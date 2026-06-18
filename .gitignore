@@ -1,0 +1,9 @@
+# секрети
+*.env
+.polski.env
+
+# конфіг Obsidian і зібраний плагін (node_modules тощо) — Dell-у не потрібні
+.obsidian/
+
+# історія чатів плагіна
+.obsidian-claude-code/
