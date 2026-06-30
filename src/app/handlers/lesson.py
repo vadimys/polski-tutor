@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards import to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai
-from app.services import clock, state
+from app.services import clock, state, vocab
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -77,8 +77,12 @@ async def _deliver(message: Message, user_id: int) -> None:
     _bump_streak(st)
     await state.save(st)
 
+    await vocab.seed_if_empty(user_id, clock.today_local())
+    _, due_n = await vocab.counts(user_id, clock.today_local())
+    review_note = f"\n\n🔁 На повторення сьогодні: <b>{due_n}</b> слів — /powtorki" if due_n else ""
+
     header = f"🔥 Стрік: <b>{st.streak}</b> · до іспиту <b>{clock.days_to_exam()}</b> днів\n\n"
-    await message.answer(header + text, reply_markup=to_menu_kb())
+    await message.answer(header + text + review_note, reply_markup=to_menu_kb())
 
 
 @router.message(Command("lekcja", "lesson"))

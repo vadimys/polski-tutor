@@ -26,6 +26,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     """Головне меню."""
     kb = InlineKeyboardBuilder()
     kb.button(text="📖 Урок дня", callback_data="lesson:start")
+    kb.button(text="🔁 Повторення слів", callback_data="review:start")
     kb.button(text="✍️ Письмо", callback_data="writing:start")
     kb.button(text="🎯 Тренування", callback_data="drill:start")
     kb.button(text="📊 Прогрес", callback_data="progress:show")
@@ -40,6 +41,21 @@ def drill_kb(options: list[str]) -> InlineKeyboardMarkup:
     for i, opt in enumerate(options):
         kb.button(text=opt, callback_data=f"dr:ans:{i}")
     kb.adjust(1)
+    return kb.as_markup()
+
+
+def review_show_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👁 Показати переклад", callback_data="rv:show")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def review_grade_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Знав", callback_data="rv:ok")
+    kb.button(text="❌ Не знав", callback_data="rv:no")
+    kb.adjust(2)
     return kb.as_markup()
 
 

@@ -8,7 +8,7 @@ from aiogram.types import Message
 
 from app.bot.keyboards import lesson_kb, start_kb
 from app.domain.models import MODULE_LABELS
-from app.services import clock, state
+from app.services import clock, state, vocab
 
 router = Router()
 
@@ -31,6 +31,7 @@ def _intro_text() -> str:
 async def cmd_start(message: Message) -> None:
     st = await state.load(message.from_user.id)
     await state.save(st)  # реєструємо користувача (для нагадувань)
+    await vocab.seed_if_empty(message.from_user.id, clock.today_local())  # стартовий банк слів
     if st.placement_done:
         await message.answer(
             f"Z powrotem! 💪 Рівень: <b>{st.level}</b>, стрік: <b>{st.streak}</b> 🔥\n"
@@ -47,7 +48,9 @@ async def cmd_help(message: Message) -> None:
         "📚 <b>Команди</b>\n"
         "/menu — головне меню\n"
         "/lekcja — сьогоднішній урок\n"
+        "/powtorki — повторення слів\n"
         "/pisanie — письмо з фідбеком\n"
+        "/trening — тренування\n"
         "/postep — мій прогрес\n"
         "/test — стартовий тест ще раз\n"
         "/pomoc — ця довідка"

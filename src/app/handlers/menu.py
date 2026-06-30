@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import clock
+from app.services import clock, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -30,9 +30,11 @@ async def cb_menu(cb: CallbackQuery) -> None:
 
 async def _render_progress(user_id: int) -> str:
     st = await user_state.load(user_id)
+    total, due_n = await vocab.counts(user_id, clock.today_local())
     lines = [
         f"📊 <b>Прогрес</b> · рівень <b>{st.level or '—'}</b> · стрік <b>{st.streak}</b> 🔥",
-        f"📅 До іспиту: <b>{clock.days_to_exam()}</b> днів\n",
+        f"📅 До іспиту: <b>{clock.days_to_exam()}</b> днів",
+        f"📚 Слова: <b>{total}</b> · на повторення сьогодні: <b>{due_n}</b>\n",
     ]
     if st.readiness:
         lines.append("<b>Готовність за модулями</b> (мета — 50% у кожному):")
