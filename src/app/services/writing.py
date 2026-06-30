@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import random
-import re
 from dataclasses import dataclass
 
 from app.integrations import ai
+from app.services.feedback import parse_score, strip_score_line
 
 
 @dataclass
@@ -87,22 +87,6 @@ def _prompt(task: WritingTask, text: str) -> str:
         f"Текст учня:\n«{text}»\n\n"
         "Оціни за критеріями B1 і дай фідбек за вказаною структурою."
     )
-
-
-SCORE_RE = re.compile(r"WYNIK:\s*(\d{1,3})")
-
-
-def parse_score(text: str) -> int | None:
-    """Витягти оцінку з рядка 'WYNIK: NN'. None, якщо не знайдено."""
-    m = SCORE_RE.search(text)
-    if not m:
-        return None
-    return max(0, min(int(m.group(1)), 100))
-
-
-def strip_score_line(text: str) -> str:
-    """Прибрати службовий рядок WYNIK: ... з тексту для показу."""
-    return SCORE_RE.sub("", text).strip()
 
 
 async def feedback(task: WritingTask, text: str) -> tuple[str, int | None]:

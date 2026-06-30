@@ -8,9 +8,18 @@ from aiogram import Router
 
 
 def test_all_handlers_have_router():
-    from app.handlers import drills, lesson, menu, placement, review, start, writing
+    from app.handlers import (
+        drills,
+        lesson,
+        menu,
+        placement,
+        review,
+        speaking,
+        start,
+        writing,
+    )
 
-    for module in (start, placement, lesson, writing, drills, review, menu):
+    for module in (start, placement, lesson, writing, drills, review, speaking, menu):
         assert isinstance(module.router, Router), module.__name__
 
 

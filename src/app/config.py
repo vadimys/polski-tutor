@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # Інфра
     redis_url: str = "redis://redis:6379/0"
 
+    # Whisper (локальне розпізнавання голосу для модуля Mówienie)
+    whisper_model: str = "small"
+    whisper_dir: str = "/opt/models"
+
     # Навчання / графік
     timezone: str = "Europe/Warsaw"
     lesson_hour: int = 8
