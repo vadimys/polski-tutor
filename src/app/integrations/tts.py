@@ -46,7 +46,7 @@ def _synth_sync(text: str) -> bytes | None:
     os.close(ogg_fd)
     try:
         with wave.open(wav_path, "wb") as wf:
-            _v().synthesize(text, wf)
+            _v().synthesize_wav(text, wf)  # piper >=1.3 — пише заголовок WAV сам
         subprocess.run(
             ["ffmpeg", "-y", "-i", wav_path, "-c:a", "libopus", "-b:a", "32k", ogg_path],
             check=True,
