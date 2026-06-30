@@ -15,6 +15,9 @@ RUN pip install --no-cache-dir .
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8', download_root='/opt/models')" \
     && chmod -R a+rX /opt/models
 
+# Модель уже в образі → у рантаймі не лізти в мережу (й не писати в read-only кеш)
+ENV HF_HUB_OFFLINE=1
+
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
