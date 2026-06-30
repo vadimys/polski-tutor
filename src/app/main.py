@@ -12,7 +12,17 @@ from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
 
 from app.config import settings
-from app.handlers import drills, lesson, menu, placement, review, speaking, start, writing
+from app.handlers import (
+    drills,
+    lesson,
+    listening,
+    menu,
+    placement,
+    review,
+    speaking,
+    start,
+    writing,
+)
 from app.scheduler import daily_nudge_loop
 
 logging.basicConfig(
@@ -27,6 +37,7 @@ COMMANDS = [
     BotCommand(command="lekcja", description="Почати урок"),
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),
+    BotCommand(command="sluchanie", description="Аудіювання (запис + питання)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
     BotCommand(command="postep", description="Мій прогрес"),
@@ -48,6 +59,7 @@ async def main() -> None:
     dp.include_router(drills.router)
     dp.include_router(review.router)
     dp.include_router(speaking.router)
+    dp.include_router(listening.router)
     dp.include_router(menu.router)
 
     await bot.set_my_commands(COMMANDS)

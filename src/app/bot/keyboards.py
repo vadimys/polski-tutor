@@ -29,6 +29,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="🔁 Повторення слів", callback_data="review:start")
     kb.button(text="✍️ Письмо", callback_data="writing:start")
     kb.button(text="🗣 Мовлення", callback_data="speaking:start")
+    kb.button(text="🎧 Аудіювання", callback_data="listening:start")
     kb.button(text="🎯 Тренування", callback_data="drill:start")
     kb.button(text="📊 Прогрес", callback_data="progress:show")
     kb.button(text="📝 Тест рівня", callback_data="placement:start")
@@ -41,6 +42,15 @@ def drill_kb(options: list[str]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for i, opt in enumerate(options):
         kb.button(text=opt, callback_data=f"dr:ans:{i}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def listen_kb(options: list[str]) -> InlineKeyboardMarkup:
+    """Варіанти відповіді для аудіювання."""
+    kb = InlineKeyboardBuilder()
+    for i, opt in enumerate(options):
+        kb.button(text=opt, callback_data=f"ls:ans:{i}")
     kb.adjust(1)
     return kb.as_markup()
 

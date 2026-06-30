@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     whisper_model: str = "small"
     whisper_dir: str = "/opt/models"
 
+    # Piper TTS (локальне озвучення для модуля Słuchanie)
+    piper_model: str = "/opt/voices/pl_PL-gosia-medium.onnx"
+
     # Навчання / графік
     timezone: str = "Europe/Warsaw"
     lesson_hour: int = 8

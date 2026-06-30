@@ -33,7 +33,7 @@ jobs:
           mypy src/app/domain src/app/config.py src/app/bot/ui.py
           src/app/services/srs.py src/app/services/placement.py
           src/app/services/clock.py src/app/services/writing.py src/app/services/drills.py
-          src/app/services/feedback.py src/app/services/speaking.py
+          src/app/services/feedback.py src/app/services/speaking.py src/app/services/listening.py
 
       - name: Tests (pytest + coverage gate)
         env:

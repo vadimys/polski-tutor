@@ -11,6 +11,7 @@ def test_all_handlers_have_router():
     from app.handlers import (
         drills,
         lesson,
+        listening,
         menu,
         placement,
         review,
@@ -19,7 +20,8 @@ def test_all_handlers_have_router():
         writing,
     )
 
-    for module in (start, placement, lesson, writing, drills, review, speaking, menu):
+    mods = (start, placement, lesson, writing, drills, review, speaking, listening, menu)
+    for module in mods:
         assert isinstance(module.router, Router), module.__name__
 
 
