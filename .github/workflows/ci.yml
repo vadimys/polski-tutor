@@ -32,7 +32,7 @@ jobs:
         run: >
           mypy src/app/domain src/app/config.py src/app/bot/ui.py
           src/app/services/srs.py src/app/services/placement.py
-          src/app/services/clock.py src/app/services/writing.py
+          src/app/services/clock.py src/app/services/writing.py src/app/services/drills.py
 
       - name: Tests (pytest + coverage gate)
         env:
