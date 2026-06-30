@@ -9,6 +9,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
+from app.bot.keyboards import to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai
 from app.services import clock, state
@@ -77,7 +78,7 @@ async def _deliver(message: Message, user_id: int) -> None:
     await state.save(st)
 
     header = f"🔥 Стрік: <b>{st.streak}</b> · до іспиту <b>{clock.days_to_exam()}</b> днів\n\n"
-    await message.answer(header + text)
+    await message.answer(header + text, reply_markup=to_menu_kb())
 
 
 @router.message(Command("lekcja", "lesson"))

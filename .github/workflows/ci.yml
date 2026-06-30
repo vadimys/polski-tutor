@@ -30,8 +30,9 @@ jobs:
 
       - name: Types (mypy — чисте ядро)
         run: >
-          mypy src/app/domain src/app/config.py
-          src/app/services/srs.py src/app/services/placement.py src/app/services/clock.py
+          mypy src/app/domain src/app/config.py src/app/bot/ui.py
+          src/app/services/srs.py src/app/services/placement.py
+          src/app/services/clock.py src/app/services/writing.py
 
       - name: Tests (pytest + coverage gate)
         env:

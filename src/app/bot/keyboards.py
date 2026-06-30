@@ -22,8 +22,28 @@ def question_kb(options: list[str]) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def menu_kb() -> InlineKeyboardMarkup:
+    """Головне меню."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📖 Урок дня", callback_data="lesson:start")
+    kb.button(text="✍️ Письмо", callback_data="writing:start")
+    kb.button(text="📊 Прогрес", callback_data="progress:show")
+    kb.button(text="📝 Тест рівня", callback_data="placement:start")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def to_menu_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def lesson_kb() -> InlineKeyboardMarkup:
+    """Після уроку/тесту: почати урок або відкрити меню."""
     kb = InlineKeyboardBuilder()
     kb.button(text="▶️ Почати урок", callback_data="lesson:start")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()

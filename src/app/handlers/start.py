@@ -45,8 +45,10 @@ async def cmd_start(message: Message) -> None:
 async def cmd_help(message: Message) -> None:
     await message.answer(
         "📚 <b>Команди</b>\n"
-        "/start — головна + рівень\n"
-        "/lekcja — почати сьогоднішній урок\n"
-        "/test — пройти стартовий тест ще раз\n"
+        "/menu — головне меню\n"
+        "/lekcja — сьогоднішній урок\n"
+        "/pisanie — письмо з фідбеком\n"
+        "/postep — мій прогрес\n"
+        "/test — стартовий тест ще раз\n"
         "/pomoc — ця довідка"
     )

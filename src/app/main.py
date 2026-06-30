@@ -12,7 +12,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
 
 from app.config import settings
-from app.handlers import lesson, placement, start
+from app.handlers import lesson, menu, placement, start, writing
 from app.scheduler import daily_nudge_loop
 
 logging.basicConfig(
@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 COMMANDS = [
     BotCommand(command="start", description="Головна + рівень"),
+    BotCommand(command="menu", description="Меню"),
     BotCommand(command="lekcja", description="Почати урок"),
+    BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
+    BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="test", description="Стартовий тест"),
     BotCommand(command="pomoc", description="Довідка"),
 ]
@@ -38,6 +41,8 @@ async def main() -> None:
     dp.include_router(start.router)
     dp.include_router(placement.router)
     dp.include_router(lesson.router)
+    dp.include_router(writing.router)
+    dp.include_router(menu.router)
 
     await bot.set_my_commands(COMMANDS)
     logger.info("Polski B1 Coach запущено. Нагадування о %02d:00 %s", settings.lesson_hour, settings.timezone)

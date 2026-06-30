@@ -11,6 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import lesson_kb, question_kb
+from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
 from app.services import placement
 from app.services import state as user_state  # aiogram інжектить FSM у параметр `state`
@@ -20,11 +21,6 @@ router = Router()
 
 class Placement(StatesGroup):
     active = State()
-
-
-def _bar(pct: int) -> str:
-    filled = round(pct / 20)
-    return "▰" * filled + "▱" * (5 - filled) + f" {pct}%"
 
 
 async def _send_question(message: Message, idx: int) -> None:
@@ -95,7 +91,7 @@ async def _finalize(
     ]
     for mod in Module:
         pct = result.per_module.get(mod.value, 0)
-        lines.append(f"{MODULE_LABELS[mod]}\n  {_bar(pct)}")
+        lines.append(f"{MODULE_LABELS[mod]}\n  {bar(pct)}")
 
     wrong = [
         q for q in placement.QUESTIONS if q.id in answers and answers[q.id] != q.correct
