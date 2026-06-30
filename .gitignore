@@ -1,9 +1,22 @@
 # секрети
 *.env
+.env
 .polski.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+.venv/
 
 # конфіг Obsidian і зібраний плагін (node_modules тощо) — Dell-у не потрібні
 .obsidian/
 
 # історія чатів плагіна
 .obsidian-claude-code/
+
+.DS_Store

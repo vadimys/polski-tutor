@@ -1,17 +1,34 @@
-# PolskiTutor — особистий vault для вивчення польської
+# Polski B1 Coach — підготовка до іспиту B1 з польської
 
-Це vault з агентом-тьютором. Vault = пам'ять: агент читає стан, працює, і записує оновлення назад.
+**Telegram-бот** для щоденної підготовки користувача до державного іспиту B1
+(*egzamin certyfikatowy*), ціль — **5 грудня 2026**. Україномовний учень, старт A1.
+Іспит: 5 модулів, треба **≥50% у КОЖНОМУ** окремо.
 
-## Агенти
-- `agent/tutor.md` — інтерактивний тьютор. Запуск: відкрий цей vault у Claude Code і напиши `запусти tutor` (або `/polski`, якщо налаштуєш команду).
-- `agent/daily.md` — проактивний щоденний урок. Запускається сам через cron на сервері (`scripts/daily.sh`). Вручну: `claude -p "$(cat agent/daily.md)" --permission-mode acceptEdits --allowedTools "Read,Write,Edit"`.
+> Раніше це був Obsidian-vault із Claude Code-агентом (`agent/*.md`, `state/*.md`, `scripts/`).
+> Тепер ядро — Python/aiogram-бот у `src/app/`. Vault-файли лишені як **довідка з методики**
+> (промпти, пріоритетна граматика, SRS-логіка) — джерело для системних промптів бота.
 
-## Стан (пам'ять) — читати на старті, оновлювати наприкінці
-- `state/progress.md` — рівень, streak, слабкі місця, черга тем.
-- `state/vocab.md` — лексика + SRS-дати. Колонки box/due оновлює лише агент.
-- `log/sessions.md` — лог сесій.
-- `lessons/` — згенеровані щоденні уроки (одна нотатка на день).
+## Архітектура (src/app/)
+- `config.py` — env-налаштування (BOT_TOKEN, ANTHROPIC_API_KEY, моделі, TIMEZONE, LESSON_HOUR, EXAM_DATE).
+- `main.py` — точка входу: aiogram polling + `RedisStorage` + запуск `scheduler.daily_nudge_loop`.
+- `domain/models.py` — `Module` (5 модулів), `UserState`, `VocabItem`.
+- `services/` — `srs.py` (Leitner, чисті функції), `state.py` (стан учня JSON у Redis),
+  `placement.py` (банк питань + скоринг), `clock.py` (час/днів до іспиту).
+- `integrations/ai.py` — Anthropic, тіровано (`strong`=Sonnet для письма/уроків, cheap=Haiku).
+- `handlers/` — `start.py` (/start), `placement.py` (тест, FSM), `lesson.py` (урок).
+- `bot/keyboards.py` — інлайн-клавіатури.
 
-## Базові правила
-- Пояснення й виправлення — українською. Цільова мова — польська.
-- Рівень учня — A1–A2. Спирайся на близькість мов, але підсвічуй «фальшивих друзів».
+## Конвенції
+- **Пояснення — українською, ПРОСТО, з прикладами.** Цільова мова — польська. Завжди підсвічуй
+  «фальшивих друзів». Адаптивно домішувати польську в пояснення в міру прогресу.
+- aiogram інжектить `FSMContext` лише в параметр з імʼям `state` — тому стан-сервіс
+  імпортуй як `from app.services import state as user_state` у хендлерах із FSM.
+- Форматування повідомлень — HTML (`<b>`), без markdown.
+- Деплой: homeserver, `docker compose up -d --build` (поряд із ботом Zelika, окремий токен/compose).
+  `.env` — на сервері, у git не потрапляє.
+
+## Стан розробки
+MVP: /start + placement-тест + мікро-урок + щоденне нагадування. Далі (беклог):
+SRS-движок у щоденному флоу, фідбек письма (Sonnet), дрили читання/граматики,
+мовлення (голос→Whisper→фідбек), дашборд 5 модулів, повні моки до грудня.
+Деталі плану — у памʼяті проєкту (memory: polski-b1-project).

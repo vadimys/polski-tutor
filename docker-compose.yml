@@ -1,0 +1,29 @@
+name: polski-b1
+
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  bot:
+    build: .
+    env_file: .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:  # бот без порту — перевіряємо живий конект до Redis
+      test: ["CMD-SHELL", "python -c \"import redis; redis.from_url('redis://redis:6379/0').ping()\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  redis-data:
