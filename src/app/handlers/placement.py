@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
+from app.bot import quiz
 from app.bot.keyboards import lesson_kb, question_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
@@ -57,11 +58,11 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Placement.active, F.data.startswith("pl:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    parts = cb.data.split(":")  # pl:ans:<qidx>:<option>
-    if len(parts) != 4:
+    ans = quiz.parse_answer(cb.data)
+    if ans is None:
         await cb.answer()
         return
-    qidx, choice = int(parts[2]), int(parts[3])
+    qidx, choice = ans
     data = await state.get_data()
     pos = data["pos"]
     pairs = data["pairs"]

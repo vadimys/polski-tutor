@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
+from app.bot import quiz
 from app.bot.keyboards import listen_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.integrations import tts
@@ -67,11 +68,11 @@ async def cb_listening(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Listening.active, F.data.startswith("ls:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    parts = cb.data.split(":")  # ls:ans:<gstep>:<option>
-    if len(parts) != 4:
+    ans = quiz.parse_answer(cb.data)
+    if ans is None:
         await cb.answer()
         return
-    qidx, chosen = int(parts[2]), int(parts[3])
+    qidx, chosen = ans
     data = await state.get_data()
     ex = listening.by_id(data["ex_id"])
     seg, q, correct, gstep = data["seg"], data["q"], data["correct"], data["gstep"]
@@ -93,11 +94,9 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     ok = chosen == question.correct
     if ok:
         correct += 1
-        verdict = "✔️ <b>Dobrze!</b>"
-    else:
-        verdict = f"❌ Poprawnie: <b>{html.escape(question.options[question.correct])}</b>"
-    exp = f"\n💡 {html.escape(question.explain)}" if question.explain else ""
-    await cb.message.edit_text(f"{html.escape(question.text)}\n\n{verdict}{exp}")
+    await cb.message.edit_text(
+        quiz.verdict_card(question.text, chosen, question.correct, question.options, question.explain)
+    )
     await cb.answer("✔️" if ok else "❌")
 
     q += 1

@@ -22,6 +22,7 @@ MODULES = [
     "app.services.progress",
     "app.bot.keyboards",
     "app.bot.ui",
+    "app.bot.quiz",
     "app.bot.access_mw",
     "app.services.writing",
     "app.services.drills",
