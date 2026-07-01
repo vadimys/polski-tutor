@@ -1,12 +1,12 @@
 """GDPR: експорт і видалення персональних даних користувача.
 
 Дані користувача: рядок users + історія sessions (Postgres) + словник/лічильники
-(Redis). Право на доступ і видалення — обов'язкове для EU-сервісу.
+та FSM-стан (Redis). Право на доступ і видалення — обов'язкове для EU-сервісу.
 """
 
 from __future__ import annotations
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 
 from app.config import settings
 from app.db.base import session_factory
@@ -14,16 +14,23 @@ from app.db.models import Session, User
 
 
 async def export_data(user_id: int) -> str:
-    """Читабельний дамп усіх даних користувача (для права на доступ)."""
+    """Читабельний дамп усіх даних користувача (право на доступ, ст. 15)."""
     async with session_factory()() as s:
         u = await s.get(User, user_id)
-        sessions = (
+        rows = (
             await s.execute(
-                select(func.count()).select_from(Session).where(Session.user_id == user_id)
+                select(Session.module, Session.score, Session.created_at)
+                .where(Session.user_id == user_id)
+                .order_by(Session.created_at.desc())
+                .limit(50)
             )
-        ).scalar() or 0
+        ).all()
     if u is None:
         return "У нас немає збережених даних про тебе."
+
+    from app.services import vocab
+
+    words = await vocab.count(user_id)
     lines = [
         "🗂 <b>Твої дані</b>",
         f"• ID: <code>{u.id}</code>" + (f" · @{u.username}" if u.username else ""),
@@ -31,15 +38,18 @@ async def export_data(user_id: int) -> str:
         f"• Готовність: {u.readiness or {}}",
         f"• Дата іспиту: {u.exam_date or '—'} (підтв.: {'так' if u.exam_date_confirmed else 'ні'})",
         f"• Доступ: {u.access_status}" + (f" до {u.access_until}" if u.access_until else ""),
-        f"• Виконано вправ: {sessions}",
+        f"• Слів у повтореннях (SRS): {words}",
         f"• Створено: {u.created_at}",
-        "\nВидалити всі дані: /zapomnij",
     ]
+    if rows:
+        lines.append(f"\n<b>Останні вправи ({len(rows)}):</b>")
+        lines += [f"• {m} — {sc}% ({ts})" for m, sc, ts in rows]
+    lines.append("\nВидалити всі дані: /zapomnij")
     return "\n".join(lines)
 
 
 async def delete_data(user_id: int) -> None:
-    """Повне видалення даних користувача (право на забуття)."""
+    """Повне видалення даних користувача (право на забуття, ст. 17)."""
     async with session_factory()() as s:
         await s.execute(delete(Session).where(Session.user_id == user_id))
         u = await s.get(User, user_id)
@@ -54,6 +64,9 @@ async def delete_data(user_id: int) -> None:
         await r.delete(f"polski:vocab:{user_id}")
         await r.srem("polski:users", user_id)
         async for key in r.scan_iter(f"polski:ai:{user_id}:*"):
+            await r.delete(key)
+        # FSM-стан aiogram: fsm:<bot_id>:<chat_id>:<user_id>:<part> — може містити чернетки текстів
+        async for key in r.scan_iter(f"fsm:*:{user_id}:*"):
             await r.delete(key)
     finally:
         await r.aclose()

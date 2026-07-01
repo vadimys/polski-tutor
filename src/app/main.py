@@ -54,6 +54,7 @@ COMMANDS = [
     BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="plan", description="Мій план підготовки"),
     BotCommand(command="test", description="Стартовий тест"),
+    BotCommand(command="prywatnosc", description="Приватність (GDPR)"),
     BotCommand(command="moidane", description="Мої дані (GDPR)"),
     BotCommand(command="zapomnij", description="Видалити мої дані (GDPR)"),
     BotCommand(command="pomoc", description="Довідка"),

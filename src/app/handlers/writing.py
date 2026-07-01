@@ -18,6 +18,7 @@ from app.services import state as user_state
 router = Router()
 
 MIN_WORDS = 5  # захист від «.» замість тексту
+MAX_CHARS = 4000  # захист від cost-abuse: обсяг B1 ~30–175 слів, 4000 символів — з великим запасом
 
 
 class Writing(StatesGroup):
@@ -54,6 +55,9 @@ async def on_task_a(message: Message, state: FSMContext) -> None:
     if len(message.text.split()) < MIN_WORDS:
         await message.answer("Напиши, будь ласка, повноцінний текст завдання a 🙂")
         return
+    if len(message.text) > MAX_CHARS:
+        await message.answer(f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂")
+        return
     await state.update_data(text_a=message.text)
     await state.set_state(Writing.await_b)
     data = await state.get_data()
@@ -67,6 +71,9 @@ async def on_task_a(message: Message, state: FSMContext) -> None:
 async def on_task_b(message: Message, state: FSMContext) -> None:
     if len(message.text.split()) < MIN_WORDS:
         await message.answer("Напиши, будь ласка, повноцінний текст завдання b 🙂")
+        return
+    if len(message.text) > MAX_CHARS:
+        await message.answer(f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂")
         return
     data = await state.get_data()
     ws = writing.set_by_id(data["set_id"])

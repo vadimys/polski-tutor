@@ -11,6 +11,30 @@ from app.services import gdpr
 
 router = Router()
 
+# Коротке повідомлення при онбордингу (ст. 13 GDPR — прозорість у момент збору даних)
+PRIVACY_SHORT = (
+    "ℹ️ <i>Зберігаю лише твій ID, дату іспиту та прогрес. Тексти письма й голосові "
+    "йдуть на AI-оцінку в Anthropic (США) і не зберігаються. Деталі — /prywatnosc, "
+    "видалити свої дані будь-коли — /zapomnij.</i>"
+)
+
+# Повне повідомлення про приватність
+PRIVACY_NOTICE = (
+    "🔐 <b>Приватність і твої дані (GDPR)</b>\n\n"
+    "<b>Що зберігаю:</b> Telegram ID та @username, обрану дату іспиту, статус доступу, "
+    "прогрес (бали й готовність по модулях) і набір слів для повторень.\n\n"
+    "<b>Чого НЕ зберігаю:</b> тексти письма та голосові повідомлення. Вони надсилаються на "
+    "оцінку в сервіс <b>Anthropic (США)</b> і одразу відкидаються; голосове видаляється "
+    "з сервера відразу після розпізнавання.\n\n"
+    "<b>Кому передаю:</b> лише Anthropic — для AI-оцінки твоїх відповідей (США; за умовами "
+    "Anthropic дані не використовуються для тренування моделей). Більше нікому.\n\n"
+    "<b>Де зберігається:</b> на приватному self-hosted сервері власника бота (він же — "
+    "контролер даних).\n\n"
+    "<b>Твої права:</b>\n"
+    "• /moidane — переглянути всі свої дані\n"
+    "• /zapomnij — видалити все безповоротно"
+)
+
 
 def _confirm_kb():
     kb = InlineKeyboardBuilder()
@@ -18,6 +42,11 @@ def _confirm_kb():
     kb.button(text="↩️ Скасувати", callback_data="gdpr:cancel")
     kb.adjust(1)
     return kb.as_markup()
+
+
+@router.message(Command("prywatnosc"))
+async def cmd_privacy(message: Message) -> None:
+    await message.answer(PRIVACY_NOTICE)
 
 
 @router.message(Command("moidane"))

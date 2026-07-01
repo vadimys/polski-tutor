@@ -6,8 +6,9 @@ requires-python = ">=3.12"
 readme = "README.md"
 dependencies = [
     "aiogram>=3.13,<4",
+    "aiohttp>=3.10",  # прямо використовується в health.py (HTTP /health)
     "redis>=5",
-    "anthropic>=0.40",
+    "anthropic>=0.40,<1",  # SDK швидко ламає API між minor — тримаємо стелю
     "pydantic-settings>=2.5",
     "tzdata>=2024.1",
     "faster-whisper>=1.0",
@@ -39,8 +40,16 @@ target-version = "py312"
 src = ["src"]
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "UP", "B"]
-ignore = ["E501"]
+select = ["E", "W", "F", "I", "UP", "B", "S"]  # S = flake8-bandit (security-lint)
+ignore = [
+    "E501",
+    "S311",  # random для вибору завдань — не криптографія
+    "S104",  # health-сервер свідомо слухає 0.0.0.0 (лише в compose-мережі, порт не публікується)
+    "S110",  # try/except/pass — навмисні best-effort cleanup'и (зняти клавіатуру, видалити temp)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]  # assert — нормально в тестах
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

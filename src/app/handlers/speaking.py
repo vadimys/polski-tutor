@@ -22,6 +22,9 @@ from app.services import state as user_state
 logger = logging.getLogger(__name__)
 router = Router()
 
+MAX_VOICE_SEC = 180  # захист від DoS: довге голосове = навантаження Whisper/CPU + диск
+MAX_VOICE_BYTES = 10 * 1024 * 1024  # 10 МБ
+
 
 class Speaking(StatesGroup):
     waiting = State()
@@ -89,6 +92,16 @@ async def cb_photo(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(Speaking.waiting, F.voice)
 async def on_voice(message: Message, state: FSMContext) -> None:
+    # Ліміти на розмір/тривалість — до завантаження й транскрипції (лишаємось у waiting для повтору)
+    if (message.voice.duration or 0) > MAX_VOICE_SEC:
+        await message.answer(
+            f"🎤 Голосове задовге (максимум {MAX_VOICE_SEC} с). "
+            "Для мовлення B1 достатньо 30–90 секунд — запиши коротше 🙂"
+        )
+        return
+    if (message.voice.file_size or 0) > MAX_VOICE_BYTES:
+        await message.answer("🎤 Файл завеликий. Запиши коротше голосове (30–90 секунд).")
+        return
     data = await state.get_data()
     task = speaking.task_by_id(data.get("task_id", ""))
     await state.clear()

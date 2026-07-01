@@ -38,6 +38,16 @@ def test_main_entrypoint_intact():
 
     assert callable(main)
     assert len(COMMANDS) >= 7  # усі команди на місці
+    cmds = {c.command for c in COMMANDS}
+    assert {"prywatnosc", "moidane", "zapomnij"} <= cmds  # GDPR-команди на місці
+
+
+def test_privacy_notice_present():
+    from app.handlers.privacy import PRIVACY_NOTICE, PRIVACY_SHORT
+
+    assert "Anthropic" in PRIVACY_NOTICE  # розкриття US-процесора (Ch. V GDPR)
+    assert "/zapomnij" in PRIVACY_NOTICE and "/moidane" in PRIVACY_NOTICE
+    assert "/prywatnosc" in PRIVACY_SHORT
 
 
 def test_scheduler_intact():

@@ -1,0 +1,26 @@
+# Секрети й локальний стан — ніколи в образ
+.env
+*.env
+!.env.example
+
+# VCS та CI
+.git
+.github
+
+# Кеші й артефакти
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Локальні дані/логи
+state/
+log/
+*.log
+
+# IDE
+.vscode/
+.idea/

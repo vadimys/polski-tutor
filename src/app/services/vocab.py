@@ -108,3 +108,8 @@ async def counts(user_id: int, today: date) -> tuple[int, int]:
     data = await _r().hgetall(_key(user_id))
     due_n = sum(1 for raw in data.values() if srs.is_due(json.loads(raw).get("due", ""), today))
     return len(data), due_n
+
+
+async def count(user_id: int) -> int:
+    """Скільки всього слів у наборі повторень (для GDPR-експорту)."""
+    return await _r().hlen(_key(user_id))

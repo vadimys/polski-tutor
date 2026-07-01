@@ -18,6 +18,7 @@ from app.bot.keyboards import (
     send_request_kb,
 )
 from app.config import settings
+from app.handlers.privacy import PRIVACY_SHORT
 from app.services import access, clock, exam_dates, vocab
 
 router = Router()
@@ -65,7 +66,8 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         await message.answer(
             "Cześć! 👋 Я твій тренер польської до державного іспиту <b>B1</b>.\n\n"
             "Спершу скажи, <b>коли твій іспит</b> (лише офіційні сесії Держкомісії) — "
-            "щоб скласти план і надіслати запит на доступ:",
+            "щоб скласти план і надіслати запит на доступ:\n\n"
+            f"{PRIVACY_SHORT}",
             reply_markup=_date_kb(),
         )
 
