@@ -13,6 +13,14 @@ def start_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def example_kb(callback_data: str) -> InlineKeyboardMarkup:
+    """Кнопка «показати зразок» під продуктивним завданням (мовлення/письмо)."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📝 Показати зразок", callback_data=callback_data)
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def exam_dates_kb(
     sessions: list[str], prefix: str, with_unconfirmed: bool = False
 ) -> InlineKeyboardMarkup:

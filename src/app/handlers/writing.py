@@ -10,9 +10,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.keyboards import menu_kb, to_menu_kb
+from app.bot.keyboards import example_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
-from app.services import limits, writing
+from app.services import guidance, limits, writing
 from app.services import state as user_state
 
 router = Router()
@@ -34,8 +34,14 @@ async def _give_set(message: Message, state: FSMContext) -> None:
         f"✍️ <b>Письмо — набір ({writing.SOURCE})</b>\n\n"
         f"Як на іспиті: <b>два завдання</b>, обидва з цього набору.\n\n"
         f"<b>Завдання a</b> ({ws.a.genre}, ~{ws.a.words} слів):\n{html.escape(ws.a.prompt)}\n\n"
-        f"<b>Завдання b</b> ({ws.b.genre}, ~{ws.b.words} слів):\n{html.escape(ws.b.prompt)}\n\n"
-        "Спершу напиши польською <b>завдання a</b> одним повідомленням. (/menu — вийти)"
+        f"<b>Завдання b</b> ({ws.b.genre}, ~{ws.b.words} слів):\n{html.escape(ws.b.prompt)}"
+    )
+    a_req = writing.GENRE_REQ.get(ws.a.genre, "—")
+    b_req = writing.GENRE_REQ.get(ws.b.genre, "—")
+    await message.answer(
+        guidance.writing_instruction(ws.a.genre, a_req, ws.a.words, ws.b.genre, b_req, ws.b.words)
+        + "\n\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням. (/menu — вийти)",
+        reply_markup=example_kb("guide:wr"),
     )
 
 
@@ -48,6 +54,12 @@ async def cmd_writing(message: Message, state: FSMContext) -> None:
 async def cb_writing(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await _give_set(cb.message, state)
+
+
+@router.callback_query(F.data == "guide:wr")
+async def cb_example(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await cb.message.answer(guidance.writing_example())
 
 
 @router.message(Writing.await_a, F.text, ~F.text.startswith("/"))

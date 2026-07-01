@@ -23,6 +23,7 @@ MODULES = [
     "app.services.limits",
     "app.services.badges",
     "app.services.gdpr",
+    "app.services.guidance",
     "app.bot.keyboards",
     "app.bot.ui",
     "app.bot.quiz",

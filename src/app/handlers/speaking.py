@@ -13,10 +13,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
-from app.bot.keyboards import menu_kb, to_menu_kb
+from app.bot.keyboards import example_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech
-from app.services import limits, speaking
+from app.services import guidance, limits, speaking
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -43,8 +43,9 @@ async def _give_task(message: Message, state: FSMContext) -> None:
     await state.update_data(task_id=task.id)
     await message.answer(
         f"🗣 <b>Мовлення — {label}</b> ({speaking.SOURCE})\n\n{html.escape(task.prompt)}\n\n"
-        "Запиши <b>голосове</b> польською (≈ 30–60 секунд) — розпізнаю й оціню за офіційними "
-        "критеріями (wykonanie / gramatyka / słownictwo). (/menu — вийти)"
+        f"{guidance.speaking_instruction(task.kind)}\n\n"
+        "🎤 Готовий — запиши <b>голосове</b> польською (≈ 30–60 секунд). (/menu — вийти)",
+        reply_markup=example_kb(f"guide:spk:{task.kind}"),
     )
 
 
@@ -62,9 +63,12 @@ async def _give_photo(message: Message, state: FSMContext) -> None:
         task.photo_url,
         caption=(
             f"🗣 <b>Мовлення — {speaking._KIND_LABEL['opis']}</b>\n\n{html.escape(task.prompt)}\n\n"
-            "Запиши <b>голосове</b> польською — оціню за офіційними критеріями. "
-            f"(<i>{html.escape(task.photo_source)}</i>) (/menu — вийти)"
+            f"🎤 Запиши <b>голосове</b> польською. (<i>{html.escape(task.photo_source)}</i>)"
         ),
+    )
+    await message.answer(
+        guidance.speaking_instruction("opis"),
+        reply_markup=example_kb("guide:spk:opis"),
     )
 
 
@@ -88,6 +92,13 @@ async def cb_speaking(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_photo(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await _give_photo(cb.message, state)
+
+
+@router.callback_query(F.data.startswith("guide:spk:"))
+async def cb_example(cb: CallbackQuery) -> None:
+    kind = cb.data.split(":", 2)[2]
+    await cb.answer()
+    await cb.message.answer(guidance.speaking_example(kind))
 
 
 @router.message(Speaking.waiting, F.voice)
