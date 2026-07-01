@@ -26,6 +26,7 @@ from app.handlers import (
     placement,
     plan,
     privacy,
+    quizpoll,
     review,
     speaking,
     start,
@@ -84,6 +85,7 @@ async def main() -> None:
     dp.include_router(onboarding.router)
     dp.include_router(admin.router)
     dp.include_router(privacy.router)  # GDPR — поза гейтом (доступно будь-кому)
+    dp.include_router(quizpoll.router)  # poll_answer нативних quiz-poll (стан у Redis)
     dp.include_router(start.router)
 
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)

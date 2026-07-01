@@ -13,7 +13,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import quiz
 from app.bot.keyboards import drill_kb, menu_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import drills, mock
+from app.services import drills, mock, pollquiz
 from app.services import state as user_state
 
 router = Router()
@@ -42,6 +42,24 @@ async def _start(message: Message, user_id: int, state: FSMContext) -> None:
     st = await user_state.load(user_id)
     module = _target_module(st)
     idxs = drills.session_indices(module.value, SESSION_SIZE)
+
+    # Короткий контент (граматика) → нативний quiz-poll; довгі тексти (читання) → інлайн
+    items = []
+    for i in idxs:
+        it = mock.section_items(module.value)[i]
+        q = f"{it.context}\n\n{it.question}" if it.context else it.question
+        items.append({"q": q, "opts": list(it.options), "correct": it.correct, "explain": it.explain})
+    if pollquiz.fits(items):
+        await message.answer(
+            f"🎯 <b>Тренування</b> — {len(items)} офіційних питань, фокус: {MODULE_LABELS[module]}.\n"
+            "Відповідай у quiz-опитуваннях нижче 👇"
+        )
+        await pollquiz.start(
+            message.bot, chat_id=message.chat.id, user_id=user_id, kind="readiness",
+            items=items, module=module.value, title="🔤 Тренування",
+        )
+        return
+
     await state.set_state(Drill.active)
     await state.update_data(section=module.value, idxs=idxs, pos=0, correct=0)
     await message.answer(
