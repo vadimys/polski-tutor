@@ -10,7 +10,8 @@ WORKDIR /app
 # 1) Важкі залежності — ОКРЕМИЙ шар (кешується між змінами коду; список синхронний з pyproject)
 RUN pip install --no-cache-dir \
     "aiogram>=3.13,<4" "redis>=5" "anthropic>=0.40" "pydantic-settings>=2.5" \
-    "tzdata>=2024.1" "faster-whisper>=1.0" "piper-tts>=1.2"
+    "tzdata>=2024.1" "faster-whisper>=1.0" "piper-tts>=1.2" \
+    "sqlalchemy[asyncio]>=2.0" asyncpg alembic
 
 # 2) Whisper-модель у образ (офлайн у рантаймі). Кешується окремо від коду.
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8', download_root='/opt/models')" \
