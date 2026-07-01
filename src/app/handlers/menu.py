@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import date
 
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
+from app.bot import charts
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
@@ -70,12 +72,21 @@ async def _render_progress(user_id: int) -> str:
     return "\n".join(lines)
 
 
+async def _send_progress(msg: Message, user_id: int) -> None:
+    await msg.answer(await _render_progress(user_id), reply_markup=to_menu_kb())
+    st = await user_state.load(user_id)
+    if st.readiness:  # графік — лише коли є що показати; matplotlib у to_thread (CPU)
+        png = await asyncio.to_thread(charts.readiness_bar, st.readiness)
+        if png:
+            await msg.answer_photo(BufferedInputFile(png, filename="progress.png"))
+
+
 @router.message(Command("postep"))
 async def cmd_progress(message: Message) -> None:
-    await message.answer(await _render_progress(message.from_user.id), reply_markup=to_menu_kb())
+    await _send_progress(message, message.from_user.id)
 
 
 @router.callback_query(F.data == "progress:show")
 async def cb_progress(cb: CallbackQuery) -> None:
-    await cb.message.answer(await _render_progress(cb.from_user.id), reply_markup=to_menu_kb())
+    await _send_progress(cb.message, cb.from_user.id)
     await cb.answer()

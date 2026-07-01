@@ -11,7 +11,7 @@ WORKDIR /app
 #    Ставимо через stub-пакет, щоб шар залежав лише від pyproject.toml (кеш між змінами коду).
 COPY pyproject.toml README.md ./
 RUN mkdir -p src/app && touch src/app/__init__.py \
-    && pip install --no-cache-dir ".[ml]" \
+    && pip install --no-cache-dir ".[ml,viz]" \
     && rm -rf src *.egg-info build
 
 # 2) Whisper-модель у образ (офлайн у рантаймі). Кешується окремо від коду.
