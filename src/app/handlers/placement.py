@@ -129,3 +129,8 @@ async def _finalize(
 
     lines.append(f"\n🎯 Почнемо з: <b>{MODULE_LABELS[st.weakest_module()]}</b>. Готовий до уроку?")
     await message.answer("\n".join(lines), reply_markup=lesson_kb())
+
+    # одразу будуємо індивідуальний план (за датою іспиту + слабкими модулями)
+    from app.handlers.plan import send_plan
+
+    await send_plan(message, user_id)

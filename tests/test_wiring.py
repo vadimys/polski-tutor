@@ -17,6 +17,7 @@ def test_all_handlers_have_router():
         mock,
         onboarding,
         placement,
+        plan,
         review,
         speaking,
         start,
@@ -25,7 +26,7 @@ def test_all_handlers_have_router():
 
     mods = (
         start, onboarding, admin, placement, lesson, writing, drills,
-        review, speaking, listening, mock, menu,
+        review, speaking, listening, mock, plan, menu,
     )
     for module in mods:
         assert isinstance(module.router, Router), module.__name__

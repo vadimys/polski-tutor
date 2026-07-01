@@ -19,5 +19,5 @@ async def cmd_help(message: Message) -> None:
         "/powtorki — повторення слів\n"
         "/pisanie — письмо · /opis — опис фото · /mowienie — мовлення\n"
         "/sluchanie — аудіювання · /mok — офіційний МОК · /trening — тренування\n"
-        "/postep — мій прогрес · /test — стартовий тест"
+        "/postep — прогрес · /plan — мій план · /test — стартовий тест"
     )
