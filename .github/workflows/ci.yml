@@ -43,3 +43,8 @@ jobs:
           BOT_TOKEN: "test:token"
           PYTHONPATH: src
         run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=30
+
+      - name: Security audit (pip-audit — не блокує)
+        run: |
+          pip install pip-audit
+          pip-audit --desc || true

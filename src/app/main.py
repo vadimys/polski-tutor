@@ -31,6 +31,7 @@ from app.handlers import (
     start,
     writing,
 )
+from app.health import start_health_server
 from app.scheduler import daily_nudge_loop
 
 logging.basicConfig(
@@ -85,6 +86,7 @@ async def main() -> None:
     if migrated:
         logger.info("Мігровано %d користувачів Redis→Postgres", migrated)
 
+    await start_health_server()
     await bot.set_my_commands(COMMANDS)
     logger.info(
         "Polski B1 Coach запущено. Нагадування о %02d:00 %s",

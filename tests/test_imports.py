@@ -49,6 +49,7 @@ MODULES = [
     "app.handlers.plan",
     "app.handlers.privacy",
     "app.handlers.menu",
+    "app.health",
     "app.scheduler",
     "app.main",
 ]
