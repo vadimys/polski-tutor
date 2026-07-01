@@ -25,6 +25,7 @@ from app.handlers import (
     onboarding,
     placement,
     plan,
+    privacy,
     review,
     speaking,
     start,
@@ -52,6 +53,8 @@ COMMANDS = [
     BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="plan", description="Мій план підготовки"),
     BotCommand(command="test", description="Стартовий тест"),
+    BotCommand(command="moidane", description="Мої дані (GDPR)"),
+    BotCommand(command="zapomnij", description="Видалити мої дані (GDPR)"),
     BotCommand(command="pomoc", description="Довідка"),
 ]
 
@@ -67,6 +70,7 @@ async def main() -> None:
     # Поза гейтом: онбординг (/start, запит доступу), адмін (схвалення), довідка
     dp.include_router(onboarding.router)
     dp.include_router(admin.router)
+    dp.include_router(privacy.router)  # GDPR — поза гейтом (доступно будь-кому)
     dp.include_router(start.router)
 
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)

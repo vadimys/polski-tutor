@@ -18,6 +18,7 @@ def test_all_handlers_have_router():
         onboarding,
         placement,
         plan,
+        privacy,
         review,
         speaking,
         start,
@@ -25,7 +26,7 @@ def test_all_handlers_have_router():
     )
 
     mods = (
-        start, onboarding, admin, placement, lesson, writing, drills,
+        start, onboarding, admin, privacy, placement, lesson, writing, drills,
         review, speaking, listening, mock, plan, menu,
     )
     for module in mods:

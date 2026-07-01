@@ -11,7 +11,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, clock, progress, vocab
+from app.services import access, badges, clock, progress, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -63,6 +63,10 @@ async def _render_progress(user_id: int) -> str:
         lines.append("\n" + progress.projection(st.readiness, days_left is not None, days_left))
     else:
         lines.append("Спершу пройди стартовий тест (/test), щоб я визначив готовність.")
+
+    earned = badges.earned(st.readiness, st.streak, total_sessions)
+    if earned:
+        lines.append("\n🏅 <b>Бейджі:</b> " + " · ".join(earned))
     return "\n".join(lines)
 
 
