@@ -35,12 +35,13 @@ async def _give_task(message: Message, state: FSMContext) -> None:
         )
         return
     task = speaking.pick_task()
+    label = speaking._KIND_LABEL[task.kind]
     await state.set_state(Speaking.waiting)
     await state.update_data(task_id=task.id)
     await message.answer(
-        f"🗣 <b>Мовлення (Mówienie)</b>\n\n{html.escape(task.prompt)}\n\n"
-        "Запиши <b>голосове</b> польською (≈ 30–60 секунд) — я розпізнаю й дам фідбек "
-        "по граматиці й лексиці. (/menu — вийти)"
+        f"🗣 <b>Мовлення — {label}</b> ({speaking.SOURCE})\n\n{html.escape(task.prompt)}\n\n"
+        "Запиши <b>голосове</b> польською (≈ 30–60 секунд) — розпізнаю й оціню за офіційними "
+        "критеріями (wykonanie / gramatyka / słownictwo). (/menu — вийти)"
     )
 
 
@@ -83,7 +84,7 @@ async def on_voice(message: Message, state: FSMContext) -> None:
         )
         return
 
-    fb, score = await speaking.feedback(task, transcript)
+    fb, scores = await speaking.feedback(task, transcript)
     if not fb:
         await message.answer(
             f"📝 Я почув:\n«{html.escape(transcript)}»\n\nAI-фідбек тимчасово недоступний.",
@@ -92,12 +93,22 @@ async def on_voice(message: Message, state: FSMContext) -> None:
         return
 
     header = f"📝 <b>Я почув:</b>\n«{html.escape(transcript)}»\n\n"
-    if score is not None:
+    if scores is not None:
+        wyk, gram, slow = scores
+        wyk = min(wyk, task.max_wykonanie)
+        gram, slow = min(gram, 8), min(slow, 8)
+        pct = speaking.readiness_pct(task, wyk, gram, slow)
+        header += (
+            "📊 <b>Офіційні критерії</b> (оцінюване з транскрипту):\n"
+            f"• Wykonanie zadania: <b>{wyk}</b>/{task.max_wykonanie}\n"
+            f"• Gramatyka: <b>{gram}</b>/8\n"
+            f"• Słownictwo i styl: <b>{slow}</b>/8\n"
+            "• Poprawność fonetyczna i płynność: лише на аудіо (не з тексту)\n\n"
+        )
         st = await user_state.load(message.from_user.id)
-        old = st.readiness.get(Module.MOWIENIE.value, score)
-        st.readiness[Module.MOWIENIE.value] = round((old + score) / 2)
+        old = st.readiness.get(Module.MOWIENIE.value, pct)
+        st.readiness[Module.MOWIENIE.value] = round((old + pct) / 2)
         await user_state.save(st)
-        header += f"📊 Орієнтовна оцінка: <b>{score}%</b> (поріг — 50%)\n\n"
 
     await message.answer(header + fb, reply_markup=to_menu_kb())
 

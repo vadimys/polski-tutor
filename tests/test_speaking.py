@@ -4,27 +4,32 @@ from app.services import feedback, speaking
 def test_tasks_valid():
     ids = [t.id for t in speaking.TASKS]
     assert len(ids) == len(set(ids))
-    assert len(speaking.TASKS) >= 5
+    assert len(speaking.TASKS) >= 6
     for t in speaking.TASKS:
         assert t.prompt
+        assert t.kind in ("monolog", "sytuacja")
+        assert t.max_wykonanie in (6, 7)
 
 
 def test_task_by_id():
-    assert speaking.task_by_id("dzien") is not None
+    assert speaking.task_by_id("m_film") is not None
     assert speaking.task_by_id("nope") is None
 
 
-def test_feedback_parse_score():
-    assert feedback.parse_score("dobrze\nWYNIK: 64") == 64
-    assert feedback.parse_score("WYNIK: 300") == 100
-    assert feedback.parse_score("нема") is None
+def test_official_max_matches_kind():
+    for t in speaking.TASKS:
+        assert t.max_wykonanie == (7 if t.kind == "monolog" else 6)
 
 
-def test_feedback_strip():
-    out = feedback.strip_score_line("Фідбек.\nWYNIK: 70")
-    assert "WYNIK" not in out and "Фідбек." in out
+def test_parse_official_mowienie():
+    txt = "ok\nWYNIK: wykonanie=6 gramatyka=7 słownictwo=6"
+    assert feedback.parse_official_mowienie(txt) == (6, 7, 6)
+    assert feedback.parse_official_mowienie("без оцінки") is None
 
 
-def test_speaking_uses_shared_feedback():
-    # speaking користується спільним парсером оцінки з feedback
-    assert feedback.parse_score("WYNIK: 50") == 50
+def test_readiness_pct():
+    t = speaking.task_by_id("m_film")  # monolog, max 7
+    assert speaking.readiness_pct(t, 7, 8, 8) == 100
+    assert speaking.readiness_pct(t, 0, 0, 0) == 0
+    # клемпінг перевищень
+    assert speaking.readiness_pct(t, 99, 99, 99) == 100

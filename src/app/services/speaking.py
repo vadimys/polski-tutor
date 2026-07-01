@@ -1,4 +1,12 @@
-"""Модуль мовлення (Mówienie): теми монологів + AI-фідбек із транскрипту."""
+"""Модуль мовлення (Mówienie) — на ОФІЦІЙНИХ матеріалах Держкомісії.
+
+Реальні типи завдань іспиту: монолог (Zadanie 2) і комунікативна ситуація (Zadanie 3),
+з офіційними прикладами тем/сценаріїв. (Опис фотографії — Zadanie 1 — потребує світлин,
+додається окремо.) Оцінювання — за ОФІЦІЙНОЮ шкалою мовлення (частина, доступна з
+транскрипту): wykonanie zadania (0-7 монолог / 0-6 ситуація), gramatyka 0-8, słownictwo
+i styl 0-8. Фонетику/плавність із тексту чесно НЕ оцінюємо (потрібен аудіо-рівень).
+Жодних вигаданих завдань: усе з опублікованих матеріалів комісії.
+"""
 
 from __future__ import annotations
 
@@ -6,61 +14,104 @@ import random
 from dataclasses import dataclass
 
 from app.integrations import ai
-from app.services.feedback import parse_score, strip_score_line
+from app.services.feedback import parse_official_mowienie, strip_official_line
 
 
 @dataclass
-class SpeakingTask:
+class SpeakTask:
     id: str
+    kind: str  # 'monolog' (Zad2) | 'sytuacja' (Zad3)
     prompt: str
+    max_wykonanie: int  # офіц.: монолог 7, ситуація 6
 
 
-# Теми монологів B1 (близькі до іспиту та життя учня)
-TASKS: list[SpeakingTask] = [
-    SpeakingTask("dzien", "Opowiedz o swoim typowym dniu: co robisz rano, po południu, wieczorem."),
-    SpeakingTask("miasto", "Opisz miasto, w którym mieszkasz: co tam jest, co lubisz, czego brakuje."),
-    SpeakingTask("polski", "Dlaczego uczysz się polskiego? Jakie masz plany na przyszłość w Polsce?"),
-    SpeakingTask("praca", "Opowiedz o swojej pracy lub wymarzonej pracy: czym się zajmujesz."),
-    SpeakingTask("weekend", "Jak spędzasz weekend? Opowiedz o swoim ostatnim wolnym dniu."),
-    SpeakingTask("zdrowie", "Co robisz, żeby być zdrowym? Sport, jedzenie, sen — opowiedz."),
-    SpeakingTask("podroze", "Opowiedz o miejscu, które chciał(a)byś odwiedzić, i dlaczego."),
+SOURCE = "офіційний зразок Держкомісії (B1)"
+
+# Реальні завдання з офіц. збірника MÓWIENIE B1 і пробного тесту
+TASKS: list[SpeakTask] = [
+    # Zadanie 2 — MONOLOG (0-7)
+    SpeakTask("m_film", "monolog",
+              "Proszę opowiedzieć o filmie, który Pani/Pan najlepiej pamięta. "
+              "(розкажи про фільм, який найкраще памʼятаєш)", 7),
+    SpeakTask("m_miejsce", "monolog",
+              "Proszę opowiedzieć o miejscowości, którą warto zobaczyć w Pani/Pana kraju. "
+              "(про місцевість, яку варто побачити у твоїй країні)", 7),
+    SpeakTask("m_jezyki", "monolog",
+              "Czy zgadza się Pani/Pan z opinią, że nauka języków obcych daje nowe możliwości "
+              "w życiu? Proszę uzasadnić odpowiedź. (чи мови дають нові можливості — обґрунтуй)", 7),
+    SpeakTask("m_rodzina", "monolog",
+              "Temat: Moja rodzina. Proszę opowiedzieć o swojej rodzinie (kim są, jak wyglądają, "
+              "czym się zajmują, relacje). (про свою родину)", 7),
+    SpeakTask("m_rzeczy", "monolog",
+              "Rzeczy, bez których trudno byłoby mi żyć. Proszę opisać i uzasadnić. "
+              "(речі, без яких важко жити — опиши й обґрунтуй)", 7),
+    # Zadanie 3 — SYTUACJA KOMUNIKACYJNA (0-6) — рольова
+    SpeakTask("s_lekcja", "sytuacja",
+              "Znalazł(a) Pan/Pani ogłoszenie «Polski dla obcokrajowców». Chce Pan/Pani zdawać "
+              "egzamin. Proszę zadzwonić i umówić się na lekcję. (подзвони й домовся про урок)", 6),
+    SpeakTask("s_hotel", "sytuacja",
+              "Chce Pan/Pani przyjechać z rodziną na tydzień do Krakowa. Proszę zadzwonić do hotelu, "
+              "zarezerwować miejsca i zapytać o warunki pobytu. (заброньуй готель, спитай умови)", 6),
+    SpeakTask("s_meble", "sytuacja",
+              "Mieszka Pani/Pan z kolegą w jednym pokoju. Chce Pani/Pan inaczej ustawić meble, "
+              "a kolega nie chce zmian. Proszę go przekonać. (переконай сусіда переставити меблі)", 6),
+    SpeakTask("s_kino", "sytuacja",
+              "Kolega proponuje wyjście do kina na komedię, ale Pani/Pan woli koncert muzyki poważnej. "
+              "Proszę uzgodnić wspólny plan. (узгодь спільний план — кіно чи концерт)", 6),
+    SpeakTask("s_narty", "sytuacja",
+              "Kolega nie umie jeździć na nartach. Proszę przekonać go, że najlepsza metoda nauki "
+              "to wyjazd z Panią/Panem w góry. (переконай поїхати вчитися на лижах)", 6),
 ]
 
+_KIND_LABEL = {"monolog": "Монолог (Zadanie 2)", "sytuacja": "Комунікативна ситуація (Zadanie 3)"}
 
-def pick_task() -> SpeakingTask:
+
+def pick_task() -> SpeakTask:
     return random.choice(TASKS)
 
 
-def task_by_id(task_id: str) -> SpeakingTask | None:
+def task_by_id(task_id: str) -> SpeakTask | None:
     return next((t for t in TASKS if t.id == task_id), None)
 
 
-_SYSTEM = (
-    "Ти — доброзичливий екзаменатор іспиту B1 з польської (модуль Mówienie) ТА репетитор "
-    "для україномовного учня. Тобі дають ТРАНСКРИПТ усного монологу учня (розпізнаний "
-    "автоматично, тому можливі дрібні неточності розпізнавання). "
-    "Оцінюєш за критеріями B1: (1) розкриття теми; (2) звʼязність і плавність (наскільки "
-    "видно з тексту); (3) граматична правильність; (4) словниковий запас. "
-    "ВАЖЛИВО: вимову з транскрипту оцінити НЕ можна — чесно про це не суди. "
-    "Фідбек УКРАЇНСЬКОЮ, конкретно й підбадьорливо. Формат Telegram: лише <b>...</b> та емодзі, "
-    "БЕЗ markdown. Структура:\n"
-    "• <b>Що добре</b> — 1–2 пункти.\n"
-    "• <b>Помилки</b> — 3–5: «було → стало» + коротке пояснення.\n"
-    "• <b>Кращі фрази</b> — 1–2 природніші польські формулювання на цю тему.\n"
-    "ОСТАННІЙ рядок — строго: WYNIK: NN  (0–100, орієнтовний % за B1 Mówienie)."
-)
-
-
-def _prompt(task: SpeakingTask, transcript: str) -> str:
+def _system(task: SpeakTask) -> str:
     return (
-        f"Тема монологу: {task.prompt}\n\n"
-        f"Транскрипт відповіді учня:\n«{transcript}»\n\n"
-        "Оціни за критеріями B1 Mówienie і дай фідбек за вказаною структурою."
+        "Ти — екзаменатор Державної комісії (PKPZJPjO), що оцінює усну відповідь B1 за "
+        "ОФІЦІЙНИМИ критеріями. Тобі дають ТРАНСКРИПТ (розпізнаний із голосу, можливі неточності).\n"
+        f"Оціни за офіційною шкалою для цього завдання ({_KIND_LABEL[task.kind]}):\n"
+        f"• WYKONANIE ZADANIA: 0-{task.max_wykonanie} — чи виконано комунікативне завдання, "
+        "повнота, структура (вступ-розвиток-закінчення для монологу; досягнення мети розмови "
+        "для ситуації), доречність.\n"
+        "• GRAMATYKA: 0-8.\n"
+        "• SŁOWNICTWO I STYL: 0-8 (доречність офіц./неофіц. регістру).\n"
+        "ВАЖЛИВО: фонетику й плавність із транскрипту НЕ оцінюй (чесно скажи, що це лише на аудіо).\n"
+        "Фідбек УКРАЇНСЬКОЮ, конкретно й підбадьорливо. Формат Telegram: лише <b>...</b> й емодзі, "
+        "БЕЗ markdown. Структура:\n"
+        "• <b>Оцінка</b> — по кожному критерію коротко чому.\n"
+        "• <b>Виконання завдання</b> — що вдалося, чого бракує для повного балу.\n"
+        "• <b>Помилки</b> — 3-5: «було → стало» + пояснення.\n"
+        "• <b>Корисні фрази</b> — 1-2 природні польські звороти для цього типу завдання.\n"
+        f"ОСТАННІЙ рядок — СТРОГО: WYNIK: wykonanie=N gramatyka=N słownictwo=N "
+        f"(wykonanie 0-{task.max_wykonanie}, решта 0-8)."
     )
 
 
-async def feedback(task: SpeakingTask, transcript: str) -> tuple[str, int | None]:
-    out = await ai.ask(_SYSTEM, _prompt(task, transcript), strong=True, max_tokens=1400)
+def _prompt(task: SpeakTask, transcript: str) -> str:
+    return (
+        f"Завдання ({_KIND_LABEL[task.kind]}): {task.prompt}\n\n"
+        f"Транскрипт відповіді учня:\n«{transcript}»\n\n"
+        "Оціни за офіційними критеріями вище і дай фідбек за вказаною структурою."
+    )
+
+
+def readiness_pct(task: SpeakTask, wykonanie: int, gramatyka: int, slownictwo: int) -> int:
+    """Відсоток за доступними з транскрипту критеріями (wykonanie + gramatyka + słownictwo)."""
+    got = min(wykonanie, task.max_wykonanie) + min(gramatyka, 8) + min(slownictwo, 8)
+    return round(got / (task.max_wykonanie + 16) * 100)
+
+
+async def feedback(task: SpeakTask, transcript: str) -> tuple[str, tuple[int, int, int] | None]:
+    out = await ai.ask(_system(task), _prompt(task, transcript), strong=True, max_tokens=1500)
     if not out:
         return "", None
-    return strip_score_line(out), parse_score(out)
+    return strip_official_line(out), parse_official_mowienie(out)

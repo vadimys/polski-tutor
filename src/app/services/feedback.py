@@ -44,3 +44,19 @@ def parse_official_pisanie(text: str) -> tuple[int, int, int] | None:
 
 def strip_official_line(text: str) -> str:
     return re.sub(r"WYNIK.*", "", text, flags=re.IGNORECASE | re.DOTALL).strip()
+
+
+# Офіційна шкала Mówienie B1 (частина, оцінювана з транскрипту): wykonanie (0-max),
+# gramatyka 0-8, słownictwo i styl 0-8. Фонетику/плавність із тексту НЕ оцінюємо.
+_SPEAK_RE = re.compile(
+    r"wykonanie\D*(\d+).*?gramatyka\D*(\d+).*?(?:słownictwo|slownictwo)\D*(\d+)",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def parse_official_mowienie(text: str) -> tuple[int, int, int] | None:
+    """(wykonanie, gramatyka, słownictwo) — сирі числа (клемпінг — на боці викликача)."""
+    m = _SPEAK_RE.search(text)
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
