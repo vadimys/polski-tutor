@@ -23,22 +23,25 @@ class Placement(StatesGroup):
     active = State()
 
 
-async def _send_question(message: Message, idx: int) -> None:
-    q = placement.QUESTIONS[idx]
+async def _send_question(message: Message, qids: list[str], idx: int) -> None:
+    q = placement.by_id(qids[idx])
+    if q is None:
+        return
     await message.answer(
-        f"<b>Питання {idx + 1}/{len(placement.QUESTIONS)}</b>\n\n{html.escape(q.text)}",
+        f"<b>Питання {idx + 1}/{len(qids)}</b>\n\n{html.escape(q.text)}",
         reply_markup=question_kb(q.options, idx),
     )
 
 
 async def _start(message: Message, state: FSMContext) -> None:
+    qids = [q.id for q in placement.build_test()]  # щоразу різна вибірка з банку
     await state.set_state(Placement.active)
-    await state.update_data(idx=0, answers={})
+    await state.update_data(idx=0, answers={}, qids=qids)
     await message.answer(
-        "📝 <b>Стартовий тест</b> — близько 18 питань (граматика, читання, лексика).\n"
-        "Відповідай чесно, без гугла — це лише діагностика, щоб скласти план. Поїхали!"
+        f"📝 <b>Стартовий тест</b> — {len(qids)} питань (граматика, читання, лексика). "
+        "Щоразу різні!\nВідповідай чесно, без гугла — це лише діагностика. Поїхали!"
     )
-    await _send_question(message, 0)
+    await _send_question(message, qids, 0)
 
 
 @router.message(Command("test"))
@@ -72,8 +75,10 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
             pass
         return
 
-    q = placement.QUESTIONS[idx]
-    answers[q.id] = chosen
+    qids = data["qids"]
+    q = placement.by_id(qids[idx])
+    if q is not None:
+        answers[q.id] = chosen
     idx += 1
     await state.update_data(idx=idx, answers=answers)
     await cb.answer()
@@ -83,8 +88,8 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     except Exception:  # noqa: BLE001
         pass
 
-    if idx < len(placement.QUESTIONS):
-        await _send_question(cb.message, idx)
+    if idx < len(qids):
+        await _send_question(cb.message, qids, idx)
     else:
         # cb.from_user — реальний користувач (cb.message.from_user — це бот!)
         await _finalize(cb.message, cb.from_user.id, state, answers)
@@ -104,15 +109,19 @@ async def _finalize(
 
     lines = [
         f"✅ <b>Тест пройдено!</b> {result.correct}/{result.total} правильних.",
-        f"📊 Орієнтовний рівень: <b>{result.level}</b>\n",
-        "<b>Готовність за модулями</b> (попередньо):",
+        f"📊 Рівень (за граматикою+читанням): <b>{result.level}</b>\n",
+        "<b>Готовність за модулями:</b>",
     ]
     for mod in Module:
-        pct = result.per_module.get(mod.value, 0)
-        lines.append(f"{MODULE_LABELS[mod]}\n  {bar(pct)}")
+        if mod.value in result.per_module:
+            lines.append(f"{MODULE_LABELS[mod]}\n  {bar(result.per_module[mod.value])}")
+        else:
+            lines.append(f"{MODULE_LABELS[mod]}\n  ❔ ще не виміряно — зроби вправу цього модуля")
 
     wrong = [
-        q for q in placement.QUESTIONS if q.id in answers and answers[q.id] != q.correct
+        q
+        for qid, chosen in answers.items()
+        if (q := placement.by_id(qid)) is not None and chosen != q.correct
     ]
     if wrong:
         lines.append("\n<b>Розбір помилок:</b>")
@@ -122,7 +131,7 @@ async def _finalize(
                 f"• {html.escape(q.text)}\n  ✔️ <b>{correct_opt}</b> — {html.escape(q.explain)}"
             )
 
-    weakest = MODULE_LABELS[Module(min(result.per_module, key=lambda k: result.per_module[k]))]
-    lines.append(f"\n🎯 Почнемо з найслабшого: <b>{weakest}</b>. Готовий до уроку?")
+    weakest = MODULE_LABELS[st.weakest_module()]
+    lines.append(f"\n🎯 Почнемо з: <b>{weakest}</b>. Готовий до уроку?")
 
     await message.answer("\n".join(lines), reply_markup=lesson_kb())

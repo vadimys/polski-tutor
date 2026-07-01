@@ -49,8 +49,17 @@ class UserState:
     readiness: dict[str, int] = field(default_factory=dict)
 
     def weakest_module(self) -> Module:
-        """Модуль із найнижчою готовністю (на ньому — акцент уроку)."""
-        if not self.readiness:
-            return Module.PISANIE  # дефолтний фокус (страх користувача + обов'язкові 50%)
-        key = min(self.readiness, key=lambda k: self.readiness[k])
-        return Module(key)
+        """Модуль-фокус уроку. Спершу — ще НЕ виміряні (найбільша невідомість),
+        у порядку пріоритету (Pisanie — страх користувача + обов'язкові 50%);
+        коли всі мають дані — найнижчий відсоток."""
+        priority = (
+            Module.PISANIE,
+            Module.MOWIENIE,
+            Module.SLUCHANIE,
+            Module.GRAMATYKA,
+            Module.CZYTANIE,
+        )
+        for m in priority:
+            if m.value not in self.readiness:
+                return m
+        return Module(min(self.readiness, key=lambda k: self.readiness[k]))
