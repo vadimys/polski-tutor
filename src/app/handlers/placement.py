@@ -10,12 +10,13 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import quiz
 from app.bot.keyboards import lesson_kb, question_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import mock, placement
+from app.services import mock, placement, progress
 from app.services import state as user_state  # aiogram інжектить FSM у параметр `state`
 
 router = Router()
@@ -118,8 +119,23 @@ async def _finalize(
                 f" — {html.escape(it.explain)}"
             )
 
-    lines.append(f"\n🎯 Почнемо з: <b>{MODULE_LABELS[st.weakest_module()]}</b>. Готовий до уроку?")
-    await message.answer("\n".join(lines), reply_markup=lesson_kb())
+    # Сильний старт (читання+граматика ≥70%) → спонукаємо перевірити решту модулів
+    measured = result.per_module.values()
+    strong = bool(measured) and all(v >= progress.READY_THRESHOLD for v in measured)
+    if strong:
+        lines.append(
+            "\n🎉 <b>Сильний старт!</b> Читання й граматика — на рівні. Але іспит — це 5 модулів, "
+            "тож перевірмо ще <b>письмо, мовлення й аудіювання</b>. Обери, з чого почати 👇"
+        )
+        kb = InlineKeyboardBuilder()
+        kb.button(text="✍️ Письмо", callback_data="writing:start")
+        kb.button(text="🗣 Мовлення", callback_data="speaking:start")
+        kb.button(text="🎧 Аудіювання", callback_data="listening:start")
+        kb.adjust(1)
+        await message.answer("\n".join(lines), reply_markup=kb.as_markup())
+    else:
+        lines.append(f"\n🎯 Почнемо з: <b>{MODULE_LABELS[st.weakest_module()]}</b>. Готовий до уроку?")
+        await message.answer("\n".join(lines), reply_markup=lesson_kb())
 
     # одразу будуємо індивідуальний план (за датою іспиту + слабкими модулями)
     from app.handlers.plan import send_plan

@@ -8,12 +8,13 @@ from datetime import date
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, badges, clock, progress, vocab
+from app.services import access, badges, clock, exam_dates, progress, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -72,6 +73,36 @@ async def _render_progress(user_id: int) -> str:
     return "\n".join(lines)
 
 
+def _readiness_scene(st, inf) -> tuple[str | None, object | None]:
+    """Сцена за станом підготовки: готовий → на іспит (з урахуванням наявної дати);
+    incomplete → підказка перевірити решту модулів."""
+    status, mods = progress.readiness_verdict(st.readiness)
+    note = "\n\n<i>Це наша оцінка за вправами, не офіційна сертифікація.</i>"
+    if status == "ready":
+        base = "🏆 <b>Схоже, ти на рівні B1!</b>\nЗа нашими вправами всі 5 модулів ≥70%."
+        if inf.confirmed and inf.exam_date:
+            days = _user_days_left(inf)
+            when = exam_dates.label(inf.exam_date) if exam_dates.is_official(inf.exam_date) else inf.exam_date
+            tail = f"\n📅 Твій іспит — <b>{when}</b>"
+            tail += f" (за <b>{days}</b> дн)" if days is not None else ""
+            tail += ". Тримай форму: практикуй і повторюй, щоб прийти впевненим."
+            return base + tail + note, None
+        upcoming = exam_dates.upcoming(clock.today_local())[:3]
+        lst = "\n".join(f"• {exam_dates.label(d)}" for d in upcoming) if upcoming else "—"
+        kb = InlineKeyboardBuilder()
+        kb.button(text="📅 Вказати дату іспиту", callback_data="onb:setdate")
+        kb.adjust(1)
+        return (
+            base + "\n\n🎯 Час <b>реєструватися на офіційний іспит</b>! Найближчі сесії:\n"
+            + lst + "\nКоли зареєструєшся — познач дату 👇" + note,
+            kb.as_markup(),
+        )
+    if status == "incomplete":
+        names = ", ".join(MODULE_LABELS[m] for m in mods)
+        return f"📋 Щоб побачити повну картину, перевір ще модулі: <b>{names}</b> (по вправі кожного).", None
+    return None, None
+
+
 async def _send_progress(msg: Message, user_id: int) -> None:
     await msg.answer(await _render_progress(user_id), reply_markup=to_menu_kb())
     st = await user_state.load(user_id)
@@ -79,6 +110,10 @@ async def _send_progress(msg: Message, user_id: int) -> None:
         png = await asyncio.to_thread(charts.readiness_bar, st.readiness)
         if png:
             await msg.answer_photo(BufferedInputFile(png, filename="progress.png"))
+    inf = await access.info(user_id)
+    scene, markup = _readiness_scene(st, inf)
+    if scene:
+        await msg.answer(scene, reply_markup=markup)
 
 
 @router.message(Command("postep"))

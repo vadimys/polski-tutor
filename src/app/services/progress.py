@@ -43,6 +43,25 @@ async def recent_scores(user_id: int, module_value: str, limit: int = 5) -> list
         return [r[0] for r in rows.all()]
 
 
+READY_THRESHOLD = 70  # усі 5 модулів ≥ цього → «схоже, готовий до іспиту» (запас над 50%)
+
+
+def readiness_verdict(readiness: dict[str, int]) -> tuple[str, list[Module]]:
+    """Стан підготовки за виміряними модулями:
+
+    ('incomplete', [невиміряні]) — не всі 5 модулів ще перевірені;
+    ('gaps', [слабкі <70%]) — усі виміряні, але не всі досягли порогу готовності;
+    ('ready', []) — усі 5 модулів ≥ READY_THRESHOLD.
+    """
+    missing = [m for m in Module if m.value not in readiness]
+    if missing:
+        return "incomplete", missing
+    weak = [m for m in Module if readiness.get(m.value, 0) < READY_THRESHOLD]
+    if weak:
+        return "gaps", weak
+    return "ready", []
+
+
 def trend(scores: list[int]) -> str:
     """Стрілка тренду за останніми двома балами (найновіші спершу)."""
     if len(scores) < 2:
