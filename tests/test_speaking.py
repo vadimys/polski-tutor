@@ -25,8 +25,6 @@ def test_feedback_strip():
     assert "WYNIK" not in out and "Фідбек." in out
 
 
-def test_writing_reexports_score():
-    # writing має лишитись сумісним (реекспорт із feedback)
-    from app.services import writing
-
-    assert writing.parse_score("WYNIK: 50") == 50
+def test_speaking_uses_shared_feedback():
+    # speaking користується спільним парсером оцінки з feedback
+    assert feedback.parse_score("WYNIK: 50") == 50

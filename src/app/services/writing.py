@@ -1,4 +1,12 @@
-"""Модуль письма (Pisanie): банк завдань B1 + AI-фідбек за критеріями іспиту."""
+"""Модуль письма (Pisanie) — на ОФІЦІЙНИХ матеріалах Держкомісії.
+
+Завдання — реальні екзаменаційні набори (zestawy) з офіційного пробного тесту й
+збірника PISANIE B1 (certyfikatpolski.pl). Формат: 3 набори по 2 завдання (a — коротка
+форма, b — довша), обираєш один, робиш обидва. Оцінювання — за ОФІЦІЙНОЮ шкалою:
+wykonanie zadania 0-10 · środki językowe 0-10 · poprawność językowa 0-10 = /30 (поріг 15).
+Вимоги жанрів (GENRE_REQ) — з офіційних «metryczek form wypowiedzi».
+Жодних вигаданих завдань: усе з опублікованих матеріалів комісії.
+"""
 
 from __future__ import annotations
 
@@ -6,92 +14,173 @@ import random
 from dataclasses import dataclass
 
 from app.integrations import ai
-from app.services.feedback import parse_score, strip_score_line
+from app.services.feedback import parse_official_pisanie, strip_official_line
 
 
 @dataclass
-class WritingTask:
+class Task:
+    genre: str  # ключ до GENRE_REQ
+    prompt: str  # офіційне формулювання (польською) + короткий укр. глос
+    words: int
+
+
+@dataclass
+class WritingSet:
     id: str
-    genre: str
-    prompt: str  # інструкція українською + що написати польською
-    min_words: int = 50
+    a: Task  # коротка форма
+    b: Task  # довша форма
 
 
-# Жанри коротких форм B1 (теми наближені до життя: побут, urząd, резиденція)
-TASKS: list[WritingTask] = [
-    WritingTask(
-        "email_priv", "E-mail prywatny",
-        "Напиши приватний e-mail польською до знайомого: запроси його на weekend до себе. "
-        "Вкажи: коли, що робитимете, що взяти. (≈ 50–70 слів)",
-        50,
+SOURCE = "офіційний зразок Держкомісії (B1)"
+
+# Реальні екзаменаційні набори з офіційних матеріалів (пробний тест + збірник PISANIE B1)
+SETS: list[WritingSet] = [
+    WritingSet(
+        "t1",
+        Task("ogłoszenie",
+             "Organizuje Pan/Pani imprezę urodzinową w mieszkaniu dla wielu gości. Hałas może "
+             "przeszkadzać sąsiadom. Proszę napisać ogłoszenie, które powiesi Pan/Pani w windzie. "
+             "(оголошення сусідам про вечірку)", 30),
+        Task("list prywatny",
+             "Odpoczywa Pan/Pani na wakacjach w swoim rodzinnym kraju. Proszę napisać list do "
+             "przyjaciela z Polski, w którym opowie Pan/Pani o swoim pobycie. (лист другові про відпочинок)",
+             170),
     ),
-    WritingTask(
-        "ogloszenie", "Ogłoszenie",
-        "Напиши оголошення польською: ти продаєш rower (велосипед). "
-        "Опиши його, вкажи cenę і kontakt. (≈ 40–60 слів)",
-        40,
+    WritingSet(
+        "t2",
+        Task("zaproszenie",
+             "Od niedawna pracuje Pan/Pani w polskiej firmie. Proszę napisać e-mail z zaproszeniem "
+             "na spotkanie przy grillu w ogrodzie dla nowych kolegów z pracy. (e-mail-запрошення на гриль)",
+             40),
+        Task("recenzja",
+             "«Ten serial ostatnio obejrzałam/obejrzałem». Proszę zaprezentować serial i wyrazić "
+             "własną opinię na jego temat. (презентація серіалу + власна думка)", 160),
     ),
-    WritingTask(
-        "zaproszenie", "Zaproszenie",
-        "Напиши zaproszenie польською на свої urodziny: kiedy, gdzie, co zabrać. (≈ 40–60 слів)",
-        40,
+    WritingSet(
+        "t3",
+        Task("życzenia",
+             "Pana/Pani przyjaciel za miesiąc bierze ślub, ale nie może Pan/Pani być na uroczystości. "
+             "Proszę poinformować go i napisać życzenia dla młodej pary. (побажання молодятам)", 30),
+        Task("charakterystyka",
+             "«Mam dobrą szefową / dobrego szefa». Proszę napisać charakterystykę swojego pracodawcy. "
+             "(характеристика керівника)", 170),
     ),
-    WritingTask(
-        "email_urzad", "E-mail formalny",
-        "Напиши формальний e-mail польською до urzędu: запитай, які dokumenty потрібні "
-        "для karty pobytu. Дотримайся ввічливого тону. (≈ 50–70 слів)",
-        50,
+    WritingSet(
+        "p1",
+        Task("pozdrowienia",
+             "Proszę napisać pozdrowienia z wakacji do swojego dyrektora/profesora/nauczyciela. "
+             "(привітання з відпустки керівнику)", 25),
+        Task("esej",
+             "«Każdy ma jakieś zainteresowania» — proszę napisać o swoim hobby. (про своє хобі)", 175),
     ),
-    WritingTask(
-        "relacja", "Relacja",
-        "Опиши польською свій останній weekend: що ти robił(a), де був(ла), як minął. "
-        "Минулий час. (≈ 60–80 слів)",
-        60,
+    WritingSet(
+        "p2",
+        Task("zaproszenie",
+             "Proszę zaprosić swoich sąsiadów (starszych państwa) na imieniny/urodziny. "
+             "(запросити літніх сусідів на іменини)", 30),
+        Task("list prywatny",
+             "Proszę napisać list do kolegi/koleżanki, w którym opisze Pan/Pani swoje mieszkanie. "
+             "(лист із описом квартири)", 170),
     ),
-    WritingTask(
-        "forum", "Wpis na forum",
-        "Напиши польською допис на форум: чи краще mieszkać w mieście czy na wsi? "
-        "Вислови думку й аргумент. (≈ 60–90 слів)",
-        60,
+    WritingSet(
+        "p3",
+        Task("ogłoszenie",
+             "Zgubił/Zgubiła Pan/Pani swój zegarek. Proszę napisać ogłoszenie. (оголошення про загублений годинник)",
+             30),
+        Task("opowiadanie",
+             "«Nie lubię poniedziałków» — proszę napisać opowiadanie. (оповідання)", 170),
+    ),
+    WritingSet(
+        "p4",
+        Task("zaproszenie",
+             "Proszę napisać zaproszenie dla kolegi na swoje urodziny. (запрошення на уродини)", 30),
+        Task("charakterystyka",
+             "Proszę opisać i scharakteryzować swojego ulubionego nauczyciela. (характеристика улюбленого вчителя)",
+             170),
+    ),
+    WritingSet(
+        "p5",
+        Task("ogłoszenie",
+             "Szuka Pan/Pani sublokatora do dużego mieszkania w centrum. Proszę napisać ogłoszenie "
+             "do rozwieszenia w okolicy. (оголошення про пошук співмешканця)", 30),
+        Task("list prywatny",
+             "Proszę napisać list do przyjaciół, w którym zachęci ich Pan/Pani do wspólnego spędzenia "
+             "wakacji w miejscowości, która bardzo się Panu/Pani spodobała. (лист-заохочення разом відпочити)",
+             170),
+    ),
+    WritingSet(
+        "p6",
+        Task("list prywatny",
+             "W krótkim liście proszę podziękować starszej sąsiadce za opiekę nad mieszkaniem podczas "
+             "Pana/Pani tygodniowej nieobecności. (лист-подяка сусідці)", 30),
+        Task("opowiadanie",
+             "Proszę opowiedzieć ciekawą historię ze swojego dzieciństwa. (цікава історія з дитинства)", 170),
     ),
 ]
 
+# Обов'язкові елементи форм — з офіційних «metryczek form wypowiedzi» (PISANIE B1)
+GENRE_REQ: dict[str, str] = {
+    "życzenia": "місце й дата; звертання (вокатив з «!»); текст під нагоду; підпис",
+    "pozdrowienia": "місце й дата; звертання; короткий текст; підпис",
+    "zaproszenie": "хто кого запрошує; з якої нагоди; де і коли; (офіц. — повний підпис)",
+    "zawiadomienie": "місце й дата; що/де/коли (від)будеться; хто повідомляє",
+    "ogłoszenie": "хто оголошує; з якою метою (sprzedaje/wynajmuje/poszukuje); предмет; контакт",
+    "list prywatny": "місце й дата (справа вгорі); звертання (вокатив з «!»); вступ (мета)+розвиток+"
+                     "закінчення; ввічлива формула на кінець; підпис",
+    "opis osoby": "вступ (хто, обставини); зовнішність; закінчення (враження автора)",
+    "charakterystyka": "дані особи (імʼя/вік/професія); зовнішність; риси характеру (+/-); риси розуму; "
+                       "зацікавлення; оцінка особи",
+    "opowiadanie": "вступ+розвиток+закінчення; логічна хронологія; зазвичай минулий час",
+    "sprawozdanie": "час/місце/обставини/мета; перебіг подій; оцінка",
+    "recenzja": "вступ (про що думка); розвиток (опис/зміст); закінчення (оцінка з обґрунтуванням)",
+    "esej": "вступ; власні погляди + аргументи; закінчення",
+}
 
-def pick_task() -> WritingTask:
-    return random.choice(TASKS)
+
+def pick_set() -> WritingSet:
+    return random.choice(SETS)
 
 
-def task_by_id(task_id: str) -> WritingTask | None:
-    return next((t for t in TASKS if t.id == task_id), None)
+def set_by_id(set_id: str) -> WritingSet | None:
+    return next((s for s in SETS if s.id == set_id), None)
 
 
 _SYSTEM = (
-    "Ти — доброзичливий екзаменатор державного іспиту B1 з польської ТА репетитор "
-    "для україномовного учня. Оцінюєш коротку письмову роботу за критеріями B1: "
-    "(1) виконання завдання — чи розкрито всі пункти; (2) poprawność — граматика/орфографія; "
-    "(3) структура й звʼязність; (4) багатство мови. "
-    "Фідбек давай УКРАЇНСЬКОЮ, конкретно й підбадьорливо. "
-    "Формат для Telegram: лише теги <b>...</b> та емодзі, БЕЗ markdown (*, _, #). "
+    "Ти — екзаменатор Державної комісії (Państwowa Komisja ds. Poświadczania Znajomości JPjO), "
+    "що оцінює письмову роботу на іспиті B1 СТРОГО за ОФІЦІЙНИМИ критеріями (максимум 30 балів):\n"
+    "• WYKONANIE ZADANIA (0-10): чи виконано ОБИДВА завдання (a і b), відповідність ЖАНРУ та його "
+    "обов'язковим елементам, композиція, обсяг (допускається різниця ~20 слів від норми).\n"
+    "• ŚRODKI JĘZYKOWE (0-10): багатство й різноманітність лексики та граматичних структур, доречність.\n"
+    "• POPRAWNOŚĆ JĘZYKOWA (0-10): граматика, орфографія, пунктуація.\n"
+    "Поріг складання модуля — 50% (15/30). Оцінюй суворо, як на реальному іспиті, але фідбек давай "
+    "УКРАЇНСЬКОЮ, конкретно й підбадьорливо. Формат Telegram: лише <b>...</b> та емодзі, БЕЗ markdown.\n"
     "Структура відповіді:\n"
-    "• <b>Що добре</b> — 1–2 пункти.\n"
-    "• <b>Помилки</b> — 3–5 конкретних: «було → стало» + коротке пояснення українською.\n"
-    "• <b>Порада</b> — 1 фраза, що підтягнути.\n"
-    "• <b>Зразок</b> — як цей текст міг би виглядати правильно (польською).\n"
-    "ОСТАННІЙ рядок — строго у форматі: WYNIK: NN  (де NN — оцінка 0–100, орієнтовний % за B1)."
+    "• <b>Оцінка</b> — по кожному критерію коротко чому саме стільки.\n"
+    "• <b>Виконання жанру</b> — чи є обов'язкові елементи форми (перелічені нижче), чого бракує.\n"
+    "• <b>Помилки</b> — 4-6 конкретних: «було → стало» + коротке пояснення.\n"
+    "• <b>Порада</b> — 1-2 фрази, що підтягнути.\n"
+    "• <b>Зразок</b> — як можна було краще (польською), стисло.\n"
+    "ОСТАННІЙ рядок — СТРОГО: WYNIK: wykonanie=N środki=N poprawność=N (кожне ціле 0-10)."
 )
 
 
-def _prompt(task: WritingTask, text: str) -> str:
+def _prompt(ws: WritingSet, text_a: str, text_b: str) -> str:
+    req_a = GENRE_REQ.get(ws.a.genre, "—")
+    req_b = GENRE_REQ.get(ws.b.genre, "—")
     return (
-        f"Завдання ({task.genre}): {task.prompt}\n\n"
-        f"Текст учня:\n«{text}»\n\n"
-        "Оціни за критеріями B1 і дай фідбек за вказаною структурою."
+        f"ЗАВДАННЯ a ({ws.a.genre}, ~{ws.a.words} слів): {ws.a.prompt}\n"
+        f"Обов'язкові елементи форми «{ws.a.genre}»: {req_a}\n"
+        f"Відповідь учня (a):\n«{text_a}»\n\n"
+        f"ЗАВДАННЯ b ({ws.b.genre}, ~{ws.b.words} слів): {ws.b.prompt}\n"
+        f"Обов'язкові елементи форми «{ws.b.genre}»: {req_b}\n"
+        f"Відповідь учня (b):\n«{text_b}»\n\n"
+        "Оціни ВЕСЬ набір за офіційною шкалою 30 балів і дай фідбек за вказаною структурою."
     )
 
 
-async def feedback(task: WritingTask, text: str) -> tuple[str, int | None]:
-    """(відформатований фідбек, оцінка|None). '' якщо AI недоступний."""
-    out = await ai.ask(_SYSTEM, _prompt(task, text), strong=True, max_tokens=1600)
+async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple[int, int, int] | None]:
+    """(фідбек, (wykonanie, środki, poprawność)|None). '' якщо AI недоступний."""
+    out = await ai.ask(_SYSTEM, _prompt(ws, text_a, text_b), strong=True, max_tokens=1900)
     if not out:
         return "", None
-    return strip_score_line(out), parse_score(out)
+    return strip_official_line(out), parse_official_pisanie(out)

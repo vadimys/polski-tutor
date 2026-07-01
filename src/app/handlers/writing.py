@@ -1,4 +1,4 @@
-"""Модуль письма (Pisanie): завдання → учень пише → AI-фідбек за критеріями B1."""
+"""Модуль письма (Pisanie): офіційний набір (a+b) → фідбек за офіційною шкалою /30."""
 
 from __future__ import annotations
 
@@ -17,58 +17,87 @@ from app.services import writing
 
 router = Router()
 
+MIN_WORDS = 5  # захист від «.» замість тексту
+
 
 class Writing(StatesGroup):
-    waiting = State()
+    await_a = State()
+    await_b = State()
 
 
-async def _give_task(message: Message, state: FSMContext) -> None:
-    task = writing.pick_task()
-    await state.set_state(Writing.waiting)
-    await state.update_data(task_id=task.id)
+async def _give_set(message: Message, state: FSMContext) -> None:
+    ws = writing.pick_set()
+    await state.set_state(Writing.await_a)
+    await state.update_data(set_id=ws.id, text_a="")
     await message.answer(
-        f"✍️ <b>Письмо ({html.escape(task.genre)})</b>\n\n"
-        f"{html.escape(task.prompt)}\n\n"
-        "Напиши свій текст польською <b>одним повідомленням</b> — я оціню за критеріями B1 "
-        "і покажу виправлення. (/menu — вийти)"
+        f"✍️ <b>Письмо — набір ({writing.SOURCE})</b>\n\n"
+        f"Як на іспиті: <b>два завдання</b>, обидва з цього набору.\n\n"
+        f"<b>Завдання a</b> ({ws.a.genre}, ~{ws.a.words} слів):\n{html.escape(ws.a.prompt)}\n\n"
+        f"<b>Завдання b</b> ({ws.b.genre}, ~{ws.b.words} слів):\n{html.escape(ws.b.prompt)}\n\n"
+        "Спершу напиши польською <b>завдання a</b> одним повідомленням. (/menu — вийти)"
     )
 
 
 @router.message(Command("pisanie"))
 async def cmd_writing(message: Message, state: FSMContext) -> None:
-    await _give_task(message, state)
+    await _give_set(message, state)
 
 
 @router.callback_query(F.data == "writing:start")
 async def cb_writing(cb: CallbackQuery, state: FSMContext) -> None:
-    await _give_task(cb.message, state)
     await cb.answer()
+    await _give_set(cb.message, state)
 
 
-@router.message(Writing.waiting, F.text, ~F.text.startswith("/"))
-async def on_essay(message: Message, state: FSMContext) -> None:
+@router.message(Writing.await_a, F.text, ~F.text.startswith("/"))
+async def on_task_a(message: Message, state: FSMContext) -> None:
+    if len(message.text.split()) < MIN_WORDS:
+        await message.answer("Напиши, будь ласка, повноцінний текст завдання a 🙂")
+        return
+    await state.update_data(text_a=message.text)
+    await state.set_state(Writing.await_b)
     data = await state.get_data()
-    task = writing.task_by_id(data.get("task_id", ""))
+    ws = writing.set_by_id(data["set_id"])
+    b = ws.b if ws else None
+    hint = f"({b.genre}, ~{b.words} слів)" if b else ""
+    await message.answer(f"✅ Прийнято. Тепер напиши <b>завдання b</b> {hint}.")
+
+
+@router.message(Writing.await_b, F.text, ~F.text.startswith("/"))
+async def on_task_b(message: Message, state: FSMContext) -> None:
+    if len(message.text.split()) < MIN_WORDS:
+        await message.answer("Напиши, будь ласка, повноцінний текст завдання b 🙂")
+        return
+    data = await state.get_data()
+    ws = writing.set_by_id(data["set_id"])
+    text_a = data.get("text_a", "")
     await state.clear()
-    if task is None:
-        await message.answer("Завдання загубилось — почнімо заново.", reply_markup=menu_kb())
+    if ws is None:
+        await message.answer("Набір загубився — почнімо заново.", reply_markup=menu_kb())
         return
 
-    await message.answer("🔍 Перевіряю твій текст…")
-    fb, score = await writing.feedback(task, message.text)
+    await message.answer("🔍 Оцінюю за офіційними критеріями (wykonanie / środki / poprawność)…")
+    fb, scores = await writing.feedback(ws, text_a, message.text)
     if not fb:
-        await message.answer(
-            "AI тимчасово недоступний — спробуй пізніше.", reply_markup=to_menu_kb()
-        )
+        await message.answer("AI тимчасово недоступний — спробуй пізніше.", reply_markup=to_menu_kb())
         return
 
-    # оновити готовність модуля Pisanie (згладжено: середнє старого й нового)
     header = ""
-    if score is not None:
+    if scores is not None:
+        wyk, sr, popr = scores
+        total = wyk + sr + popr
+        passed = "✅ склав би" if total >= 15 else "❌ поки нижче порога"
+        header = (
+            "📊 <b>Офіційна шкала (0-30):</b>\n"
+            f"• Wykonanie zadania: <b>{wyk}</b>/10\n"
+            f"• Środki językowe: <b>{sr}</b>/10\n"
+            f"• Poprawność językowa: <b>{popr}</b>/10\n"
+            f"• <b>Разом: {total}/30</b> — поріг 15/30 ({passed})\n\n"
+        )
         st = await user_state.load(message.from_user.id)
-        old = st.readiness.get(Module.PISANIE.value, score)
-        st.readiness[Module.PISANIE.value] = round((old + score) / 2)
+        pct = round(total / 30 * 100)
+        old = st.readiness.get(Module.PISANIE.value, pct)
+        st.readiness[Module.PISANIE.value] = round((old + pct) / 2)
         await user_state.save(st)
-        header = f"📊 Орієнтовна оцінка: <b>{score}%</b> (поріг іспиту — 50%)\n\n"
 
     await message.answer(header + fb, reply_markup=to_menu_kb())
