@@ -12,6 +12,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import example_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
@@ -30,6 +31,10 @@ class Speaking(StatesGroup):
     waiting = State()
 
 
+class Guided(StatesGroup):
+    active = State()  # керована практика комунікативної ситуації (крок-за-кроком)
+
+
 async def _give_task(message: Message, state: FSMContext) -> None:
     if not speech.available():
         await message.answer(
@@ -41,11 +46,19 @@ async def _give_task(message: Message, state: FSMContext) -> None:
     label = speaking._KIND_LABEL[task.kind]
     await state.set_state(Speaking.waiting)
     await state.update_data(task_id=task.id)
+    if task.kind == "sytuacja":  # ситуація → пропонуємо ще й керовану практику
+        kb = InlineKeyboardBuilder()
+        kb.button(text="📝 Показати зразок", callback_data=f"guide:spk:{task.kind}")
+        kb.button(text="🪜 Пройти по кроках", callback_data=f"guided:start:{task.id}")
+        kb.adjust(1)
+        markup = kb.as_markup()
+    else:
+        markup = example_kb(f"guide:spk:{task.kind}")
     await message.answer(
         f"🗣 <b>Мовлення — {label}</b> ({speaking.SOURCE})\n\n{html.escape(task.prompt)}\n\n"
         f"{guidance.speaking_instruction(task.kind)}\n\n"
         "🎤 Готовий — запиши <b>голосове</b> польською (≈ 30–60 секунд). (/menu — вийти)",
-        reply_markup=example_kb(f"guide:spk:{task.kind}"),
+        reply_markup=markup,
     )
 
 
@@ -99,6 +112,75 @@ async def cb_example(cb: CallbackQuery) -> None:
     kind = cb.data.split(":", 2)[2]
     await cb.answer()
     await cb.message.answer(guidance.speaking_example(kind))
+
+
+# --- Керована практика (крок-за-кроком) для комунікативної ситуації ---
+
+
+@router.callback_query(F.data.startswith("guided:start:"))
+async def cb_guided_start(cb: CallbackQuery, state: FSMContext) -> None:
+    task_id = cb.data.split(":", 2)[2]
+    task = speaking.task_by_id(task_id)
+    await cb.answer()
+    if task is None:
+        await cb.message.answer("Завдання загубилось — почни знову: /mowienie")
+        return
+    await state.set_state(Guided.active)
+    await state.update_data(task_id=task_id, step=0, lines=[])
+    await cb.message.answer(
+        "🪜 <b>Керована практика</b> — пройдемо ситуацію по кроках, а наприкінці складеш усе "
+        "разом і запишеш голосом.\n\n"
+        f"🎭 <b>Ситуація:</b>\n{html.escape(task.prompt)}"
+    )
+    await cb.message.answer(guidance.sytuacja_step(0))
+
+
+@router.message(Guided.active, F.text, ~F.text.startswith("/"))
+async def on_guided_step(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    step = int(data.get("step", 0))
+    lines = list(data.get("lines", []))
+    task_id = data.get("task_id", "")
+    if len(message.text.strip()) < 2:
+        await message.answer("Напиши, будь ласка, повноцінну репліку польською 🙂")
+        return
+    lines.append(message.text.strip())
+    step += 1
+    if step < guidance.SYTUACJA_STEPS_N:
+        await state.update_data(step=step, lines=lines)
+        await message.answer("✅ Прийнято.")
+        await message.answer(guidance.sytuacja_step(step))
+        return
+
+    await state.clear()
+    dialogue = "\n".join(f"{i + 1}. {html.escape(ln)}" for i, ln in enumerate(lines))
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🎤 Виконати самостійно й здати", callback_data=f"guided:record:{task_id}")
+    kb.button(text="🏠 Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await message.answer(
+        "🎉 <b>Готово!</b> Ось твоя репліка з 5 кроків:\n\n"
+        f"{dialogue}\n\n"
+        "ℹ️ Це <b>тренування</b> — у готовність не зараховується (на іспиті підказок не буде). "
+        "Щоб підняти готовність — <b>запиши це саме голосом</b> самостійно 👇",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("guided:record:"))
+async def cb_guided_record(cb: CallbackQuery, state: FSMContext) -> None:
+    task_id = cb.data.split(":", 2)[2]
+    task = speaking.task_by_id(task_id)
+    await cb.answer()
+    if task is None:
+        await cb.message.answer("Завдання загубилось — /mowienie")
+        return
+    await state.set_state(Speaking.waiting)
+    await state.update_data(task_id=task_id)
+    await cb.message.answer(
+        f"🎤 Запиши <b>голосове</b> польською за цією ситуацією:\n\n{html.escape(task.prompt)}\n\n"
+        "Оціню за офіційними критеріями — і це піде в прогрес."
+    )
 
 
 @router.message(Speaking.waiting, F.voice)

@@ -133,6 +133,35 @@ def speaking_example(kind: str) -> str:
     return g.example if g is not None else "Зразок для цього завдання недоступний."
 
 
+# --- Керована практика: комунікативна ситуація (Zadanie 3), 5 кроків ---
+
+SYTUACJA_STEPS: list[tuple[str, list[str]]] = [
+    ("Крок 1/5 — Відреагуй на співрозмовника: привітайся і визнай його ідею.",
+     ["Cześć! / Dzień dobry!", "Rozumiem, że chcesz…", "Wiem, że masz ochotę na…"]),
+    ("Крок 2/5 — Скажи, чого хочеш ТИ (своя позиція).",
+     ["Ale ja wolałbym / wolałabym…", "Wolę raczej…", "Mnie bardziej pasuje…"]),
+    ("Крок 3/5 — Наведи аргумент: чому це для тебе важливо/зручно.",
+     ["…bo… (…бо…)", "Dlatego że…", "Zależy mi na tym, ponieważ…"]),
+    ("Крок 4/5 — Запропонуй компроміс.",
+     ["Może zrobimy tak, że…?", "Proponuję kompromis:…", "A gdybyśmy…?"]),
+    ("Крок 5/5 — Підсумуй домовленість і спитай згоди.",
+     ["Umówmy się, że…", "Czyli robimy tak:…", "Co o tym myślisz? / Pasuje Ci?"]),
+]
+
+SYTUACJA_STEPS_N = len(SYTUACJA_STEPS)
+
+
+def sytuacja_step(i: int) -> str:
+    """Текст i-го кроку (0-based): інструкція + банк фраз + заклик написати репліку."""
+    instr, phrases = SYTUACJA_STEPS[i]
+    ph = "\n".join(f"• {p}" for p in phrases)
+    return (
+        f"🪜 <b>{instr}</b>\n\n"
+        f"💬 Корисні фрази:\n{ph}\n\n"
+        "✍️ Напиши свою репліку польською (одним повідомленням)."
+    )
+
+
 # --- ПИСЬМО (Pisanie) ------------------------------------------------------
 
 

@@ -31,3 +31,10 @@ def test_writing_instruction_shows_genre_elements():
 
 def test_writing_example_present():
     assert "OGŁOSZENIE" in guidance.writing_example()
+
+
+def test_sytuacja_guided_steps():
+    assert guidance.SYTUACJA_STEPS_N == 5
+    first = guidance.sytuacja_step(0)
+    assert "Крок 1/5" in first and "фрази" in first.lower()
+    assert "Крок 5/5" in guidance.sytuacja_step(4)
