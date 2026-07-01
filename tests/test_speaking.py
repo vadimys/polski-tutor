@@ -21,6 +21,17 @@ def test_official_max_matches_kind():
         assert t.max_wykonanie == (7 if t.kind == "monolog" else 6)
 
 
+def test_photo_tasks_valid():
+    assert len(speaking.PHOTOS) >= 4
+    for t in speaking.PHOTOS:
+        assert t.kind == "opis"
+        assert t.max_wykonanie == 7
+        assert t.photo_url.startswith("https://upload.wikimedia.org/")
+        assert t.photo_source  # атрибуція ліцензії
+    # task_by_id знаходить і фото-завдання
+    assert speaking.task_by_id(speaking.PHOTOS[0].id) is not None
+
+
 def test_parse_official_mowienie():
     txt = "ok\nWYNIK: wykonanie=6 gramatyka=7 słownictwo=6"
     assert feedback.parse_official_mowienie(txt) == (6, 7, 6)

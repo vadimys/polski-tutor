@@ -45,15 +45,46 @@ async def _give_task(message: Message, state: FSMContext) -> None:
     )
 
 
+async def _give_photo(message: Message, state: FSMContext) -> None:
+    if not speech.available():
+        await message.answer(
+            "🎤 Розпізнавання голосу тимчасово недоступне. Спробуй пізніше.",
+            reply_markup=to_menu_kb(),
+        )
+        return
+    task = speaking.pick_photo()
+    await state.set_state(Speaking.waiting)
+    await state.update_data(task_id=task.id)
+    await message.answer_photo(
+        task.photo_url,
+        caption=(
+            f"🗣 <b>Мовлення — {speaking._KIND_LABEL['opis']}</b>\n\n{html.escape(task.prompt)}\n\n"
+            "Запиши <b>голосове</b> польською — оціню за офіційними критеріями. "
+            f"(<i>{html.escape(task.photo_source)}</i>) (/menu — вийти)"
+        ),
+    )
+
+
 @router.message(Command("mowienie"))
 async def cmd_speaking(message: Message, state: FSMContext) -> None:
     await _give_task(message, state)
+
+
+@router.message(Command("opis"))
+async def cmd_opis(message: Message, state: FSMContext) -> None:
+    await _give_photo(message, state)
 
 
 @router.callback_query(F.data == "speaking:start")
 async def cb_speaking(cb: CallbackQuery, state: FSMContext) -> None:
     await _give_task(cb.message, state)
     await cb.answer()
+
+
+@router.callback_query(F.data == "speaking:photo")
+async def cb_photo(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await _give_photo(cb.message, state)
 
 
 @router.message(Speaking.waiting, F.voice)

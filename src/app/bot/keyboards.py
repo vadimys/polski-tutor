@@ -29,6 +29,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="🔁 Повторення слів", callback_data="review:start")
     kb.button(text="✍️ Письмо", callback_data="writing:start")
     kb.button(text="🗣 Мовлення", callback_data="speaking:start")
+    kb.button(text="🖼 Опис фото", callback_data="speaking:photo")
     kb.button(text="🎧 Аудіювання", callback_data="listening:start")
     kb.button(text="🎯 Тренування", callback_data="drill:start")
     kb.button(text="📋 Офіційний МОК", callback_data="mock:open")

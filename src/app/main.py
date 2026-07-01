@@ -38,6 +38,7 @@ COMMANDS = [
     BotCommand(command="lekcja", description="Почати урок"),
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),
+    BotCommand(command="opis", description="Опис фотографії (Zadanie 1)"),
     BotCommand(command="sluchanie", description="Аудіювання (запис + питання)"),
     BotCommand(command="mok", description="Офіційний МОК (читання/граматика)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
