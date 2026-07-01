@@ -13,6 +13,48 @@ def start_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def onboarding_date_kb() -> InlineKeyboardMarkup:
+    """Вибір дати іспиту (офіційні сесії 2026) або «не підтверджена»."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📅 5 грудня 2026", callback_data="onb:date:2026-12-05")
+    kb.button(text="📅 17 жовтня 2026", callback_data="onb:date:2026-10-17")
+    kb.button(text="✏️ Інша дата", callback_data="onb:other")
+    kb.button(text="❔ Дата ще не підтверджена", callback_data="onb:unconfirmed")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def send_request_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📨 Надіслати запит адміну", callback_data="onb:send")
+    kb.button(text="⬅️ Змінити дату", callback_data="onb:restart")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def contact_admin_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✍️ Написати адміну", callback_data="onb:contact")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def admin_decision_kb(user_id: int) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Схвалити", callback_data=f"adm:ok:{user_id}")
+    kb.button(text="❌ Відмовити", callback_data=f"adm:no:{user_id}")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+def approved_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="▶️ Пройти стартовий тест", callback_data="placement:start")
+    kb.button(text="📋 Меню", callback_data="menu:home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Кнопки-варіанти (callback містить індекс питання — захист від дублів/сталих тапів)."""
     kb = InlineKeyboardBuilder()

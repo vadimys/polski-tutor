@@ -5,20 +5,23 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
 
+from app.bot.access_mw import AccessMiddleware
 from app.config import settings
 from app.db.migrate_legacy import migrate_from_redis
 from app.handlers import (
+    admin,
     drills,
     lesson,
     listening,
     menu,
     mock,
+    onboarding,
     placement,
     review,
     speaking,
@@ -56,16 +59,19 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=RedisStorage.from_url(settings.redis_url))
+
+    # Поза гейтом: онбординг (/start, запит доступу), адмін (схвалення), довідка
+    dp.include_router(onboarding.router)
+    dp.include_router(admin.router)
     dp.include_router(start.router)
-    dp.include_router(placement.router)
-    dp.include_router(lesson.router)
-    dp.include_router(writing.router)
-    dp.include_router(drills.router)
-    dp.include_router(review.router)
-    dp.include_router(speaking.router)
-    dp.include_router(listening.router)
-    dp.include_router(mock.router)
-    dp.include_router(menu.router)
+
+    # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)
+    learning = Router()
+    for r in (placement, lesson, writing, drills, review, speaking, listening, mock, menu):
+        learning.include_router(r.router)
+    learning.message.middleware(AccessMiddleware())
+    learning.callback_query.middleware(AccessMiddleware())
+    dp.include_router(learning)
 
     migrated = await migrate_from_redis()
     if migrated:

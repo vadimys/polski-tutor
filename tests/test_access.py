@@ -1,0 +1,28 @@
+from datetime import date, timedelta
+
+from app.services.access import SIX_MONTHS_DAYS, compute_access_until
+
+TODAY = date(2026, 7, 1)
+SIX = TODAY + timedelta(days=SIX_MONTHS_DAYS)
+
+
+def test_unconfirmed_gives_six_months():
+    assert compute_access_until("", False, TODAY) == SIX
+
+
+def test_confirmed_but_within_six_months_gives_min_six():
+    # іспит через ~2 місяці → мінімум 6 місяців
+    assert compute_access_until("2026-09-01", True, TODAY) == SIX
+
+
+def test_confirmed_beyond_six_months_gives_exam_date():
+    assert compute_access_until("2027-06-01", True, TODAY) == date(2027, 6, 1)
+
+
+def test_confirmed_exactly_uses_max():
+    # рівно на межі 6 міс → не менше 6 міс
+    assert compute_access_until(SIX.isoformat(), True, TODAY) == SIX
+
+
+def test_invalid_date_falls_back_to_six_months():
+    assert compute_access_until("не-дата", True, TODAY) == SIX

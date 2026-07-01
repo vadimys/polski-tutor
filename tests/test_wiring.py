@@ -9,11 +9,13 @@ from aiogram import Router
 
 def test_all_handlers_have_router():
     from app.handlers import (
+        admin,
         drills,
         lesson,
         listening,
         menu,
         mock,
+        onboarding,
         placement,
         review,
         speaking,
@@ -21,7 +23,10 @@ def test_all_handlers_have_router():
         writing,
     )
 
-    mods = (start, placement, lesson, writing, drills, review, speaking, listening, mock, menu)
+    mods = (
+        start, onboarding, admin, placement, lesson, writing, drills,
+        review, speaking, listening, mock, menu,
+    )
     for module in mods:
         assert isinstance(module.router, Router), module.__name__
 
