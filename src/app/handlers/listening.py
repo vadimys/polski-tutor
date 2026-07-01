@@ -1,4 +1,4 @@
-"""Модуль аудіювання (Słuchanie): TTS-аудіо → питання формату іспиту."""
+"""Модуль аудіювання (Słuchanie): офіц. запис (piper TTS) → офіц. питання."""
 
 from __future__ import annotations
 
@@ -23,31 +23,35 @@ class Listening(StatesGroup):
     active = State()
 
 
-async def _send_question(message: Message, item: listening.ListeningItem, n: int) -> None:
-    q = item.questions[n]
+async def _play(message: Message, audio: str) -> None:
+    data = await tts.synthesize(audio)
+    if data:
+        await message.answer_voice(
+            BufferedInputFile(data, filename="sluchanie.ogg"),
+            caption="🎧 Прослухай (можна кілька разів).",
+        )
+    else:
+        await message.answer(f"🔇 (аудіо недоступне — прочитай)\n\n<i>{html.escape(audio)}</i>")
+
+
+async def _send_q(message: Message, ex: listening.Exercise, seg: int, q: int, gstep: int) -> None:
+    question = ex.segments[seg].questions[q]
+    total = listening.total_questions(ex)
     await message.answer(
-        f"<b>Питання {n + 1}/{len(item.questions)}</b>\n\n{html.escape(q.text)}",
-        reply_markup=listen_kb(q.options, n),
+        f"<b>Питання {gstep + 1}/{total}</b>\n\n{html.escape(question.text)}",
+        reply_markup=listen_kb(question.options, gstep),
     )
 
 
 async def _start(message: Message, state: FSMContext) -> None:
-    item = listening.pick()
-    await message.answer("🎧 <b>Аудіювання</b> — готую запис…")
-    audio = await tts.synthesize(item.text)
-    if audio:
-        await message.answer_voice(
-            BufferedInputFile(audio, filename="sluchanie.ogg"),
-            caption="🎧 Прослухай (можна кілька разів) і відповідай на питання.",
-        )
-    else:
-        # фолбек: TTS недоступний → показуємо текст
-        await message.answer(
-            f"🔇 (аудіо недоступне — прочитай)\n\n<i>{html.escape(item.text)}</i>"
-        )
+    ex = listening.pick()
     await state.set_state(Listening.active)
-    await state.update_data(item_id=item.id, idx=0, correct=0)
-    await _send_question(message, item, 0)
+    await state.update_data(ex_id=ex.id, seg=0, q=0, correct=0, gstep=0)
+    await message.answer(
+        f"🎧 <b>Аудіювання — {html.escape(ex.title)}</b> ({listening.SOURCE})\n\n{ex.intro}"
+    )
+    await _play(message, ex.segments[0].audio)
+    await _send_q(message, ex, 0, 0, 0)
 
 
 @router.message(Command("sluchanie"))
@@ -63,22 +67,21 @@ async def cb_listening(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Listening.active, F.data.startswith("ls:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    parts = cb.data.split(":")  # ls:ans:<qidx>:<option>
+    parts = cb.data.split(":")  # ls:ans:<gstep>:<option>
     if len(parts) != 4:
         await cb.answer()
         return
     qidx, chosen = int(parts[2]), int(parts[3])
     data = await state.get_data()
-    item = listening.by_id(data["item_id"])
-    idx = data["idx"]
-    correct = data["correct"]
-    if item is None:
+    ex = listening.by_id(data["ex_id"])
+    seg, q, correct, gstep = data["seg"], data["q"], data["correct"], data["gstep"]
+    if ex is None:
         await state.clear()
         await cb.message.answer("Запис загубився — почнімо заново.", reply_markup=menu_kb())
         await cb.answer()
         return
 
-    if qidx != idx:  # дубль/стале питання
+    if qidx != gstep:  # дубль/стале
         await cb.answer("Це питання вже пройдено 🙂")
         try:
             await cb.message.edit_reply_markup(reply_markup=None)
@@ -86,35 +89,43 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
             pass
         return
 
-    q = item.questions[idx]
-    ok = chosen == q.correct
+    question = ex.segments[seg].questions[q]
+    ok = chosen == question.correct
     if ok:
         correct += 1
-        verdict = "✔️ <b>Правильно!</b>"
+        verdict = "✔️ <b>Dobrze!</b>"
     else:
-        verdict = f"❌ Правильно: <b>{html.escape(q.options[q.correct])}</b>"
-    await cb.message.edit_text(f"{html.escape(q.text)}\n\n{verdict}\n💡 {html.escape(q.explain)}")
+        verdict = f"❌ Poprawnie: <b>{html.escape(question.options[question.correct])}</b>"
+    exp = f"\n💡 {html.escape(question.explain)}" if question.explain else ""
+    await cb.message.edit_text(f"{html.escape(question.text)}\n\n{verdict}{exp}")
     await cb.answer("✔️" if ok else "❌")
 
-    idx += 1
-    await state.update_data(idx=idx, correct=correct)
-    if idx < len(item.questions):
-        await _send_question(cb.message, item, idx)
+    q += 1
+    gstep += 1
+    if q < len(ex.segments[seg].questions):
+        await state.update_data(q=q, correct=correct, gstep=gstep)
+        await _send_q(cb.message, ex, seg, q, gstep)
+        return
+    seg += 1
+    if seg < len(ex.segments):
+        await state.update_data(seg=seg, q=0, correct=correct, gstep=gstep)
+        await _play(cb.message, ex.segments[seg].audio)
+        await _send_q(cb.message, ex, seg, 0, gstep)
     else:
-        await _finalize(cb.message, cb.from_user.id, state, correct, len(item.questions))
+        await _finalize(cb.message, cb.from_user.id, state, correct, listening.total_questions(ex))
 
 
 async def _finalize(
     message: Message, user_id: int, state: FSMContext, correct: int, total: int
 ) -> None:
     await state.clear()
-    score = round(correct / total * 100) if total else 0
+    pct = round(correct / total * 100) if total else 0
     st = await user_state.load(user_id)
-    old = st.readiness.get(Module.SLUCHANIE.value, score)
-    st.readiness[Module.SLUCHANIE.value] = round((old + score) / 2)
+    old = st.readiness.get(Module.SLUCHANIE.value, pct)
+    st.readiness[Module.SLUCHANIE.value] = round((old + pct) / 2)
     await user_state.save(st)
-    emoji = "🎉" if score >= 80 else "👍" if score >= 50 else "💪"
+    emoji = "🎉" if pct >= 80 else "👍" if pct >= 50 else "💪"
     await message.answer(
-        f"{emoji} <b>Аудіювання: {correct}/{total} ({score}%)</b>\nГотовність Słuchanie оновлено.",
-        reply_markup=menu_kb() if score >= 50 else to_menu_kb(),
+        f"{emoji} <b>Аудіювання: {correct}/{total} ({pct}%)</b>\nГотовність Słuchanie оновлено.",
+        reply_markup=menu_kb() if pct >= 50 else to_menu_kb(),
     )
