@@ -68,11 +68,6 @@ async def cb_listening(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Listening.active, F.data.startswith("ls:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    ans = quiz.parse_answer(cb.data)
-    if ans is None:
-        await cb.answer()
-        return
-    qidx, chosen = ans
     data = await state.get_data()
     ex = listening.by_id(data["ex_id"])
     seg, q, correct, gstep = data["seg"], data["q"], data["correct"], data["gstep"]
@@ -82,22 +77,15 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.answer()
         return
 
-    if qidx != gstep:  # дубль/стале
-        await cb.answer("Це питання вже пройдено 🙂")
-        try:
-            await cb.message.edit_reply_markup(reply_markup=None)
-        except Exception:  # noqa: BLE001
-            pass
+    chosen = await quiz.read_answer(cb, gstep)
+    if chosen is None:  # стале/дубль/зіпсовано — уже оброблено
         return
 
     question = ex.segments[seg].questions[q]
-    ok = chosen == question.correct
-    if ok:
+    if await quiz.show_verdict(
+        cb, chosen, question.correct, question.options, question.text, question.explain
+    ):
         correct += 1
-    await cb.message.edit_text(
-        quiz.verdict_card(question.text, chosen, question.correct, question.options, question.explain)
-    )
-    await cb.answer("✔️" if ok else "❌")
 
     q += 1
     gstep += 1

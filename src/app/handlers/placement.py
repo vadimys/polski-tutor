@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -58,32 +59,21 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Placement.active, F.data.startswith("pl:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    ans = quiz.parse_answer(cb.data)
-    if ans is None:
-        await cb.answer()
-        return
-    qidx, choice = ans
     data = await state.get_data()
     pos = data["pos"]
     pairs = data["pairs"]
     chosen = data["chosen"]
 
-    if qidx != pos:  # дубль/стале
-        await cb.answer("Це питання вже пройдено 🙂")
-        try:
-            await cb.message.edit_reply_markup(reply_markup=None)
-        except Exception:  # noqa: BLE001
-            pass
+    choice = await quiz.read_answer(cb, pos)
+    if choice is None:  # стале/дубль/зіпсовано — уже оброблено
         return
 
     chosen.append(choice)
     pos += 1
     await state.update_data(pos=pos, chosen=chosen)
     await cb.answer()
-    try:
+    with suppress(Exception):  # прибрати клавіатуру (діагностика — без миттєвого вердикту)
         await cb.message.edit_reply_markup(reply_markup=None)
-    except Exception:  # noqa: BLE001
-        pass
 
     if pos < len(pairs):
         await _send_question(cb.message, pairs, pos)

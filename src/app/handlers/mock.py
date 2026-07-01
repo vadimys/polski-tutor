@@ -71,29 +71,17 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Mock.active, F.data.startswith("mk:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    ans = quiz.parse_answer(cb.data)
-    if ans is None:
-        await cb.answer()
-        return
-    qidx, chosen = ans
     data = await state.get_data()
     section, idx, correct = data["section"], data["idx"], data["correct"]
 
-    if qidx != idx:  # дубль/стале
-        await cb.answer("Це питання вже пройдено 🙂")
-        try:
-            await cb.message.edit_reply_markup(reply_markup=None)
-        except Exception:  # noqa: BLE001
-            pass
+    chosen = await quiz.read_answer(cb, idx)
+    if chosen is None:  # стале/дубль/зіпсовано — уже оброблено
         return
 
     items = mock.section_items(section)
     it = items[idx]
-    ok = chosen == it.correct
-    if ok:
+    if await quiz.show_verdict(cb, chosen, it.correct, it.options, it.question, it.explain):
         correct += 1
-    await cb.message.edit_text(quiz.verdict_card(it.question, chosen, it.correct, it.options, it.explain))
-    await cb.answer("✔️" if ok else "❌")
 
     idx += 1
     await state.update_data(idx=idx, correct=correct)

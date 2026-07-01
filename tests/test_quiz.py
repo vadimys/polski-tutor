@@ -1,4 +1,58 @@
+import pytest
+
 from app.bot import quiz
+
+
+class _FakeMsg:
+    def __init__(self):
+        self.edited_text = None
+        self.markup_cleared = False
+
+    async def edit_text(self, text):
+        self.edited_text = text
+
+    async def edit_reply_markup(self, reply_markup=None):
+        self.markup_cleared = reply_markup is None
+
+
+class _FakeCb:
+    def __init__(self, data):
+        self.data = data
+        self.message = _FakeMsg()
+        self.answered_with = None
+
+    async def answer(self, text=None, **kwargs):
+        self.answered_with = text if text is not None else ""
+
+
+@pytest.mark.asyncio
+async def test_read_answer_valid_returns_choice():
+    cb = _FakeCb("dr:ans:2:1")
+    assert await quiz.read_answer(cb, current_pos=2) == 1
+
+
+@pytest.mark.asyncio
+async def test_read_answer_stale_returns_none_and_clears():
+    cb = _FakeCb("dr:ans:0:1")  # qidx=0, а поточне питання 3 → стале
+    assert await quiz.read_answer(cb, current_pos=3) is None
+    assert cb.message.markup_cleared
+    assert "вже пройдено" in cb.answered_with
+
+
+@pytest.mark.asyncio
+async def test_read_answer_malformed_returns_none():
+    cb = _FakeCb("garbage")
+    assert await quiz.read_answer(cb, current_pos=0) is None
+
+
+@pytest.mark.asyncio
+async def test_show_verdict_correct_and_wrong():
+    cb_ok = _FakeCb("x:ans:0:1")
+    assert await quiz.show_verdict(cb_ok, 1, 1, ["a", "b"], "Q?", "бо") is True
+    assert "Dobrze" in cb_ok.message.edited_text
+    cb_no = _FakeCb("x:ans:0:0")
+    assert await quiz.show_verdict(cb_no, 0, 1, ["a", "b"], "Q?", "") is False
+    assert "Poprawnie" in cb_no.message.edited_text
 
 
 def test_parse_answer_valid():
