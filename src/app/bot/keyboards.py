@@ -31,6 +31,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="🗣 Мовлення", callback_data="speaking:start")
     kb.button(text="🎧 Аудіювання", callback_data="listening:start")
     kb.button(text="🎯 Тренування", callback_data="drill:start")
+    kb.button(text="📋 Офіційний МОК", callback_data="mock:open")
     kb.button(text="📊 Прогрес", callback_data="progress:show")
     kb.button(text="📝 Тест рівня", callback_data="placement:start")
     kb.adjust(1)
@@ -51,6 +52,24 @@ def listen_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for i, opt in enumerate(options):
         kb.button(text=opt, callback_data=f"ls:ans:{qidx}:{i}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def mock_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Варіанти відповіді для офіційного МОКу."""
+    kb = InlineKeyboardBuilder()
+    for i, opt in enumerate(options):
+        kb.button(text=opt, callback_data=f"mk:ans:{qidx}:{i}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def mock_menu_kb() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📖 Читання (офіц.)", callback_data="mock:czytanie")
+    kb.button(text="🔤 Граматика (офіц.)", callback_data="mock:gramatyka")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()
 

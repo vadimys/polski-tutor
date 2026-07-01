@@ -17,6 +17,7 @@ from app.handlers import (
     lesson,
     listening,
     menu,
+    mock,
     placement,
     review,
     speaking,
@@ -38,6 +39,7 @@ COMMANDS = [
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),
     BotCommand(command="sluchanie", description="Аудіювання (запис + питання)"),
+    BotCommand(command="mok", description="Офіційний МОК (читання/граматика)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
     BotCommand(command="postep", description="Мій прогрес"),
@@ -60,6 +62,7 @@ async def main() -> None:
     dp.include_router(review.router)
     dp.include_router(speaking.router)
     dp.include_router(listening.router)
+    dp.include_router(mock.router)
     dp.include_router(menu.router)
 
     await bot.set_my_commands(COMMANDS)

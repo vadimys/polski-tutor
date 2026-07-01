@@ -13,6 +13,7 @@ def test_all_handlers_have_router():
         lesson,
         listening,
         menu,
+        mock,
         placement,
         review,
         speaking,
@@ -20,7 +21,7 @@ def test_all_handlers_have_router():
         writing,
     )
 
-    mods = (start, placement, lesson, writing, drills, review, speaking, listening, menu)
+    mods = (start, placement, lesson, writing, drills, review, speaking, listening, mock, menu)
     for module in mods:
         assert isinstance(module.router, Router), module.__name__
 
