@@ -61,7 +61,18 @@ COMMANDS = [
 ]
 
 
+def _init_sentry() -> None:
+    """Трекінг помилок — активний лише якщо задано SENTRY_DSN. PII не надсилаємо (GDPR)."""
+    if not settings.sentry_dsn:
+        return
+    import sentry_sdk
+
+    sentry_sdk.init(dsn=settings.sentry_dsn, send_default_pii=False, traces_sample_rate=0.0)
+    logger.info("Sentry увімкнено")
+
+
 async def main() -> None:
+    _init_sentry()
     bot = Bot(
         token=settings.bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),

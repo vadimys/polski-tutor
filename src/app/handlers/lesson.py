@@ -71,6 +71,8 @@ async def _deliver(message: Message, user_id: int) -> None:
     text = ""
     if ai.enabled() and await limits.allow_ai(user_id):
         text = await ai.ask(_SYSTEM, _prompt(module, st.level), strong=True, max_tokens=1500)
+        if not text:
+            await limits.refund_ai(user_id)  # виклик не вдався — не палимо квоту
     if not text:
         text = _fallback(module)
 

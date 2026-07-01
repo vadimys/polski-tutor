@@ -11,14 +11,18 @@ dependencies = [
     "anthropic>=0.40,<1",  # SDK швидко ламає API між minor — тримаємо стелю
     "pydantic-settings>=2.5",
     "tzdata>=2024.1",
-    "faster-whisper>=1.0",
-    "piper-tts>=1.2",
     "sqlalchemy[asyncio]>=2.0",
     "asyncpg>=0.29",
     "alembic>=1.13",
+    "sentry-sdk>=2.0",  # трекінг помилок (активний лише якщо задано SENTRY_DSN)
 ]
 
 [project.optional-dependencies]
+# ML-важкі залежності (Whisper/piper) — окремо: Docker ставить, CI пропускає (імпортуються ліниво)
+ml = [
+    "faster-whisper>=1.0",
+    "piper-tts>=1.2",
+]
 dev = [
     "ruff>=0.6",
     "mypy>=1.11",

@@ -7,11 +7,12 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# 1) Важкі залежності — ОКРЕМИЙ шар (кешується між змінами коду; список синхронний з pyproject)
-RUN pip install --no-cache-dir \
-    "aiogram>=3.13,<4" "redis>=5" "anthropic>=0.40" "pydantic-settings>=2.5" \
-    "tzdata>=2024.1" "faster-whisper>=1.0" "piper-tts>=1.2" \
-    "sqlalchemy[asyncio]>=2.0" asyncpg alembic
+# 1) Залежності з pyproject (ЄДИНЕ джерело) — окремий кеш-шар.
+#    Ставимо через stub-пакет, щоб шар залежав лише від pyproject.toml (кеш між змінами коду).
+COPY pyproject.toml README.md ./
+RUN mkdir -p src/app && touch src/app/__init__.py \
+    && pip install --no-cache-dir ".[ml]" \
+    && rm -rf src *.egg-info build
 
 # 2) Whisper-модель у образ (офлайн у рантаймі). Кешується окремо від коду.
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('small', device='cpu', compute_type='int8', download_root='/opt/models')" \
@@ -27,7 +28,8 @@ RUN mkdir -p /opt/voices && cd /opt/voices \
     && chmod -R a+rX /opt/voices
 
 # 4) Застосунок — лише цей шар рерраниться при зміні коду (deps/моделі кешовані)
-COPY pyproject.toml README.md alembic.ini ./
+#    pyproject.toml/README.md уже скопійовані в шарі (1); тут — лише решта й код
+COPY alembic.ini ./
 COPY migrations ./migrations
 COPY src ./src
 RUN pip install --no-cache-dir --no-deps .

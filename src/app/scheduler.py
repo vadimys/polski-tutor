@@ -14,7 +14,7 @@ from aiogram import Bot
 from app.bot.keyboards import lesson_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
-from app.services import access, clock, state
+from app.services import access, clock, gdpr, state
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,12 @@ async def daily_nudge_loop(bot: Bot) -> None:
                 except Exception:
                     logger.exception("nudge failed uid=%s", uid)
             logger.info("Daily nudge → %d users", sent)
+            try:
+                purged = await gdpr.purge_stale(clock.today_local())
+                if purged:
+                    logger.info("Retention: видалено %d denied-користувачів", purged)
+            except Exception:
+                logger.exception("retention purge failed")
         except asyncio.CancelledError:
             raise
         except Exception:

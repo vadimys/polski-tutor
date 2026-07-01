@@ -93,6 +93,7 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
     await message.answer("🔍 Оцінюю за офіційними критеріями (wykonanie / środki / poprawność)…")
     fb, scores = await writing.feedback(ws, text_a, message.text)
     if not fb:
+        await limits.refund_ai(message.from_user.id)  # виклик не вдався — не палимо квоту
         await message.answer("AI тимчасово недоступний — спробуй пізніше.", reply_markup=to_menu_kb())
         return
 

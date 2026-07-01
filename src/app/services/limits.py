@@ -21,13 +21,26 @@ def _r() -> Redis:
     return _redis
 
 
+def _key(user_id: int) -> str:
+    return f"polski:ai:{user_id}:{clock.today_local().isoformat()}"
+
+
 async def allow_ai(user_id: int) -> bool:
     """True, якщо користувач ще в межах денного ліміту AI (інкрементує лічильник)."""
     if settings.admin_id and user_id == settings.admin_id:
         return True
-    key = f"polski:ai:{user_id}:{clock.today_local().isoformat()}"
     r = _r()
-    n = await r.incr(key)
+    n = await r.incr(_key(user_id))
     if n == 1:
-        await r.expire(key, 90_000)  # ~25 год — самоскидання щодоби
+        await r.expire(_key(user_id), 90_000)  # ~25 год — самоскидання щодоби
     return n <= settings.ai_daily_limit
+
+
+async def refund_ai(user_id: int) -> None:
+    """Повернути юніт квоти, якщо AI-виклик не вдався (щоб фейл не палив ліміт)."""
+    if settings.admin_id and user_id == settings.admin_id:
+        return
+    r = _r()
+    raw = await r.get(_key(user_id))
+    if raw and int(raw) > 0:
+        await r.decr(_key(user_id))

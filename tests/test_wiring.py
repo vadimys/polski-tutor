@@ -54,3 +54,15 @@ def test_scheduler_intact():
     from app.scheduler import daily_nudge_loop
 
     assert callable(daily_nudge_loop)
+
+
+def test_wave2_functions_present():
+    """Хвиля 2: retry/refund/purge/sentry на місці (регресія на обрізані файли)."""
+    from app.integrations import ai
+    from app.main import _init_sentry
+    from app.services import gdpr, limits
+
+    assert ai._MAX_ATTEMPTS >= 2
+    assert callable(limits.refund_ai)
+    assert callable(gdpr.purge_stale)
+    assert callable(_init_sentry)

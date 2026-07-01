@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     database_url: str = "postgresql+asyncpg://polski:polski@postgres:5432/polski"
 
+    # Observability (опційно): якщо задано SENTRY_DSN — трекінг помилок без нагляду
+    sentry_dsn: str | None = None
+
     # Whisper (локальне розпізнавання голосу для модуля Mówienie)
     whisper_model: str = "small"
     whisper_dir: str = "/opt/models"

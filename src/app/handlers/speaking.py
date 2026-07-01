@@ -137,6 +137,7 @@ async def on_voice(message: Message, state: FSMContext) -> None:
 
     fb, scores = await speaking.feedback(task, transcript)
     if not fb:
+        await limits.refund_ai(message.from_user.id)  # виклик не вдався — не палимо квоту
         await message.answer(
             f"📝 Я почув:\n«{html.escape(transcript)}»\n\nAI-фідбек тимчасово недоступний.",
             reply_markup=to_menu_kb(),

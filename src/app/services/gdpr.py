@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 from sqlalchemy import delete, select
 
 from app.config import settings
@@ -70,3 +72,22 @@ async def delete_data(user_id: int) -> None:
             await r.delete(key)
     finally:
         await r.aclose()
+
+
+async def purge_stale(today: date, denied_days: int = 30) -> int:
+    """Storage limitation (ст. 5 GDPR): видаляє denied-користувачів, рішення по яких
+    старше denied_days. Повертає к-сть видалених. Викликається щодня зі scheduler."""
+    cutoff = (today - timedelta(days=denied_days)).isoformat()
+    async with session_factory()() as s:
+        ids = (
+            await s.execute(
+                select(User.id).where(
+                    User.access_status == "denied",
+                    User.decided_at != "",
+                    User.decided_at < cutoff,
+                )
+            )
+        ).scalars().all()
+    for uid in ids:
+        await delete_data(uid)  # повне видалення (PG + Redis + FSM)
+    return len(ids)
