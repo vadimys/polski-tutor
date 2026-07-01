@@ -17,6 +17,7 @@ from app.db.migrate_legacy import migrate_from_redis
 from app.handlers import (
     admin,
     drills,
+    errors,
     lesson,
     listening,
     menu,
@@ -61,6 +62,7 @@ async def main() -> None:
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=RedisStorage.from_url(settings.redis_url))
+    dp.errors.register(errors.on_error)  # глобальний обробник помилок → алерт адміну
 
     # Поза гейтом: онбординг (/start, запит доступу), адмін (схвалення), довідка
     dp.include_router(onboarding.router)

@@ -33,6 +33,7 @@ MODULES = [
     "app.handlers.start",
     "app.handlers.onboarding",
     "app.handlers.admin",
+    "app.handlers.errors",
     "app.handlers.placement",
     "app.handlers.lesson",
     "app.handlers.writing",

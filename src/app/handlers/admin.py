@@ -56,6 +56,32 @@ async def cb_decision(cb: CallbackQuery) -> None:
     await cb.answer()
 
 
+@router.message(Command("status"))
+async def cmd_status(message: Message) -> None:
+    if not _is_admin(message.from_user.id):
+        return
+    from sqlalchemy import func, select
+
+    from app.db.base import session_factory
+    from app.db.models import Session, User
+    from app.integrations import speech, tts
+
+    db_ok, users, sessions = True, 0, 0
+    try:
+        async with session_factory()() as s:
+            users = (await s.execute(select(func.count()).select_from(User))).scalar() or 0
+            sessions = (await s.execute(select(func.count()).select_from(Session))).scalar() or 0
+    except Exception:  # noqa: BLE001
+        db_ok = False
+    await message.answer(
+        "🩺 <b>Стан системи</b>\n"
+        f"• PostgreSQL: {'✅' if db_ok else '❌'}\n"
+        f"• Користувачів: <b>{users}</b> · вправ: <b>{sessions}</b>\n"
+        f"• Whisper (голос): {'✅' if speech.available() else '❌'}\n"
+        f"• Piper TTS (аудіо): {'✅' if tts.available() else '❌'}"
+    )
+
+
 @router.message(Command("reply"))
 async def cmd_reply(message: Message) -> None:
     if not _is_admin(message.from_user.id):
