@@ -33,3 +33,15 @@ class User(Base):
     decided_at: Mapped[str] = mapped_column(String(32), default="")
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Session(Base):
+    """Лог кожної вправи (для трендів/статистики/прогнозу)."""
+
+    __tablename__ = "sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    module: Mapped[str] = mapped_column(String(16))
+    score: Mapped[int] = mapped_column(Integer)  # результат саме цієї вправи, 0..100
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

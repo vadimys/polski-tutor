@@ -19,6 +19,7 @@ MODULES = [
     "app.services.access",
     "app.services.exam_dates",
     "app.services.plan",
+    "app.services.progress",
     "app.bot.keyboards",
     "app.bot.ui",
     "app.bot.access_mw",
