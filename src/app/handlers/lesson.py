@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards import to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai
-from app.services import clock, state, vocab
+from app.services import clock, limits, state, vocab
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -69,7 +69,7 @@ async def _deliver(message: Message, user_id: int) -> None:
     module = st.weakest_module()
 
     text = ""
-    if ai.enabled():
+    if ai.enabled() and await limits.allow_ai(user_id):
         text = await ai.ask(_SYSTEM, _prompt(module, st.level), strong=True, max_tokens=1500)
     if not text:
         text = _fallback(module)

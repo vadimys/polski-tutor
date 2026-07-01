@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     strong_model: str = "claude-sonnet-4-6"
     cheap_model: str = "claude-haiku-4-5-20251001"
+    ai_daily_limit: int = 30  # ліміт AI-вправ на користувача/добу (контроль витрат; адмін — без ліміту)
 
     # Адмін (єдиний адмін-акаунт — для запитів на доступ)
     admin_id: int = 0

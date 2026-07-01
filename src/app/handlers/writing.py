@@ -12,8 +12,8 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.domain.models import Module
+from app.services import limits, writing
 from app.services import state as user_state
-from app.services import writing
 
 router = Router()
 
@@ -74,6 +74,13 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
     await state.clear()
     if ws is None:
         await message.answer("Набір загубився — почнімо заново.", reply_markup=menu_kb())
+        return
+    if not await limits.allow_ai(message.from_user.id):
+        await message.answer(
+            "🚫 Денний ліміт AI-фідбеку вичерпано. Тренування/МОК/повторення — без ліміту 👍 "
+            "Письмо — завтра.",
+            reply_markup=to_menu_kb(),
+        )
         return
 
     await message.answer("🔍 Оцінюю за офіційними критеріями (wykonanie / środki / poprawność)…")

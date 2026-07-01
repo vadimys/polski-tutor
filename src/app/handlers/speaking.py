@@ -16,7 +16,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech
-from app.services import speaking
+from app.services import limits, speaking
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -111,6 +111,13 @@ async def on_voice(message: Message, state: FSMContext) -> None:
     if not transcript:
         await message.answer(
             "Не вдалося розпізнати голос 😕 Спробуй ще раз, чіткіше й ближче до мікрофона.",
+            reply_markup=to_menu_kb(),
+        )
+        return
+    if not await limits.allow_ai(message.from_user.id):
+        await message.answer(
+            f"📝 Я почув:\n«{html.escape(transcript)}»\n\n"
+            "🚫 Денний ліміт AI-фідбеку вичерпано. Спробуй мовлення завтра 🙂",
             reply_markup=to_menu_kb(),
         )
         return

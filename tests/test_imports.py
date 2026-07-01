@@ -20,6 +20,7 @@ MODULES = [
     "app.services.exam_dates",
     "app.services.plan",
     "app.services.progress",
+    "app.services.limits",
     "app.bot.keyboards",
     "app.bot.ui",
     "app.bot.quiz",
