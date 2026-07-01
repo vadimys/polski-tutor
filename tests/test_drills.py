@@ -16,6 +16,9 @@ def test_session_indices_valid():
         assert all(0 <= i < total for i in idxs)
 
 
-def test_session_indices_capped_to_available():
+def test_session_indices_only_standalone():
+    # береться лише самодостатні (з власним контекстом) питання
     idxs = drills.session_indices("czytanie", 1000)
-    assert len(idxs) == len(mock.section_items("czytanie"))
+    standalone = [i for i, it in enumerate(mock.section_items("czytanie")) if it.context]
+    assert sorted(idxs) == sorted(standalone)
+    assert all(mock.section_items("czytanie")[i].context for i in idxs)

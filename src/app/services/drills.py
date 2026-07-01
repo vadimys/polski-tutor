@@ -17,8 +17,13 @@ DRILLABLE = (Module.GRAMATYKA, Module.CZYTANIE)
 
 
 def session_indices(section: str, n: int = 5) -> list[int]:
-    """Випадкові індекси n офіційних питань секції ('gramatyka'|'czytanie')."""
-    total = len(mock.section_items(section))
-    idxs = list(range(total))
-    random.shuffle(idxs)
-    return idxs[: min(n, total)]
+    """Випадкові індекси n офіційних САМОДОСТАТНІХ питань секції.
+
+    Самодостатнє = має власний контекст (it.context). Питання TAK/NIE, що
+    спираються на спільний текст (показаний раніше), у випадкову вибірку не беремо —
+    інакше вони були б без тексту й нерозв'язні.
+    """
+    items = mock.section_items(section)
+    standalone = [i for i, it in enumerate(items) if it.context]
+    random.shuffle(standalone)
+    return standalone[: min(n, len(standalone))]

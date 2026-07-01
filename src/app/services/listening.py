@@ -9,8 +9,14 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
-from app.domain.models import Module
-from app.services.placement import Question
+
+@dataclass
+class LQuestion:
+    id: str
+    text: str
+    options: list[str]
+    correct: int
+    explain: str
 
 
 @dataclass
@@ -18,11 +24,11 @@ class ListeningItem:
     id: str
     title: str
     text: str  # польський текст для озвучення (4–6 речень, B1)
-    questions: list[Question]
+    questions: list[LQuestion]
 
 
-def _q(qid: str, text: str, options: list[str], correct: int, explain: str) -> Question:
-    return Question(qid, Module.SLUCHANIE, "B1", text, options, correct, explain)
+def _q(qid: str, text: str, options: list[str], correct: int, explain: str) -> LQuestion:
+    return LQuestion(qid, text, options, correct, explain)
 
 
 ITEMS: list[ListeningItem] = [

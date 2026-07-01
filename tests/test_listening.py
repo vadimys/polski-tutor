@@ -1,4 +1,3 @@
-from app.domain.models import Module
 from app.services import listening
 
 
@@ -11,7 +10,6 @@ def test_items_valid():
         assert it.text and it.title
         assert len(it.questions) >= 1
         for q in it.questions:
-            assert q.module == Module.SLUCHANIE
             assert 0 <= q.correct < len(q.options)
             qids.append(q.id)
     assert len(qids) == len(set(qids)), "id питань мають бути унікальні"
