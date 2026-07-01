@@ -27,7 +27,7 @@ async def _send_question(message: Message, idx: int) -> None:
     q = placement.QUESTIONS[idx]
     await message.answer(
         f"<b>Питання {idx + 1}/{len(placement.QUESTIONS)}</b>\n\n{html.escape(q.text)}",
-        reply_markup=question_kb(q.options),
+        reply_markup=question_kb(q.options, idx),
     )
 
 
@@ -48,22 +48,40 @@ async def cmd_test(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == "placement:start")
 async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()  # одразу гасимо «спінер» (інакше повільний старт → подвійні тапи)
     await _start(cb.message, state)
-    await cb.answer()
 
 
 @router.callback_query(Placement.active, F.data.startswith("pl:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    chosen = int(cb.data.rsplit(":", 1)[1])
+    parts = cb.data.split(":")  # pl:ans:<qidx>:<option>
+    if len(parts) != 4:  # старий формат кнопки (з минулої сесії) — ігноруємо
+        await cb.answer()
+        return
+    qidx, chosen = int(parts[2]), int(parts[3])
     data = await state.get_data()
     idx = data["idx"]
     answers = data["answers"]
+
+    # тап по НЕ поточному питанню (дубль/стале) — ігноруємо, прибираємо кнопки
+    if qidx != idx:
+        await cb.answer("Це питання вже пройдено 🙂")
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+        except Exception:  # noqa: BLE001
+            pass
+        return
 
     q = placement.QUESTIONS[idx]
     answers[q.id] = chosen
     idx += 1
     await state.update_data(idx=idx, answers=answers)
     await cb.answer()
+    # прибираємо кнопки з відповіданого питання
+    try:
+        await cb.message.edit_reply_markup(reply_markup=None)
+    except Exception:  # noqa: BLE001
+        pass
 
     if idx < len(placement.QUESTIONS):
         await _send_question(cb.message, idx)

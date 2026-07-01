@@ -27,7 +27,7 @@ async def _send_question(message: Message, item: listening.ListeningItem, n: int
     q = item.questions[n]
     await message.answer(
         f"<b>Питання {n + 1}/{len(item.questions)}</b>\n\n{html.escape(q.text)}",
-        reply_markup=listen_kb(q.options),
+        reply_markup=listen_kb(q.options, n),
     )
 
 
@@ -63,7 +63,11 @@ async def cb_listening(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(Listening.active, F.data.startswith("ls:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    chosen = int(cb.data.rsplit(":", 1)[1])
+    parts = cb.data.split(":")  # ls:ans:<qidx>:<option>
+    if len(parts) != 4:
+        await cb.answer()
+        return
+    qidx, chosen = int(parts[2]), int(parts[3])
     data = await state.get_data()
     item = listening.by_id(data["item_id"])
     idx = data["idx"]
@@ -72,6 +76,14 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
         await state.clear()
         await cb.message.answer("Запис загубився — почнімо заново.", reply_markup=menu_kb())
         await cb.answer()
+        return
+
+    if qidx != idx:  # дубль/стале питання
+        await cb.answer("Це питання вже пройдено 🙂")
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+        except Exception:  # noqa: BLE001
+            pass
         return
 
     q = item.questions[idx]

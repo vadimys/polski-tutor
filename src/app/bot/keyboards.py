@@ -13,11 +13,11 @@ def start_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def question_kb(options: list[str]) -> InlineKeyboardMarkup:
-    """Кнопки-варіанти відповіді (індекс у callback)."""
+def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Кнопки-варіанти (callback містить індекс питання — захист від дублів/сталих тапів)."""
     kb = InlineKeyboardBuilder()
     for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"pl:ans:{i}")
+        kb.button(text=opt, callback_data=f"pl:ans:{qidx}:{i}")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -37,20 +37,20 @@ def menu_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def drill_kb(options: list[str]) -> InlineKeyboardMarkup:
-    """Варіанти відповіді для тренування (окремий callback від placement)."""
+def drill_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Варіанти відповіді для тренування (з індексом питання)."""
     kb = InlineKeyboardBuilder()
     for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"dr:ans:{i}")
+        kb.button(text=opt, callback_data=f"dr:ans:{qidx}:{i}")
     kb.adjust(1)
     return kb.as_markup()
 
 
-def listen_kb(options: list[str]) -> InlineKeyboardMarkup:
-    """Варіанти відповіді для аудіювання."""
+def listen_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Варіанти відповіді для аудіювання (з індексом питання)."""
     kb = InlineKeyboardBuilder()
     for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"ls:ans:{i}")
+        kb.button(text=opt, callback_data=f"ls:ans:{qidx}:{i}")
     kb.adjust(1)
     return kb.as_markup()
 

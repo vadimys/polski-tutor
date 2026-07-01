@@ -37,7 +37,7 @@ async def _send_q(message: Message, qid: str, n: int, total: int) -> None:
         return
     await message.answer(
         f"<b>{n}/{total}</b> · {MODULE_LABELS[q.module]}\n\n{html.escape(q.text)}",
-        reply_markup=drill_kb(q.options),
+        reply_markup=drill_kb(q.options, n - 1),  # qidx = 0-based позиція = data["idx"]
     )
 
 
@@ -62,17 +62,29 @@ async def cmd_drill(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(F.data == "drill:start")
 async def cb_drill(cb: CallbackQuery, state: FSMContext) -> None:
-    await _start(cb.message, cb.from_user.id, state)
     await cb.answer()
+    await _start(cb.message, cb.from_user.id, state)
 
 
 @router.callback_query(Drill.active, F.data.startswith("dr:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
-    chosen = int(cb.data.rsplit(":", 1)[1])
+    parts = cb.data.split(":")  # dr:ans:<qidx>:<option>
+    if len(parts) != 4:
+        await cb.answer()
+        return
+    qidx, chosen = int(parts[2]), int(parts[3])
     data = await state.get_data()
     ids = data["ids"]
     idx = data["idx"]
     correct = data["correct"]
+
+    if qidx != idx:  # дубль/стале питання — ігноруємо
+        await cb.answer("Це питання вже пройдено 🙂")
+        try:
+            await cb.message.edit_reply_markup(reply_markup=None)
+        except Exception:  # noqa: BLE001
+            pass
+        return
 
     q = drills.by_id(ids[idx])
     ok = q is not None and chosen == q.correct
