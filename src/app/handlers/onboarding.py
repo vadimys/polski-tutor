@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import html
-from datetime import date
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart
@@ -15,41 +14,25 @@ from app.bot.keyboards import (
     admin_decision_kb,
     approved_kb,
     contact_admin_kb,
-    onboarding_date_kb,
+    exam_dates_kb,
     send_request_kb,
 )
 from app.config import settings
-from app.services import access, clock, vocab
+from app.services import access, clock, exam_dates, vocab
 
 router = Router()
 
 
 class Onb(StatesGroup):
-    other_date = State()
     contact = State()
 
 
 def _fmt(iso: str, confirmed: bool) -> str:
-    return iso if (confirmed and iso) else "ще не підтверджена"
+    return exam_dates.label(iso) if (confirmed and iso) else "ще не підтверджена"
 
 
-def _parse_date(text: str) -> str:
-    """Приймає РРРР-ММ-ДД або ДД.ММ.РРРР → ISO або '' якщо не розпізнано/не майбутнє."""
-    t = text.strip()
-    parsed: date | None = None
-    try:
-        parsed = date.fromisoformat(t)
-    except ValueError:
-        parts = t.replace("/", ".").split(".")
-        if len(parts) == 3 and all(p.isdigit() for p in parts):
-            d, m, y = parts
-            try:
-                parsed = date(int(y), int(m), int(d))
-            except ValueError:
-                parsed = None
-    if parsed is None or parsed <= clock.today_local():
-        return ""
-    return parsed.isoformat()
+def _date_kb():
+    return exam_dates_kb(exam_dates.upcoming(clock.today_local()), "onb:date", with_unconfirmed=True)
 
 
 async def _approved_welcome(message: Message, user_id: int) -> None:
@@ -81,8 +64,9 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     else:  # новий
         await message.answer(
             "Cześć! 👋 Я твій тренер польської до державного іспиту <b>B1</b>.\n\n"
-            "Спершу скажи, <b>коли твій іспит</b> — щоб скласти план і надіслати запит на доступ:",
-            reply_markup=onboarding_date_kb(),
+            "Спершу скажи, <b>коли твій іспит</b> (лише офіційні сесії Держкомісії) — "
+            "щоб скласти план і надіслати запит на доступ:",
+            reply_markup=_date_kb(),
         )
 
 
@@ -90,7 +74,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 async def cb_restart(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await cb.answer()
-    await cb.message.answer("Коли твій іспит?", reply_markup=onboarding_date_kb())
+    await cb.message.answer("Коли твій іспит?", reply_markup=_date_kb())
 
 
 async def _confirm(message: Message, iso: str, confirmed: bool) -> None:
@@ -103,6 +87,9 @@ async def _confirm(message: Message, iso: str, confirmed: bool) -> None:
 @router.callback_query(F.data.startswith("onb:date:"))
 async def cb_date(cb: CallbackQuery, state: FSMContext) -> None:
     iso = cb.data.split(":", 2)[2]
+    if not exam_dates.is_official(iso):  # захист: лише офіційні дати
+        await cb.answer("Оберіть офіційну дату зі списку.", show_alert=True)
+        return
     await state.update_data(exam_date=iso, confirmed=True)
     await cb.answer()
     await _confirm(cb.message, iso, True)
@@ -112,25 +99,36 @@ async def cb_date(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_unconfirmed(cb: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(exam_date="", confirmed=False)
     await cb.answer()
-    await _confirm(cb.message, "", False)
+    await cb.message.answer(
+        "❔ Дата ще не підтверджена → доступ на <b>6 місяців</b>. За цей час зареєструйся "
+        "на іспит і познач дату («📅 Вказати дату іспиту») — якщо вона далі, доступ подовжимо.\n\n"
+        "Надіслати запит адміну?",
+        reply_markup=send_request_kb(),
+    )
 
 
-@router.callback_query(F.data == "onb:other")
-async def cb_other(cb: CallbackQuery, state: FSMContext) -> None:
-    await state.set_state(Onb.other_date)
+# --- Оновлення/підтвердження дати іспиту (для схвалених) ---
+@router.callback_query(F.data == "onb:setdate")
+async def cb_setdate(cb: CallbackQuery) -> None:
     await cb.answer()
-    await cb.message.answer("Введи дату іспиту: <b>РРРР-ММ-ДД</b> (напр. 2026-12-05) або ДД.ММ.РРРР:")
+    await cb.message.answer(
+        "Обери офіційну дату свого іспиту:",
+        reply_markup=exam_dates_kb(exam_dates.upcoming(clock.today_local()), "onb:exam"),
+    )
 
 
-@router.message(Onb.other_date, F.text)
-async def on_other_date(message: Message, state: FSMContext) -> None:
-    iso = _parse_date(message.text)
-    if not iso:
-        await message.answer("Не зрозумів дату 😕 Формат: 2026-12-05 (майбутня). Спробуй ще:")
+@router.callback_query(F.data.startswith("onb:exam:"))
+async def cb_examdate(cb: CallbackQuery) -> None:
+    iso = cb.data.split(":", 2)[2]
+    if not exam_dates.is_official(iso):
+        await cb.answer("Оберіть офіційну дату зі списку.", show_alert=True)
         return
-    await state.set_state(None)
-    await state.update_data(exam_date=iso, confirmed=True)
-    await _confirm(message, iso, True)
+    until = await access.set_exam_date(cb.from_user.id, iso)
+    await cb.answer()
+    await cb.message.answer(
+        f"✅ Дату іспиту збережено: <b>{exam_dates.label(iso)}</b>."
+        + (f"\nДоступ активний до <b>{until}</b>." if until else "")
+    )
 
 
 @router.callback_query(F.data == "onb:send")

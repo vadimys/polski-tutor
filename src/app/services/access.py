@@ -30,6 +30,19 @@ def compute_access_until(exam_date: str, confirmed: bool, today: date) -> date:
     return exam if exam > six else six
 
 
+def extend_until(current_until: str, exam_date: str) -> str:
+    """Подовжити доступ до дати іспиту, якщо вона ПІЗНІШЕ за поточний кінець.
+
+    Сценарій: доступ дали на 6 міс (дата не підтв.); користувач зареєструвався й
+    дав реальну дату — якщо вона за межами поточного вікна, продовжуємо до неї.
+    """
+    if not exam_date:
+        return current_until
+    if not current_until:
+        return exam_date
+    return max(current_until, exam_date)
+
+
 @dataclass
 class AccessInfo:
     status: str  # new / pending / approved / denied
@@ -86,6 +99,20 @@ async def approve(user_id: int) -> str:
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
         return until.isoformat()
+
+
+async def set_exam_date(user_id: int, exam_date: str) -> str:
+    """Підтвердити дату іспиту; подовжити доступ до неї, якщо треба. Повертає новий until."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            return ""
+        u.exam_date = exam_date
+        u.exam_date_confirmed = True
+        if u.access_status == "approved":
+            u.access_until = extend_until(u.access_until, exam_date)
+        await s.commit()
+        return u.access_until
 
 
 async def deny(user_id: int) -> None:

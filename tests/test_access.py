@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from app.services.access import SIX_MONTHS_DAYS, compute_access_until
+from app.services.access import SIX_MONTHS_DAYS, compute_access_until, extend_until
 
 TODAY = date(2026, 7, 1)
 SIX = TODAY + timedelta(days=SIX_MONTHS_DAYS)
@@ -26,3 +26,16 @@ def test_confirmed_exactly_uses_max():
 
 def test_invalid_date_falls_back_to_six_months():
     assert compute_access_until("не-дата", True, TODAY) == SIX
+
+
+def test_extend_until_prolongs_to_later_exam():
+    # доступ до 2026-12-30 (6 міс), зареєструвався на пізніший іспит → подовжуємо
+    assert extend_until("2026-12-30", "2027-06-01") == "2027-06-01"
+
+
+def test_extend_until_keeps_window_if_exam_earlier():
+    assert extend_until("2027-06-01", "2026-12-05") == "2027-06-01"
+
+
+def test_extend_until_no_exam_keeps_current():
+    assert extend_until("2026-12-30", "") == "2026-12-30"

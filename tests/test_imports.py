@@ -17,6 +17,7 @@ MODULES = [
     "app.db.base",
     "app.db.models",
     "app.services.access",
+    "app.services.exam_dates",
     "app.bot.keyboards",
     "app.bot.ui",
     "app.bot.access_mw",

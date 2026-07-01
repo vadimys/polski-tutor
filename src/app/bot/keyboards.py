@@ -13,13 +13,17 @@ def start_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def onboarding_date_kb() -> InlineKeyboardMarkup:
-    """Вибір дати іспиту (офіційні сесії 2026) або «не підтверджена»."""
+def exam_dates_kb(
+    sessions: list[str], prefix: str, with_unconfirmed: bool = False
+) -> InlineKeyboardMarkup:
+    """Кнопки лише з ОФІЦІЙНИХ дат сесій. prefix — onb:date (онбординг) / onb:exam (оновлення)."""
+    from app.services import exam_dates
+
     kb = InlineKeyboardBuilder()
-    kb.button(text="📅 5 грудня 2026", callback_data="onb:date:2026-12-05")
-    kb.button(text="📅 17 жовтня 2026", callback_data="onb:date:2026-10-17")
-    kb.button(text="✏️ Інша дата", callback_data="onb:other")
-    kb.button(text="❔ Дата ще не підтверджена", callback_data="onb:unconfirmed")
+    for iso in sessions:
+        kb.button(text=f"📅 {exam_dates.label(iso)}", callback_data=f"{prefix}:{iso}")
+    if with_unconfirmed:
+        kb.button(text="❔ Дата ще не підтверджена", callback_data="onb:unconfirmed")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -50,6 +54,7 @@ def admin_decision_kb(user_id: int) -> InlineKeyboardMarkup:
 def approved_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="▶️ Пройти стартовий тест", callback_data="placement:start")
+    kb.button(text="📅 Вказати/змінити дату іспиту", callback_data="onb:setdate")
     kb.button(text="📋 Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()
