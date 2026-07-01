@@ -12,6 +12,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
 
 from app.config import settings
+from app.db.migrate_legacy import migrate_from_redis
 from app.handlers import (
     drills,
     lesson,
@@ -65,6 +66,10 @@ async def main() -> None:
     dp.include_router(listening.router)
     dp.include_router(mock.router)
     dp.include_router(menu.router)
+
+    migrated = await migrate_from_redis()
+    if migrated:
+        logger.info("Мігровано %d користувачів Redis→Postgres", migrated)
 
     await bot.set_my_commands(COMMANDS)
     logger.info(

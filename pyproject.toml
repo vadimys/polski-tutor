@@ -12,6 +12,9 @@ dependencies = [
     "tzdata>=2024.1",
     "faster-whisper>=1.0",
     "piper-tts>=1.2",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    "alembic>=1.13",
 ]
 
 [project.optional-dependencies]

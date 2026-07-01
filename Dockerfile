@@ -26,7 +26,8 @@ RUN mkdir -p /opt/voices && cd /opt/voices \
     && chmod -R a+rX /opt/voices
 
 # 4) Застосунок — лише цей шар рерраниться при зміні коду (deps/моделі кешовані)
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md alembic.ini ./
+COPY migrations ./migrations
 COPY src ./src
 RUN pip install --no-cache-dir --no-deps .
 

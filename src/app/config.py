@@ -18,8 +18,12 @@ class Settings(BaseSettings):
     strong_model: str = "claude-sonnet-4-6"
     cheap_model: str = "claude-haiku-4-5-20251001"
 
+    # Адмін (єдиний адмін-акаунт — для запитів на доступ)
+    admin_id: int = 0
+
     # Інфра
     redis_url: str = "redis://redis:6379/0"
+    database_url: str = "postgresql+asyncpg://polski:polski@postgres:5432/polski"
 
     # Whisper (локальне розпізнавання голосу для модуля Mówienie)
     whisper_model: str = "small"
