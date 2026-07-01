@@ -94,10 +94,7 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
             f"• Poprawność językowa: <b>{popr}</b>/10\n"
             f"• <b>Разом: {total}/30</b> — поріг 15/30 ({passed})\n\n"
         )
-        st = await user_state.load(message.from_user.id)
         pct = round(total / 30 * 100)
-        old = st.readiness.get(Module.PISANIE.value, pct)
-        st.readiness[Module.PISANIE.value] = round((old + pct) / 2)
-        await user_state.save(st)
+        await user_state.update_readiness(message.from_user.id, Module.PISANIE.value, pct)
 
     await message.answer(header + fb, reply_markup=to_menu_kb())

@@ -111,11 +111,7 @@ async def _finalize(
     await state.clear()
     pct = round(correct / total * 100) if total else 0
     passed = "✅ склав би модуль" if pct >= 50 else "❌ поки нижче порога (50%)"
-    st = await user_state.load(user_id)
-    mod = _SECTION_MODULE[section]
-    old = st.readiness.get(mod.value, pct)
-    st.readiness[mod.value] = round((old + pct) / 2)
-    await user_state.save(st)
+    await user_state.update_readiness(user_id, _SECTION_MODULE[section].value, pct)
     await message.answer(
         f"🏁 <b>{_SECTION_LABEL[section]} — результат: {correct}/{total} ({pct}%)</b>\n"
         f"{passed}. Готовність оновлено.",

@@ -43,3 +43,14 @@ async def save(state: UserState) -> None:
 async def all_user_ids() -> list[int]:
     ids = await _r().smembers(USERS_KEY)
     return [int(i) for i in ids]
+
+
+async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
+    """Згладжене оновлення готовності модуля (середнє старого й нового значення).
+
+    Єдине джерело правди для всіх вправ (письмо/мовлення/тренування/мок/аудіювання).
+    """
+    st = await load(user_id)
+    old = st.readiness.get(module_value, pct)
+    st.readiness[module_value] = round((old + pct) / 2)
+    await save(st)

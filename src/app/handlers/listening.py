@@ -120,10 +120,7 @@ async def _finalize(
 ) -> None:
     await state.clear()
     pct = round(correct / total * 100) if total else 0
-    st = await user_state.load(user_id)
-    old = st.readiness.get(Module.SLUCHANIE.value, pct)
-    st.readiness[Module.SLUCHANIE.value] = round((old + pct) / 2)
-    await user_state.save(st)
+    await user_state.update_readiness(user_id, Module.SLUCHANIE.value, pct)
     emoji = "🎉" if pct >= 80 else "👍" if pct >= 50 else "💪"
     await message.answer(
         f"{emoji} <b>Аудіювання: {correct}/{total} ({pct}%)</b>\nГотовність Słuchanie оновлено.",

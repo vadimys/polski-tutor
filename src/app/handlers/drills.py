@@ -102,10 +102,7 @@ async def _finalize(
 ) -> None:
     await state.clear()
     score = round(correct / total * 100) if total else 0
-    st = await user_state.load(user_id)
-    old = st.readiness.get(section, score)
-    st.readiness[section] = round((old + score) / 2)
-    await user_state.save(st)
+    await user_state.update_readiness(user_id, section, score)
     emoji = "🎉" if score >= 80 else "👍" if score >= 50 else "💪"
     await message.answer(
         f"{emoji} <b>Результат: {correct}/{total} ({score}%)</b>\n"

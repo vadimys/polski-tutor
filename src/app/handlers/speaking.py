@@ -136,10 +136,7 @@ async def on_voice(message: Message, state: FSMContext) -> None:
             f"• Słownictwo i styl: <b>{slow}</b>/8\n"
             "• Poprawność fonetyczna i płynność: лише на аудіо (не з тексту)\n\n"
         )
-        st = await user_state.load(message.from_user.id)
-        old = st.readiness.get(Module.MOWIENIE.value, pct)
-        st.readiness[Module.MOWIENIE.value] = round((old + pct) / 2)
-        await user_state.save(st)
+        await user_state.update_readiness(message.from_user.id, Module.MOWIENIE.value, pct)
 
     await message.answer(header + fb, reply_markup=to_menu_kb())
 
