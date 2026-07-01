@@ -1,0 +1,29 @@
+from app.domain.models import Module
+from app.handlers import lesson
+
+
+def test_parse_lesson_valid_with_code_fence():
+    raw = (
+        '```json\n{"topic":"T","grammar":"G",'
+        '"vocab":[{"pl":"kot","ua":"кіт","example":"To kot."}],"task":"zrób to"}\n```'
+    )
+    out = lesson._parse_lesson(raw, Module.PISANIE)
+    assert out is not None
+    assert out["topic"] == "T" and out["vocab_n"] == 1
+    assert "kot" in out["vocab"] and out["task"] == "zrób to"
+    assert out["module"] == "pisanie"
+
+
+def test_parse_lesson_invalid_returns_none():
+    assert lesson._parse_lesson("not json at all", Module.PISANIE) is None
+    assert lesson._parse_lesson('{"topic":"x"}', Module.PISANIE) is None  # бракує полів
+
+
+def test_fallback_lesson_has_all_fields():
+    fb = lesson._fallback_lesson(Module.GRAMATYKA)
+    assert {"topic", "grammar", "vocab", "task", "vocab_n", "module", "label"} <= fb.keys()
+
+
+def test_exercise_cb_covers_every_module():
+    for m in Module:
+        assert m.value in lesson._EXERCISE_CB  # кнопка «Виконати» знає, куди вести кожен модуль
