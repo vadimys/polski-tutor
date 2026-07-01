@@ -75,7 +75,8 @@ def _vocab_html(items: list) -> str:
         if not isinstance(w, dict):
             continue
         pl, ua, ex = w.get("pl", ""), w.get("ua", ""), w.get("example", "")
-        lines.append(f"🔑 <b>{html.escape(str(pl))}</b> — {html.escape(str(ua))}")
+        # переклад ховаємо під spoiler — спершу пригадай сам, тоді тапни
+        lines.append(f"🔑 <b>{html.escape(str(pl))}</b> — <tg-spoiler>{html.escape(str(ua))}</tg-spoiler>")
         if ex:
             lines.append(f"📌 {html.escape(str(ex))}")
     return "\n".join(lines)

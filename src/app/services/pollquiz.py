@@ -15,7 +15,7 @@ import json
 from typing import Any
 
 from aiogram import Bot
-from aiogram.types import InputPollOption
+from aiogram.types import BufferedInputFile, InputPollOption
 from redis.asyncio import Redis
 
 from app.config import settings
@@ -53,8 +53,24 @@ def fits(items: list[dict[str, Any]]) -> bool:
 
 
 async def send_item(bot: Bot, session: dict[str, Any]) -> None:
-    """Надсилає quiz-poll для поточного item і зберігає контекст під його poll_id."""
+    """Надсилає quiz-poll для поточного item і зберігає контекст під його poll_id.
+
+    Якщо item має 'audio' (аудіювання) — спершу програє голос (piper TTS).
+    """
     item = session["items"][session["idx"]]
+    audio = item.get("audio")
+    if audio:
+        from app.integrations import tts
+
+        data = await tts.synthesize(audio)
+        if data:
+            await bot.send_voice(
+                session["chat_id"],
+                BufferedInputFile(data, filename="sluchanie.ogg"),
+                caption="🎧 Прослухай (можна кілька разів), тоді відповідай.",
+            )
+        else:
+            await bot.send_message(session["chat_id"], f"🔇 (аудіо недоступне — прочитай)\n\n{audio}")
     total = len(session["items"])
     question = f"{session['idx'] + 1}/{total} · {item['q']}"
     explanation = (item.get("explain") or "").strip()[:_EXPL_MAX] or None

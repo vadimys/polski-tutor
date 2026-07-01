@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import random
 from datetime import date
 
 from redis.asyncio import Redis
@@ -113,3 +114,34 @@ async def counts(user_id: int, today: date) -> tuple[int, int]:
 async def count(user_id: int) -> int:
     """Скільки всього слів у наборі повторень (для GDPR-експорту)."""
     return await _r().hlen(_key(user_id))
+
+
+async def all_pairs(user_id: int) -> list[tuple[str, str]]:
+    """Усі пари (pl, uk) користувача — для дистракторів у вікторині."""
+    data = await _r().hgetall(_key(user_id))
+    return [(pl, json.loads(raw)["uk"]) for pl, raw in data.items()]
+
+
+def quiz_items(due: list[tuple[str, str]], pool: list[tuple[str, str]]) -> list[dict]:
+    """MCQ-питання «обери переклад» з дистракторами з наявного словника.
+
+    Кожен item: q, opts (правильний + до 3 хибних), correct (індекс), key=pl (для SRS).
+    Пропускає слово, якщо не набирається щонайменше 2 варіанти.
+    """
+    all_uk = [uk for _, uk in pool]
+    items: list[dict] = []
+    for pl, uk in due:
+        distractors = list(dict.fromkeys(u for u in all_uk if u != uk))  # унікальні, крім правильного
+        random.shuffle(distractors)
+        opts = [uk, *distractors[:3]]
+        if len(opts) < 2:
+            continue
+        random.shuffle(opts)
+        items.append({
+            "q": f"Що означає «{pl}»?",
+            "opts": opts,
+            "correct": opts.index(uk),
+            "explain": f"{pl} — {uk}",
+            "key": pl,
+        })
+    return items

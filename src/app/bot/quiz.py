@@ -13,7 +13,7 @@ from __future__ import annotations
 import html
 from contextlib import suppress
 
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, ReactionTypeEmoji
 
 
 def parse_answer(data: str) -> tuple[int, int] | None:
@@ -63,4 +63,9 @@ async def show_verdict(
     ok = chosen == correct
     await cb.message.edit_text(verdict_card(question, chosen, correct, options, explain))
     await cb.answer("✔️" if ok else "❌")
+    if ok:  # маленька гейміфікація — реакція на правильну відповідь
+        with suppress(Exception):
+            await cb.bot.set_message_reaction(
+                cb.message.chat.id, cb.message.message_id, [ReactionTypeEmoji(emoji="🔥")]
+            )
     return ok

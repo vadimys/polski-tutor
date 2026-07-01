@@ -11,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import menu_kb, review_grade_kb, review_show_kb, to_menu_kb
-from app.services import clock, vocab
+from app.services import clock, pollquiz, vocab
 
 router = Router()
 
@@ -40,7 +40,21 @@ async def _start(message: Message, user_id: int, state: FSMContext) -> None:
             reply_markup=menu_kb(),
         )
         return
-    words = [it.pl for it in items][:SESSION_CAP]
+    due_pairs = [(it.pl, it.uk) for it in items][:SESSION_CAP]
+    pool = await vocab.all_pairs(user_id)
+    quiz = vocab.quiz_items(due_pairs, pool)
+    if quiz and pollquiz.fits(quiz):  # вікторина «обери переклад» (нативні quiz-poll)
+        await message.answer(
+            f"🔁 <b>Повторення</b> — {len(quiz)} слів. Обери правильний переклад у quiz нижче 👇"
+        )
+        await pollquiz.start(
+            message.bot, chat_id=message.chat.id, user_id=user_id, kind="srs",
+            items=quiz, title="🔁 Повторення",
+        )
+        return
+
+    # fallback: старий flashcard (замало слів для дистракторів)
+    words = [pl for pl, _ in due_pairs]
     await state.set_state(Review.active)
     await state.update_data(words=words, idx=0, known=0)
     await _send_word(message, words[0], 1, len(words))
