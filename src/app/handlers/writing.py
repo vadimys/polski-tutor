@@ -9,8 +9,9 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import example_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.services import guidance, limits, writing
 from app.services import state as user_state
@@ -26,6 +27,10 @@ class Writing(StatesGroup):
     await_b = State()
 
 
+class GuidedW(StatesGroup):
+    active = State()  # керована практика письма (офіційний лист крок-за-кроком)
+
+
 async def _give_set(message: Message, state: FSMContext) -> None:
     ws = writing.pick_set()
     await state.set_state(Writing.await_a)
@@ -38,10 +43,14 @@ async def _give_set(message: Message, state: FSMContext) -> None:
     )
     a_req = writing.GENRE_REQ.get(ws.a.genre, "—")
     b_req = writing.GENRE_REQ.get(ws.b.genre, "—")
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📝 Показати зразок", callback_data="guide:wr")
+    kb.button(text="🪜 Пройти по кроках", callback_data="guidew:start")
+    kb.adjust(1)
     await message.answer(
         guidance.writing_instruction(ws.a.genre, a_req, ws.a.words, ws.b.genre, b_req, ws.b.words)
         + "\n\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням. (/menu — вийти)",
-        reply_markup=example_kb("guide:wr"),
+        reply_markup=kb.as_markup(),
     )
 
 
@@ -60,6 +69,52 @@ async def cb_writing(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_example(cb: CallbackQuery) -> None:
     await cb.answer()
     await cb.message.answer(guidance.writing_example())
+
+
+# --- Керована практика письма (офіційний лист крок-за-кроком) ---
+
+
+@router.callback_query(F.data == "guidew:start")
+async def cb_guided_start(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    await state.set_state(GuidedW.active)
+    await state.update_data(gw_step=0, gw_lines=[])
+    await cb.message.answer(
+        "🪜 <b>Керована практика — офіційний лист</b>\n"
+        "Складемо лист по частинах, а потім виконаєш справжнє завдання на оцінку."
+    )
+    await cb.message.answer(guidance.writing_step(0))
+
+
+@router.message(GuidedW.active, F.text, ~F.text.startswith("/"))
+async def on_guided_step(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    step = int(data.get("gw_step", 0))
+    lines = list(data.get("gw_lines", []))
+    if len(message.text.strip()) < 2:
+        await message.answer("Напиши, будь ласка, цю частину польською 🙂")
+        return
+    lines.append(message.text.strip())
+    step += 1
+    if step < guidance.WRITING_STEPS_N:
+        await state.update_data(gw_step=step, gw_lines=lines)
+        await message.answer("✅ Прийнято.")
+        await message.answer(guidance.writing_step(step))
+        return
+
+    await state.clear()
+    letter = "\n".join(html.escape(ln) for ln in lines)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✍️ Виконати офіційне завдання й здати", callback_data="writing:start")
+    kb.button(text="🏠 Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await message.answer(
+        "🎉 <b>Готово!</b> Ось твій лист із 4 частин:\n\n"
+        f"{letter}\n\n"
+        "ℹ️ Це <b>тренування</b> — у готовність не зараховується. Щоб підняти готовність — "
+        "виконай <b>офіційне завдання</b> модуля Pisanie й здай на перевірку 👇",
+        reply_markup=kb.as_markup(),
+    )
 
 
 @router.message(Writing.await_a, F.text, ~F.text.startswith("/"))

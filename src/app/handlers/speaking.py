@@ -46,7 +46,7 @@ async def _give_task(message: Message, state: FSMContext) -> None:
     label = speaking._KIND_LABEL[task.kind]
     await state.set_state(Speaking.waiting)
     await state.update_data(task_id=task.id)
-    if task.kind == "sytuacja":  # ситуація → пропонуємо ще й керовану практику
+    if guidance.guided_available(task.kind):  # усі типи мовлення → є керована практика
         kb = InlineKeyboardBuilder()
         kb.button(text="📝 Показати зразок", callback_data=f"guide:spk:{task.kind}")
         kb.button(text="🪜 Пройти по кроках", callback_data=f"guided:start:{task.id}")
@@ -79,10 +79,11 @@ async def _give_photo(message: Message, state: FSMContext) -> None:
             f"🎤 Запиши <b>голосове</b> польською. (<i>{html.escape(task.photo_source)}</i>)"
         ),
     )
-    await message.answer(
-        guidance.speaking_instruction("opis"),
-        reply_markup=example_kb("guide:spk:opis"),
-    )
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📝 Показати зразок", callback_data="guide:spk:opis")
+    kb.button(text="🪜 Пройти по кроках", callback_data=f"guided:start:{task.id}")
+    kb.adjust(1)
+    await message.answer(guidance.speaking_instruction("opis"), reply_markup=kb.as_markup())
 
 
 @router.message(Command("mowienie"))
@@ -126,18 +127,25 @@ async def cb_guided_start(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.answer("Завдання загубилось — почни знову: /mowienie")
         return
     await state.set_state(Guided.active)
-    await state.update_data(task_id=task_id, step=0, lines=[])
-    await cb.message.answer(
-        "🪜 <b>Керована практика</b> — пройдемо ситуацію по кроках, а наприкінці складеш усе "
-        "разом і запишеш голосом.\n\n"
-        f"🎭 <b>Ситуація:</b>\n{html.escape(task.prompt)}"
-    )
-    await cb.message.answer(guidance.sytuacja_step(0))
+    await state.update_data(task_id=task_id, kind=task.kind, step=0, lines=[])
+    if task.kind == "opis" and task.photo_url:
+        await cb.message.answer_photo(
+            task.photo_url,
+            caption="🪜 <b>Керована практика</b> — опишемо фото по кроках, наприкінці запишеш усе голосом.",
+        )
+    else:
+        await cb.message.answer(
+            "🪜 <b>Керована практика</b> — пройдемо по кроках, а наприкінці складеш усе "
+            "разом і запишеш голосом.\n\n"
+            f"🎭 <b>Завдання:</b>\n{html.escape(task.prompt)}"
+        )
+    await cb.message.answer(guidance.guided_speak_step(task.kind, 0))
 
 
 @router.message(Guided.active, F.text, ~F.text.startswith("/"))
 async def on_guided_step(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
+    kind = data.get("kind", "sytuacja")
     step = int(data.get("step", 0))
     lines = list(data.get("lines", []))
     task_id = data.get("task_id", "")
@@ -146,10 +154,10 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
         return
     lines.append(message.text.strip())
     step += 1
-    if step < guidance.SYTUACJA_STEPS_N:
+    if step < guidance.guided_speak_n(kind):
         await state.update_data(step=step, lines=lines)
         await message.answer("✅ Прийнято.")
-        await message.answer(guidance.sytuacja_step(step))
+        await message.answer(guidance.guided_speak_step(kind, step))
         return
 
     await state.clear()
@@ -177,10 +185,19 @@ async def cb_guided_record(cb: CallbackQuery, state: FSMContext) -> None:
         return
     await state.set_state(Speaking.waiting)
     await state.update_data(task_id=task_id)
-    await cb.message.answer(
-        f"🎤 Запиши <b>голосове</b> польською за цією ситуацією:\n\n{html.escape(task.prompt)}\n\n"
-        "Оціню за офіційними критеріями — і це піде в прогрес."
-    )
+    if task.kind == "opis" and task.photo_url:
+        await cb.message.answer_photo(
+            task.photo_url,
+            caption=(
+                "🎤 Тепер опиши це фото <b>голосом</b> самостійно.\n"
+                "Оціню за офіційними критеріями — і це піде в прогрес."
+            ),
+        )
+    else:
+        await cb.message.answer(
+            f"🎤 Запиши <b>голосове</b> польською за завданням:\n\n{html.escape(task.prompt)}\n\n"
+            "Оціню за офіційними критеріями — і це піде в прогрес."
+        )
 
 
 @router.message(Speaking.waiting, F.voice)

@@ -133,33 +133,83 @@ def speaking_example(kind: str) -> str:
     return g.example if g is not None else "Зразок для цього завдання недоступний."
 
 
-# --- Керована практика: комунікативна ситуація (Zadanie 3), 5 кроків ---
+# --- Керована практика (крок-за-кроком) для продуктивних завдань ---
 
-SYTUACJA_STEPS: list[tuple[str, list[str]]] = [
-    ("Крок 1/5 — Відреагуй на співрозмовника: привітайся і визнай його ідею.",
-     ["Cześć! / Dzień dobry!", "Rozumiem, że chcesz…", "Wiem, że masz ochotę na…"]),
-    ("Крок 2/5 — Скажи, чого хочеш ТИ (своя позиція).",
-     ["Ale ja wolałbym / wolałabym…", "Wolę raczej…", "Mnie bardziej pasuje…"]),
-    ("Крок 3/5 — Наведи аргумент: чому це для тебе важливо/зручно.",
-     ["…bo… (…бо…)", "Dlatego że…", "Zależy mi na tym, ponieważ…"]),
-    ("Крок 4/5 — Запропонуй компроміс.",
-     ["Może zrobimy tak, że…?", "Proponuję kompromis:…", "A gdybyśmy…?"]),
-    ("Крок 5/5 — Підсумуй домовленість і спитай згоди.",
-     ["Umówmy się, że…", "Czyli robimy tak:…", "Co o tym myślisz? / Pasuje Ci?"]),
+# Кроки для мовлення за типом завдання (інструкція + банк фраз на кожен крок)
+_GUIDED_SPEAK: dict[str, list[tuple[str, list[str]]]] = {
+    "sytuacja": [
+        ("Крок 1/5 — Відреагуй на співрозмовника: привітайся і визнай його ідею.",
+         ["Cześć! / Dzień dobry!", "Rozumiem, że chcesz…", "Wiem, że masz ochotę na…"]),
+        ("Крок 2/5 — Скажи, чого хочеш ТИ (своя позиція).",
+         ["Ale ja wolałbym / wolałabym…", "Wolę raczej…", "Mnie bardziej pasuje…"]),
+        ("Крок 3/5 — Наведи аргумент: чому це для тебе важливо/зручно.",
+         ["…bo… (…бо…)", "Dlatego że…", "Zależy mi na tym, ponieważ…"]),
+        ("Крок 4/5 — Запропонуй компроміс.",
+         ["Może zrobimy tak, że…?", "Proponuję kompromis:…", "A gdybyśmy…?"]),
+        ("Крок 5/5 — Підсумуй домовленість і спитай згоди.",
+         ["Umówmy się, że…", "Czyli robimy tak:…", "Co o tym myślisz? / Pasuje Ci?"]),
+    ],
+    "monolog": [
+        ("Крок 1/4 — Вступ: назви тему й свою тезу (про що говоритимеш).",
+         ["Chciałbym opowiedzieć o…", "Moim zdaniem…", "Ten temat jest ważny, bo…"]),
+        ("Крок 2/4 — Перша думка + приклад.",
+         ["Po pierwsze,…", "Na przykład…", "Widać to, gdy…"]),
+        ("Крок 3/4 — Друга думка + приклад.",
+         ["Po drugie,…", "Poza tym,…", "Innym przykładem jest…"]),
+        ("Крок 4/4 — Висновок: підсумок і власна позиція.",
+         ["Podsumowując,…", "Dlatego uważam, że…", "Właśnie dlatego…"]),
+    ],
+    "opis": [
+        ("Крок 1/5 — Загальний план: що зображено й де.",
+         ["Na zdjęciu widzę…", "Zdjęcie przedstawia…", "To jest…"]),
+        ("Крок 2/5 — Особи: хто, зовнішність, емоції.",
+         ["Na pierwszym planie…", "Widać osoby, które…", "Wyglądają na…"]),
+        ("Крок 3/5 — Дії: що люди роблять.",
+         ["Oni właśnie…", "W tym momencie…", "Wydaje się, że…"]),
+        ("Крок 4/5 — Деталі: кольори, пора, задній план.",
+         ["W tle…", "Dominują kolory…", "Prawdopodobnie jest to…"]),
+        ("Крок 5/5 — Припущення / враження.",
+         ["Myślę, że…", "Być może…", "Całość sprawia wrażenie…"]),
+    ],
+}
+
+# Кроки для письма — універсальний офіційний лист (найпоширеніший і найстрашніший жанр)
+_WRITING_STEPS: list[tuple[str, list[str]]] = [
+    ("Крок 1/4 — Шапка: місце й дата (справа вгорі) + звертання.",
+     ["Warszawa, 1.07.2026", "Szanowni Państwo,", "Szanowny Panie / Szanowna Pani,"]),
+    ("Крок 2/4 — Вступ: мета звернення.",
+     ["Zwracam się z uprzejmą prośbą o…", "Piszę w sprawie…", "Chciałbym / Chciałabym zapytać o…"]),
+    ("Крок 3/4 — Розвиток: суть, деталі, аргументи (2–3 речення).",
+     ["Sytuacja wygląda następująco:…", "W związku z tym…", "Załączam…"]),
+    ("Крок 4/4 — Закінчення: ввічлива формула + підпис.",
+     ["Z góry dziękuję za odpowiedź.", "Z poważaniem,", "Imię i nazwisko"]),
 ]
 
-SYTUACJA_STEPS_N = len(SYTUACJA_STEPS)
 
-
-def sytuacja_step(i: int) -> str:
-    """Текст i-го кроку (0-based): інструкція + банк фраз + заклик написати репліку."""
-    instr, phrases = SYTUACJA_STEPS[i]
+def _render_step(instr: str, phrases: list[str], write_hint: str) -> str:
     ph = "\n".join(f"• {p}" for p in phrases)
-    return (
-        f"🪜 <b>{instr}</b>\n\n"
-        f"💬 Корисні фрази:\n{ph}\n\n"
-        "✍️ Напиши свою репліку польською (одним повідомленням)."
-    )
+    return f"🪜 <b>{instr}</b>\n\n💬 Корисні фрази:\n{ph}\n\n{write_hint}"
+
+
+def guided_speak_n(kind: str) -> int:
+    return len(_GUIDED_SPEAK.get(kind, []))
+
+
+def guided_speak_step(kind: str, i: int) -> str:
+    instr, phrases = _GUIDED_SPEAK[kind][i]
+    return _render_step(instr, phrases, "✍️ Напиши свою репліку польською (одним повідомленням).")
+
+
+WRITING_STEPS_N = len(_WRITING_STEPS)
+
+
+def writing_step(i: int) -> str:
+    instr, phrases = _WRITING_STEPS[i]
+    return _render_step(instr, phrases, "✍️ Напиши цю частину польською (одним повідомленням).")
+
+
+def guided_available(kind: str) -> bool:
+    return kind in _GUIDED_SPEAK
 
 
 # --- ПИСЬМО (Pisanie) ------------------------------------------------------
