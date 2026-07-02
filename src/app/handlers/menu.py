@@ -7,11 +7,12 @@ from datetime import date
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
-from app.bot.keyboards import menu_kb, to_menu_kb
+from app.bot.keyboards import menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
 from app.services import access, badges, clock, exam_dates, progress, vocab
@@ -125,3 +126,40 @@ async def cmd_progress(message: Message) -> None:
 async def cb_progress(cb: CallbackQuery) -> None:
     await _send_progress(cb.message, cb.from_user.id)
     await cb.answer()
+
+
+# --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---
+
+
+@router.message(Command("reset"))
+async def cmd_reset(message: Message) -> None:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="♻️ Так, почати заново", callback_data="reset:do")
+    kb.button(text="↩️ Скасувати", callback_data="reset:cancel")
+    kb.adjust(1)
+    await message.answer(
+        "♻️ <b>Почати навчання заново?</b>\n\n"
+        "Обнуляться: рівень, готовність усіх модулів, стрік, історія вправ і повторення слів.\n"
+        "✅ Доступ і дата іспиту <b>залишаться</b> (онбординг проходити не треба).\n\n"
+        "Це незворотно.",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data == "reset:do")
+async def cb_reset_do(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await user_state.reset_progress(cb.from_user.id)
+    await vocab.reset(cb.from_user.id)
+    await cb.answer("Готово")
+    await cb.message.answer(
+        "♻️ <b>Прогрес обнулено.</b> Починаємо з чистого аркуша!\n"
+        "Найкраще стартувати зі стартового тесту 👇",
+        reply_markup=start_kb(),
+    )
+
+
+@router.callback_query(F.data == "reset:cancel")
+async def cb_reset_cancel(cb: CallbackQuery) -> None:
+    await cb.answer("Скасовано")
+    await cb.message.answer("Ок, нічого не змінено 🙂", reply_markup=to_menu_kb())

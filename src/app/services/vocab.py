@@ -116,6 +116,11 @@ async def count(user_id: int) -> int:
     return await _r().hlen(_key(user_id))
 
 
+async def reset(user_id: int) -> None:
+    """Скинути словник (SRS) — при наступному використанні засіється наново."""
+    await _r().delete(_key(user_id))
+
+
 async def all_pairs(user_id: int) -> list[tuple[str, str]]:
     """Усі пари (pl, uk) користувача — для дистракторів у вікторині."""
     data = await _r().hgetall(_key(user_id))

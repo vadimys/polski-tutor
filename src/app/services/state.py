@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.config import settings
 from app.db.base import session_factory
@@ -54,6 +54,21 @@ async def all_user_ids() -> list[int]:
     async with session_factory()() as s:
         rows = await s.execute(select(User.id))
         return [r[0] for r in rows.all()]
+
+
+async def reset_progress(user_id: int) -> None:
+    """Обнулити НАВЧАННЯ (рівень/готовність/стрік/історія вправ), зберігши акаунт,
+    доступ і дату іспиту. Словник (SRS) скидається окремо через vocab.reset."""
+    async with session_factory()() as s:
+        await s.execute(delete(Session).where(Session.user_id == user_id))
+        u = await s.get(User, user_id)
+        if u is not None:
+            u.readiness = {}
+            u.level = ""
+            u.streak = 0
+            u.last_lesson = ""
+            u.placement_done = False
+        await s.commit()
 
 
 async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
