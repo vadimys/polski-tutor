@@ -179,9 +179,17 @@ async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
 
     lesson: dict | None = None
     if ai.enabled() and await limits.allow_ai(user_id):
-        raw = await ai.ask(_SYSTEM, _prompt(module, st.level), strong=True, max_tokens=1600)
+        # 2500 — запас над реальними ~1300–1600 токенами уроку (кирилиця дорога),
+        # щоб JSON не обривався по max_tokens і не падав у fallback.
+        raw = await ai.ask(_SYSTEM, _prompt(module, st.level), strong=True, max_tokens=2500)
         if raw:
             lesson = _parse_lesson(raw, module)
+            if lesson is None:
+                logger.warning(
+                    "Урок: AI відповів (%d симв.), але JSON не розпарсився — fallback (модуль=%s)",
+                    len(raw),
+                    module.value,
+                )
         if not raw or lesson is None:
             await limits.refund_ai(user_id)  # виклик не вдався/невалідний — не палимо квоту
     if lesson is None:
