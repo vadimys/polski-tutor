@@ -21,7 +21,28 @@ from app.services import state as user_state
 
 router = Router()
 
-_MENU_TEXT = "📋 <b>Меню</b> — обери, чим займемось:"
+async def _menu_header(user_id: int) -> str:
+    """Жива шапка меню: рівень/XP/серія + ціль дня + похід + місія дня — для мотивації."""
+    st = await user_state.load(user_id)
+    g = await goals.status(user_id)
+    days = _user_days_left(await access.info(user_id))
+    qp = quest.overall_pct(st.readiness or {})
+    gp = min(100, round(g["today"] / g["goal"] * 100)) if g["goal"] else 0
+    dm = missions.daily_mission(user_id, clock.today_local().isoformat())
+    m_done = await goals.today_count(user_id, dm["kinds"]) >= dm["n"]
+
+    streak = f"🔥 <b>{g['streak']}</b> дн" if g["streak"] else "🔥 почни серію"
+    frz = f" · 🧊{g['freeze']}" if g["freeze"] else ""
+    exam = f" · до іспиту <b>{days}</b> дн" if days is not None else ""
+    mission = f"🎲 Місія дня: {dm['desc']} <b>+{dm['xp']} XP</b>" + (" ✅" if m_done else "")
+    return (
+        "📋 <b>Меню</b>\n"
+        f"⭐ <b>Рівень {g['level']}</b> · {g['xp']} XP · {streak}{frz}\n"
+        f"🎯 Ціль дня: {g['today']}/{g['goal']} хв  {bar(gp)}" + (" ✅" if g["done"] else "") + "\n"
+        f"🗺 Похід до B1: <b>{qp}%</b>{exam}\n"
+        f"{mission}\n\n"
+        "Обери, чим займемось 👇"
+    )
 
 
 def _goal_line(g: dict) -> str:
@@ -43,13 +64,13 @@ def _user_days_left(inf) -> int | None:
 @router.message(Command("menu"))
 async def cmd_menu(message: Message, state: FSMContext) -> None:
     await state.clear()  # вихід із будь-якого активного завдання (без «протікання» стану)
-    await message.answer(_MENU_TEXT, reply_markup=menu_kb())
+    await message.answer(await _menu_header(message.from_user.id), reply_markup=menu_kb())
 
 
 @router.callback_query(F.data == "menu:home")
 async def cb_menu(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
-    await cb.message.answer(_MENU_TEXT, reply_markup=menu_kb())
+    await cb.message.answer(await _menu_header(cb.from_user.id), reply_markup=menu_kb())
     await cb.answer()
 
 
