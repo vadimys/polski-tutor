@@ -41,18 +41,24 @@ def test_menu_kb_review_button_uses_registered_callback():
     assert "review:show" not in datas  # review:show — стан-залежний rv-флоу, не вхід
 
 
-def test_parse_lesson_extracts_vocab_pl():
+def test_parse_lesson_extracts_vocab_say():
     raw = (
         '{"topic":"T","grammar":"G","task":"zrób","vocab":['
         '{"pl":"kot","ua":"кіт","example":"To kot."},'
         '{"pl":"pies","ua":"пес","example":"To pies."}]}'
     )
     out = lesson._parse_lesson(raw, Module.PISANIE)
-    assert out["vocab_pl"] == ["kot", "pies"]  # польські слова для кнопок 🔊
+    # [мітка, текст-для-озвучення] = слово + приклад
+    assert out["vocab_say"] == [["kot", "kot. To kot."], ["pies", "pies. To pies."]]
 
 
-def test_fallback_lesson_has_vocab_pl():
-    assert lesson._fallback_lesson(Module.GRAMATYKA)["vocab_pl"]  # непорожній
+def test_vocab_say_word_only_when_no_example():
+    out = lesson._vocab_say([{"pl": "dom", "ua": "дім"}])
+    assert out == [["dom", "dom"]]
+
+
+def test_fallback_lesson_has_vocab_say():
+    assert lesson._fallback_lesson(Module.GRAMATYKA)["vocab_say"]  # непорожній
 
 
 def test_section_kb_vocab_has_speak_buttons():

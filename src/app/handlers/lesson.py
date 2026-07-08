@@ -96,7 +96,6 @@ def _parse_lesson(raw: str, module: Module) -> dict | None:
     if not all(k in obj for k in ("topic", "grammar", "vocab", "task")):
         return None
     voc = obj["vocab"] if isinstance(obj["vocab"], list) else []
-    pl_words = [str(w["pl"]).strip() for w in voc if isinstance(w, dict) and w.get("pl")][:7]
     return {
         "module": module.value,
         "label": MODULE_LABELS[module],
@@ -104,9 +103,21 @@ def _parse_lesson(raw: str, module: Module) -> dict | None:
         "grammar": str(obj["grammar"]),
         "vocab": _vocab_html(voc),
         "vocab_n": len(voc),
-        "vocab_pl": pl_words,  # для кнопок 🔊 у розділі «Слова»
+        "vocab_say": _vocab_say(voc),  # [мітка, текст «слово. приклад»] для кнопок 🔊
         "task": html.escape(str(obj["task"])),
     }
+
+
+def _vocab_say(items: list) -> list[list[str]]:
+    """Пари [мітка-слово, текст-для-озвучення] — слово + приклад, щоб чути в контексті."""
+    out: list[list[str]] = []
+    for w in items[:7]:
+        if not isinstance(w, dict) or not w.get("pl"):
+            continue
+        pl = str(w["pl"]).strip()
+        ex = str(w.get("example", "")).strip()
+        out.append([pl, f"{pl}. {ex}" if ex else pl])
+    return out
 
 
 def _fallback_lesson(module: Module) -> dict:
@@ -124,7 +135,11 @@ def _fallback_lesson(module: Module) -> dict:
             "🔑 <b>sprawa</b> — справа\n📌 Poznaj stan sprawy."
         ),
         "vocab_n": 3,
-        "vocab_pl": ["wniosek", "urząd", "sprawa"],
+        "vocab_say": [
+            ["wniosek", "wniosek. Złożyłem wniosek."],
+            ["urząd", "urząd. Idę do urzędu."],
+            ["sprawa", "sprawa. Poznaj stan sprawy."],
+        ],
         "task": "Перепиши польською у минулому часі: 1) Czytam książkę 2) Idę do sklepu 3) Ona pracuje.",
     }
 
@@ -273,7 +288,9 @@ async def cb_section(cb: CallbackQuery, state: FSMContext) -> None:
     text = f"🇵🇱 <b>Урок — {lesson['label']}</b>\n➖➖➖➖➖\n{_SECTION_TITLE[section]}\n\n{body}"
     say_items: list[tuple[str, str]] | None = None
     if section == "vocab" and tts.available():  # кнопки 🔊 для кожного слова
-        say_items = [(w, await tts_say.stash(w)) for w in lesson.get("vocab_pl", []) if w]
+        say_items = [
+            (label, await tts_say.stash(text)) for label, text in lesson.get("vocab_say", []) if text
+        ]
         if say_items:
             text += "\n\n🔊 Тисни слово, щоб почути вимову."
     if section == "task":

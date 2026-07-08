@@ -5,6 +5,7 @@ from __future__ import annotations
 import html
 import logging
 import os
+import re
 import tempfile
 
 from aiogram import F, Router
@@ -16,8 +17,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
-from app.integrations import speech
-from app.services import guidance, limits, speaking
+from app.integrations import speech, tts
+from app.services import guidance, limits, speaking, tts_say
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -111,7 +112,14 @@ async def cb_photo(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_example(cb: CallbackQuery) -> None:
     kind = cb.data.split(":", 2)[2]
     await cb.answer()
-    await cb.message.answer(guidance.speaking_example(kind))
+    example = guidance.speaking_example(kind)
+    markup = None
+    if tts.available():  # 🔊 почути зразкову відповідь польською
+        plain = re.sub(r"<[^>]+>", "", example)  # без HTML-тегів для озвучення
+        kb = InlineKeyboardBuilder()
+        kb.button(text="🔊 Послухати зразок", callback_data=f"say:{await tts_say.stash(plain)}")
+        markup = kb.as_markup()
+    await cb.message.answer(example, reply_markup=markup)
 
 
 # --- Керована практика (крок-за-кроком) для комунікативної ситуації ---

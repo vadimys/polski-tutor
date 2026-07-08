@@ -148,5 +148,6 @@ def quiz_items(due: list[tuple[str, str]], pool: list[tuple[str, str]]) -> list[
             "correct": opts.index(uk),
             "explain": f"{pl} — {uk}",
             "key": pl,
+            "audio": pl,  # програти вимову слова перед варіантами (piper TTS)
         })
     return items
