@@ -27,3 +27,15 @@ def test_fallback_lesson_has_all_fields():
 def test_exercise_cb_covers_every_module():
     for m in Module:
         assert m.value in lesson._EXERCISE_CB  # кнопка «Виконати» знає, куди вести кожен модуль
+
+
+def _datas(markup):
+    return [b.callback_data for row in markup.inline_keyboard for b in row]
+
+
+def test_menu_kb_review_button_uses_registered_callback():
+    """Регрес: кнопка повторення слів шле review:start (обробляється), не мертвий review:show."""
+    fb = lesson._fallback_lesson(Module.PISANIE)
+    datas = _datas(lesson._menu_kb(fb, due_n=5))
+    assert "review:start" in datas
+    assert "review:show" not in datas  # review:show — стан-залежний rv-флоу, не вхід
