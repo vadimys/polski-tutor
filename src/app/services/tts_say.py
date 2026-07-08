@@ -8,7 +8,9 @@ callback_data обмежений 64 байтами — польську фраз
 from __future__ import annotations
 
 import hashlib
+from contextlib import suppress
 
+from aiogram import Bot
 from redis.asyncio import Redis
 
 from app.config import settings
@@ -55,3 +57,20 @@ async def lock(sid: str) -> bool:
 
 async def unlock(sid: str) -> None:
     await _r().delete(f"polski:say:lock:{sid}")
+
+
+# --- «одне голосове за раз»: попереднє прибираємо, щоб не накопичувались ---
+
+
+async def forget_voice(bot: Bot, chat_id: int) -> None:
+    """Видалити попереднє озвучене голосове в цьому чаті (якщо було)."""
+    key = f"polski:say:msg:{chat_id}"
+    mid = await _r().get(key)
+    if mid:
+        with suppress(Exception):
+            await bot.delete_message(chat_id, int(mid))
+        await _r().delete(key)
+
+
+async def remember_voice(chat_id: int, message_id: int) -> None:
+    await _r().set(f"polski:say:msg:{chat_id}", str(message_id), ex=3600)

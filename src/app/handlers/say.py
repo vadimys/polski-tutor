@@ -25,8 +25,10 @@ async def cb_say(cb: CallbackQuery) -> None:
     fid = await tts_say.get_file_id(sid)
     if fid:
         await cb.answer()
+        await tts_say.forget_voice(cb.bot, cb.message.chat.id)  # прибрати попереднє
         with suppress(Exception):
-            await cb.message.answer_voice(fid)
+            msg = await cb.message.answer_voice(fid)
+            await tts_say.remember_voice(cb.message.chat.id, msg.message_id)
         return
 
     text = await tts_say.fetch(sid)
@@ -50,8 +52,10 @@ async def cb_say(cb: CallbackQuery) -> None:
         if not data:
             await cb.message.answer("Не вдалось озвучити 😔 Спробуй ще раз.")
             return
+        await tts_say.forget_voice(cb.bot, cb.message.chat.id)  # прибрати попереднє
         msg = await cb.message.answer_voice(BufferedInputFile(data, filename="say.ogg"))
-        if msg and msg.voice:  # закешувати file_id для миттєвого повтору
+        if msg.voice:  # закешувати file_id для миттєвого повтору
             await tts_say.set_file_id(sid, msg.voice.file_id)
+        await tts_say.remember_voice(cb.message.chat.id, msg.message_id)
     finally:
         await tts_say.unlock(sid)

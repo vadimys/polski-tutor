@@ -71,6 +71,7 @@ async def cb_topic(cb: CallbackQuery, state: FSMContext) -> None:
 
 
 async def _render_card(msg: Message, state: FSMContext, reveal: bool) -> None:
+    await tts_say.forget_voice(msg.bot, msg.chat.id)  # прибрати голосове попереднього слова
     data = await state.get_data()
     words, idx, topic = data["words"], data["idx"], data["topic"]
     w = words[idx]
