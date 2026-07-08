@@ -14,7 +14,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import quiz
 from app.bot.keyboards import menu_kb, mock_kb, mock_menu_kb, to_menu_kb
 from app.domain.models import Module
-from app.services import mock
+from app.services import mock, progress
 from app.services import state as user_state
 
 router = Router()
@@ -111,6 +111,7 @@ async def _finalize(
     pct = round(correct / total * 100) if total else 0
     passed = "✅ склав би модуль" if pct >= 50 else "❌ поки нижче порога (50%)"
     await user_state.update_readiness(user_id, _SECTION_MODULE[section].value, pct)
+    await progress.record_mock_pass(user_id, section, pct)  # гейт готовності «під іспитом»
     await message.answer(
         f"🏁 <b>{_SECTION_LABEL[section]} — результат: {correct}/{total} ({pct}%)</b>\n"
         f"{passed}. Готовність оновлено.",

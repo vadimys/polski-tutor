@@ -88,12 +88,13 @@ async def cb_cancel(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.message.answer("🚫 Скасовано. Повертаю в меню 👇", reply_markup=menu_kb())
 
 
-async def _render_progress(user_id: int) -> str:
+async def _render_progress(user_id: int, stats: dict) -> str:
     st = await user_state.load(user_id)
     inf = await access.info(user_id)
     days_left = _user_days_left(inf)
     total_words, due_n = await vocab.counts(user_id, clock.today_local())
     total_sessions, last7 = await progress.counts(user_id)
+    r = progress.pcts(stats)
 
     exam_line = f"📅 До іспиту: <b>{days_left}</b> днів" if days_left is not None else "📅 Дата іспиту не підтверджена"
     g = await goals.status(user_id)
@@ -108,28 +109,40 @@ async def _render_progress(user_id: int) -> str:
         f"🏋️ Вправ усього: <b>{total_sessions}</b> · за 7 днів: <b>{last7}</b>",
         f"📚 Слова: <b>{total_words}</b> · на повторення: <b>{due_n}</b>\n",
     ]
-    if st.readiness:
-        lines.append("<b>Готовність за модулями</b> (мета — 50%, зі стрілкою тренду):")
+    if any(s.attempts for s in stats.values()):
+        lines.append("<b>Готовність за модулями</b> (обсяг × регулярність × свіжість):")
         for mod in Module:
-            pct = st.readiness.get(mod.value, 0)
-            mark = "✅" if pct >= 50 else "🔸"
-            arrow = progress.trend(await progress.recent_scores(user_id, mod.value))
-            lines.append(f"{mark} {MODULE_LABELS[mod]} {arrow}\n  {bar(pct)}")
-        lines.append("\n" + progress.projection(st.readiness, days_left is not None, days_left))
+            s = stats[mod.value]
+            if s.attempts == 0:
+                lines.append(f"❔ {MODULE_LABELS[mod]} — ще не виміряно")
+                continue
+            mark = "✅" if s.mastered else "🔸"
+            hint = "" if (s.attempts >= 8 and s.days >= 3) else "  <i>мало практики</i>"
+            lines.append(f"{mark} {MODULE_LABELS[mod]}\n  {bar(s.pct)}{hint}")
+        lines.append("\n" + progress.projection(r, days_left is not None, days_left))
+        lines.append(
+            "<i>ℹ️ Готовність росте від СТАБІЛЬНОЇ практики (багато вправ, різні дні) "
+            "і тане без повторення — щоб оцінка була чесною.</i>"
+        )
     else:
         lines.append("Спершу пройди стартовий тест (/test), щоб я визначив готовність.")
 
-    earned = badges.earned(st.readiness, st.streak, total_sessions, level=g["level"])
+    earned = badges.earned(r, st.streak, total_sessions, level=g["level"])
     if earned:
         lines.append("\n🏅 <b>Бейджі:</b> " + " · ".join(earned))
     return "\n".join(lines)
 
 
-def _readiness_scene(st, inf) -> tuple[str | None, object | None]:
-    """Сцена за станом підготовки: готовий → на іспит (з урахуванням наявної дати);
-    incomplete → підказка перевірити решту модулів."""
-    status, mods = progress.readiness_verdict(st.readiness)
+def _readiness_scene(inf, status: str, mods: list) -> tuple[str | None, object | None]:
+    """Сцена за станом підготовки (incomplete/gaps/almost/ready)."""
     note = "\n\n<i>Це наша оцінка за вправами, не офіційна сертифікація.</i>"
+    if status == "almost":
+        return (
+            "🔥 <b>Майже готовий!</b> Усі 5 модулів на впевненому рівні.\n"
+            "Лишилось <b>скласти повний мок</b> обох секцій (/mok) на ≥60% — це доказ, "
+            "що тримаєш рівень «під іспитом». Тоді підтверджу готовність 🏁" + note,
+            to_menu_kb(),
+        )
     if status == "ready":
         base = "🏆 <b>Схоже, ти на рівні B1!</b>\nЗа нашими вправами всі 5 модулів ≥70%."
         if inf.confirmed and inf.exam_date:
@@ -167,14 +180,20 @@ def _readiness_scene(st, inf) -> tuple[str | None, object | None]:
 
 
 async def _send_progress(msg: Message, user_id: int) -> None:
-    await msg.answer(await _render_progress(user_id), reply_markup=to_menu_kb())
+    stats = await progress.compute(user_id)  # свіжо (з урахуванням спаду)
+    r = progress.pcts(stats)
     st = await user_state.load(user_id)
-    if st.readiness:  # графік — лише коли є що показати; matplotlib у to_thread (CPU)
-        png = await asyncio.to_thread(charts.readiness_bar, st.readiness)
+    st.readiness = r  # оновлюємо кеш (для меню/квесту/плану/нагадування)
+    await user_state.save(st)
+
+    await msg.answer(await _render_progress(user_id, stats), reply_markup=to_menu_kb())
+    if any(s.attempts for s in stats.values()):  # графік — лише коли є що показати
+        png = await asyncio.to_thread(charts.readiness_bar, r)
         if png:
             await msg.answer_photo(BufferedInputFile(png, filename="progress.png"))
     inf = await access.info(user_id)
-    scene, markup = _readiness_scene(st, inf)
+    status, mods = progress.verdict(stats, await progress.mock_ok(user_id))
+    scene, markup = _readiness_scene(inf, status, mods)
     if scene:
         await msg.answer(scene, reply_markup=markup)
 
@@ -268,10 +287,10 @@ async def cb_missions(cb: CallbackQuery) -> None:
 
 
 async def _send_quest(msg: Message, user_id: int) -> None:
-    st = await user_state.load(user_id)
+    r = progress.pcts(await progress.compute(user_id))  # свіжо (з урахуванням спаду)
     inf = await access.info(user_id)
     g = await goals.status(user_id)
-    text = quest.render(st.readiness, _user_days_left(inf), g["level"], g["streak"])
+    text = quest.render(r, _user_days_left(inf), g["level"], g["streak"])
     await msg.answer(text, reply_markup=to_menu_kb())
 
 

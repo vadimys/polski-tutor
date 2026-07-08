@@ -72,21 +72,26 @@ async def reset_progress(user_id: int) -> None:
 
 
 async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
-    """Згладжене оновлення готовності (середнє) + лог сесії (сирий бал) — атомарно.
+    """Лог сесії (сирий бал) + перерахунок ЧЕСНОЇ готовності з історії.
 
     Єдина точка для ВСІХ вправ (письмо/мовлення/тренування/мок/аудіювання).
+    Готовність більше НЕ ковзне середнє — рахується з усієї історії сесій
+    (обсяг + різні дні + свіжість), див. progress.compute.
     """
     async with session_factory()() as s:
         u = await s.get(User, user_id)
         if u is None:
             u = User(id=user_id, lesson_hour=settings.lesson_hour)
             s.add(u)
-        current = dict(u.readiness or {})
-        old = current.get(module_value, pct)
-        current[module_value] = round((old + pct) / 2)
-        u.readiness = current
         s.add(Session(user_id=user_id, module=module_value, score=pct))
         await s.commit()
-    from app.services import goals  # відкладений імпорт — уникаємо циклів
 
+    from app.services import goals, progress  # відкладений імпорт — уникаємо циклів
+
+    stats = await progress.compute(user_id)  # чесна готовність із повної історії
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is not None:
+            u.readiness = progress.pcts(stats)
+            await s.commit()
     await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію

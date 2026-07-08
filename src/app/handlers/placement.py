@@ -103,8 +103,10 @@ async def _finalize(
     st = await user_state.load(user_id)
     st.placement_done = True
     st.level = result.level
-    st.readiness = result.per_module  # лише виміряні (gramatyka/czytanie)
     await user_state.save(st)
+    # лог сесій → чесна модель готовності врахує (тест = 1 спроба = поки низька впевненість)
+    for mod_value, pct in result.per_module.items():
+        await user_state.update_readiness(user_id, mod_value, pct)
 
     lines = [
         f"✅ <b>Тест пройдено!</b> {result.correct}/{result.total} правильних.",

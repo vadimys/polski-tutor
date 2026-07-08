@@ -19,8 +19,7 @@ from aiohttp import web
 
 from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, clock, goals, missions
-from app.services import state as user_state
+from app.services import access, clock, goals, missions, progress
 from app.services.progress import READY_THRESHOLD
 from app.services.quest import PASS, overall_pct
 
@@ -81,11 +80,10 @@ async def state_data(request: web.Request) -> web.Response:
     if uid is None:
         return web.json_response({"error": "forbidden"}, status=403)
 
-    st = await user_state.load(uid)
     inf = await access.info(uid)
     g = await goals.status(uid)
     ms = await missions.status(uid)
-    readiness = st.readiness or {}
+    readiness = progress.pcts(await progress.compute(uid))  # чесна готовність (свіжо)
     weakest = min(Module, key=lambda m: readiness.get(m.value, 0))
 
     mods = []
