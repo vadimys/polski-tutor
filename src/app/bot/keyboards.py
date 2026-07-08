@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from app.config import settings
 
 
 def start_kb() -> InlineKeyboardMarkup:
@@ -107,6 +109,8 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="📅 Мій план", callback_data="plan:show")
     kb.button(text="📊 Прогрес", callback_data="progress:show")
     kb.button(text="📝 Тест рівня", callback_data="placement:start")
+    if settings.webapp_url:  # красива панель у Mini App (лише коли тунель налаштовано)
+        kb.button(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url))
     kb.adjust(1)
     return kb.as_markup()
 

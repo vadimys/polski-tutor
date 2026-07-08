@@ -49,6 +49,11 @@ async def start_health_server(port: int = 8080) -> None:
     global _runner
     app = web.Application()
     app.router.add_get("/health", _health)
+    if settings.webapp_url:  # Mini App (WebApp-панель) — лише коли задано публічний URL
+        from app.bot import webapp
+
+        webapp.add_routes(app)
+        logger.info("Mini App змонтовано: %s + %s", webapp.APP_PATH, webapp.STATE_PATH)
     _runner = web.AppRunner(app)
     await _runner.setup()
     site = web.TCPSite(_runner, "0.0.0.0", port)
