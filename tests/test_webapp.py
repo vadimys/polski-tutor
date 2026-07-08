@@ -33,7 +33,7 @@ def test_tampered_payload_rejected():
 
 
 def test_wrong_token_rejected():
-    assert webapp.validate_init_data(_signed(42, token="wrong:token:xyz")) is None
+    assert webapp.validate_init_data(_signed(42, token="wrong:token:xyz")) is None  # noqa: S106
 
 
 def test_expired_rejected():

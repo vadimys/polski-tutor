@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import hashlib
+from typing import TypedDict
 
 from redis.asyncio import Redis
 
@@ -15,8 +16,24 @@ from app.services import clock, goals
 
 _redis: Redis | None = None
 
+
+class DailyMission(TypedDict):
+    id: str
+    kinds: list[str]
+    n: int
+    desc: str
+    xp: int
+
+
+class WeeklyMission(TypedDict):
+    id: str
+    days: int
+    desc: str
+    xp: int
+
+
 # щоденні місії — рівно одна активність, досяжна за один захід
-_DAILY = [
+_DAILY: list[DailyMission] = [
     {"id": "lesson", "kinds": ["lesson"], "n": 1, "desc": "📖 Пройди урок дня", "xp": 15},
     {"id": "listen", "kinds": ["sluchanie"], "n": 1, "desc": "🎧 Зроби одне аудіювання", "xp": 15},
     {"id": "write", "kinds": ["pisanie"], "n": 1, "desc": "✍️ Напиши один текст/лист", "xp": 20},
@@ -25,7 +42,9 @@ _DAILY = [
     {"id": "review", "kinds": ["review"], "n": 1, "desc": "🔁 Одне повторення слів", "xp": 15},
 ]
 
-_WEEKLY = {"id": "week5", "days": 5, "desc": "🗓 Виконай денну ціль 5 днів цього тижня", "xp": 60}
+_WEEKLY: WeeklyMission = {
+    "id": "week5", "days": 5, "desc": "🗓 Виконай денну ціль 5 днів цього тижня", "xp": 60
+}
 
 
 def _r() -> Redis:
@@ -35,7 +54,7 @@ def _r() -> Redis:
     return _redis
 
 
-def daily_mission(user_id: int, date_iso: str) -> dict:
+def daily_mission(user_id: int, date_iso: str) -> DailyMission:
     """Детермінована щоденна місія (ротація за user+дата)."""
     h = hashlib.sha1(f"{user_id}:{date_iso}".encode()).hexdigest()  # noqa: S324
     return _DAILY[int(h, 16) % len(_DAILY)]
