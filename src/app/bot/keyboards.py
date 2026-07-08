@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardMarkup, WebAppInfo
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.config import settings
@@ -94,24 +94,27 @@ def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
 
 
 def menu_kb() -> InlineKeyboardMarkup:
-    """Головне меню."""
+    """Головне меню: практика (що ти РОБИШ) + Панель (прогрес/похід/місії — read-only).
+
+    Похід/Місії/Прогрес окремими кнопками НЕ дублюємо — вони в «📱 Панелі»
+    (лишаються командами /quest /misje /postep для тих, хто без панелі)."""
     kb = InlineKeyboardBuilder()
-    kb.button(text="📖 Урок дня", callback_data="lesson:start")
-    kb.button(text="🔁 Повторення слів", callback_data="review:start")
-    kb.button(text="✍️ Письмо", callback_data="writing:start")
-    kb.button(text="🗣 Мовлення", callback_data="speaking:start")
-    kb.button(text="🖼 Опис фото", callback_data="speaking:photo")
-    kb.button(text="🎧 Аудіювання", callback_data="listening:start")
-    kb.button(text="🎯 Тренування", callback_data="drill:start")
-    kb.button(text="📋 Офіційний МОК", callback_data="mock:open")
-    kb.button(text="🗺 Похід до B1", callback_data="quest:show")
-    kb.button(text="🎲 Місії", callback_data="missions:show")
-    kb.button(text="📅 Мій план", callback_data="plan:show")
-    kb.button(text="📊 Прогрес", callback_data="progress:show")
-    kb.button(text="📝 Тест рівня", callback_data="placement:start")
-    if settings.webapp_url:  # красива панель у Mini App (лише коли тунель налаштовано)
-        kb.button(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url))
-    kb.adjust(1)
+    if settings.webapp_url:  # хаб прогресу — вгорі, коли Mini App увімкнено
+        kb.row(InlineKeyboardButton(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url)))
+    kb.row(InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"))
+    practice = [
+        ("🔁 Повторення слів", "review:start"),
+        ("✍️ Письмо", "writing:start"),
+        ("🗣 Мовлення", "speaking:start"),
+        ("🖼 Опис фото", "speaking:photo"),
+        ("🎧 Аудіювання", "listening:start"),
+        ("🎯 Тренування", "drill:start"),
+        ("📋 Офіційний МОК", "mock:open"),
+        ("📅 Мій план", "plan:show"),
+    ]
+    for i in range(0, len(practice), 2):  # у 2 колонки — менше скролу
+        kb.row(*(InlineKeyboardButton(text=t, callback_data=c) for t, c in practice[i : i + 2]))
+    kb.row(InlineKeyboardButton(text="📝 Тест рівня", callback_data="placement:start"))
     return kb.as_markup()
 
 
