@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import menu_kb, review_grade_kb, to_menu_kb
 from app.integrations import tts
-from app.services import clock, pollquiz, tts_say, vocab
+from app.services import clock, goals, pollquiz, tts_say, vocab
 
 router = Router()
 
@@ -112,6 +112,7 @@ async def cb_grade(cb: CallbackQuery, state: FSMContext) -> None:
         await _send_word(cb.message, words[idx], idx + 1, len(words))
     else:
         await state.clear()
+        await goals.add(cb.from_user.id, goals.REVIEW_MIN)
         await cb.message.answer(
             f"🏁 <b>Готово!</b> Повторено {len(words)} слів, знав {known}. "
             "Слова повернуться за графіком SRS. 🔥",

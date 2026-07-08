@@ -14,7 +14,7 @@ from aiogram import Bot
 from app.bot.keyboards import lesson_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
-from app.services import access, clock, gdpr, state
+from app.services import access, clock, gdpr, goals, state
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +39,13 @@ async def _personal_nudge(user_id: int) -> str:
             tail = f" До іспиту <b>{days}</b> днів."
         except ValueError:
             tail = ""
+    g = await goals.status(user_id)
+    goal_line = f"🎯 Ціль дня: <b>{g['goal']}</b> хв"
+    if g["streak"]:
+        goal_line += f" · 🔥 <b>{g['streak']}</b> дн поспіль — не гасимо серію!"
     return (
         f"🌅 <b>Dzień dobry!</b> Час для польської.{tail}\n"
+        f"{goal_line}\n"
         f"Сьогодні підтягнемо: <b>{weakest}</b>. Натисни нижче або /lekcja 👇"
     )
 

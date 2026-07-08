@@ -24,7 +24,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
-from app.services import clock, limits, tts_say, vocab
+from app.services import clock, goals, limits, tts_say, vocab
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -215,6 +215,7 @@ async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
 
     _bump_streak(st)
     await user_state.save(st)
+    await goals.add(user_id, goals.LESSON_MIN)  # урок зараховує час у денну ціль
     await vocab.seed_if_empty(user_id, clock.today_local())
     _, due_n = await vocab.counts(user_id, clock.today_local())
 

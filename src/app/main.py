@@ -54,6 +54,7 @@ COMMANDS = [
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
     BotCommand(command="postep", description="Мій прогрес"),
+    BotCommand(command="cel", description="Денна ціль (хвилини)"),
     BotCommand(command="plan", description="Мій план підготовки"),
     BotCommand(command="test", description="Стартовий тест"),
     BotCommand(command="reset", description="Почати навчання заново"),

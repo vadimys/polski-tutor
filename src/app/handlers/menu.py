@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import suppress
 from datetime import date
 
 from aiogram import F, Router
@@ -15,12 +16,19 @@ from app.bot import charts
 from app.bot.keyboards import menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, badges, clock, exam_dates, progress, vocab
+from app.services import access, badges, clock, exam_dates, goals, progress, vocab
 from app.services import state as user_state
 
 router = Router()
 
 _MENU_TEXT = "📋 <b>Меню</b> — обери, чим займемось:"
+
+
+def _goal_line(g: dict) -> str:
+    pct = min(100, round(g["today"] / g["goal"] * 100)) if g["goal"] else 0
+    tick = " ✅ виконано!" if g["done"] else ""
+    streak = f" · 🔥 <b>{g['streak']}</b> дн поспіль" if g["streak"] else ""
+    return f"🎯 <b>Ціль дня:</b> {g['today']}/{g['goal']} хв{tick}\n  {bar(pct)}{streak}"
 
 
 def _user_days_left(inf) -> int | None:
@@ -67,9 +75,11 @@ async def _render_progress(user_id: int) -> str:
     total_sessions, last7 = await progress.counts(user_id)
 
     exam_line = f"📅 До іспиту: <b>{days_left}</b> днів" if days_left is not None else "📅 Дата іспиту не підтверджена"
+    g = await goals.status(user_id)
     lines = [
         f"📊 <b>Прогрес</b> · рівень <b>{st.level or '—'}</b> · стрік <b>{st.streak}</b> 🔥",
         exam_line,
+        _goal_line(g),
         f"🏋️ Вправ усього: <b>{total_sessions}</b> · за 7 днів: <b>{last7}</b>",
         f"📚 Слова: <b>{total_words}</b> · на повторення: <b>{due_n}</b>\n",
     ]
@@ -153,6 +163,45 @@ async def cmd_progress(message: Message) -> None:
 async def cb_progress(cb: CallbackQuery) -> None:
     await _send_progress(cb.message, cb.from_user.id)
     await cb.answer()
+
+
+# --- Денна ціль (хвилини навчання на день) ---
+
+
+def _goal_text(g: dict) -> str:
+    return (
+        "🎯 <b>Денна ціль навчання</b>\n\n"
+        f"{_goal_line(g)}\n\n"
+        "Скільки хвилин польської на день тобі комфортно? Обери — я рахуватиму прогрес "
+        "щодня й нагадуватиму. Регулярність важливіша за обсяг 🙂"
+    )
+
+
+def _goal_kb(current: int) -> object:
+    kb = InlineKeyboardBuilder()
+    labels = {10: "🟢 10 хв — легко", 20: "🟡 20 хв — норма", 30: "🔴 30 хв — інтенсив"}
+    for m in goals.GOAL_CHOICES:
+        mark = "✅ " if m == current else ""
+        kb.button(text=mark + labels.get(m, f"{m} хв"), callback_data=f"goal:set:{m}")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+@router.message(Command("cel"))
+async def cmd_goal(message: Message) -> None:
+    g = await goals.status(message.from_user.id)
+    await message.answer(_goal_text(g), reply_markup=_goal_kb(g["goal"]))
+
+
+@router.callback_query(F.data.startswith("goal:set:"))
+async def cb_goal_set(cb: CallbackQuery) -> None:
+    minutes = int(cb.data.split(":")[2])
+    await goals.set_goal(cb.from_user.id, minutes)
+    await cb.answer(f"Ціль: {minutes} хв/день 🎯")
+    g = await goals.status(cb.from_user.id)
+    with suppress(Exception):
+        await cb.message.edit_text(_goal_text(g), reply_markup=_goal_kb(g["goal"]))
 
 
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---
