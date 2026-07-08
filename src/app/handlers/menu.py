@@ -33,14 +33,30 @@ def _user_days_left(inf) -> int | None:
 
 
 @router.message(Command("menu"))
-async def cmd_menu(message: Message) -> None:
+async def cmd_menu(message: Message, state: FSMContext) -> None:
+    await state.clear()  # вихід із будь-якого активного завдання (без «протікання» стану)
     await message.answer(_MENU_TEXT, reply_markup=menu_kb())
 
 
 @router.callback_query(F.data == "menu:home")
-async def cb_menu(cb: CallbackQuery) -> None:
+async def cb_menu(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
     await cb.message.answer(_MENU_TEXT, reply_markup=menu_kb())
     await cb.answer()
+
+
+@router.message(Command("anuluj", "cancel"))
+async def cmd_cancel(message: Message, state: FSMContext) -> None:
+    """Глобальне скасування — виходить із будь-якого стану (тест/письмо/мовлення)."""
+    await state.clear()
+    await message.answer("🚫 Скасовано. Повертаю в меню 👇", reply_markup=menu_kb())
+
+
+@router.callback_query(F.data == "nav:cancel")
+async def cb_cancel(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer("Скасовано")
+    await cb.message.answer("🚫 Скасовано. Повертаю в меню 👇", reply_markup=menu_kb())
 
 
 async def _render_progress(user_id: int) -> str:
@@ -87,11 +103,12 @@ def _readiness_scene(st, inf) -> tuple[str | None, object | None]:
             tail = f"\n📅 Твій іспит — <b>{when}</b>"
             tail += f" (за <b>{days}</b> дн)" if days is not None else ""
             tail += ". Тримай форму: практикуй і повторюй, щоб прийти впевненим."
-            return base + tail + note, None
+            return base + tail + note, to_menu_kb()
         upcoming = exam_dates.upcoming(clock.today_local())[:3]
         lst = "\n".join(f"• {exam_dates.label(d)}" for d in upcoming) if upcoming else "—"
         kb = InlineKeyboardBuilder()
         kb.button(text="📅 Вказати дату іспиту", callback_data="onb:setdate")
+        kb.button(text="⬅️ Меню", callback_data="menu:home")
         kb.adjust(1)
         return (
             base + "\n\n🎯 Час <b>реєструватися на офіційний іспит</b>! Найближчі сесії:\n"
@@ -100,7 +117,17 @@ def _readiness_scene(st, inf) -> tuple[str | None, object | None]:
         )
     if status == "incomplete":
         names = ", ".join(MODULE_LABELS[m] for m in mods)
-        return f"📋 Щоб побачити повну картину, перевір ще модулі: <b>{names}</b> (по вправі кожного).", None
+        return (
+            f"📋 Щоб побачити повну картину, перевір ще модулі: <b>{names}</b> (по вправі кожного).",
+            to_menu_kb(),
+        )
+    if status == "gaps":
+        names = ", ".join(MODULE_LABELS[m] for m in mods)
+        return (
+            f"🔸 <b>Майже там!</b> Усі модулі виміряні, лишилось підтягнути до впевненого рівня: "
+            f"<b>{names}</b>.\nРоби вправи саме цих модулів — і побачиш, як стрілка йде вгору ▲." + note,
+            to_menu_kb(),
+        )
     return None, None
 
 

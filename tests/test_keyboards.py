@@ -1,13 +1,22 @@
-"""Регрес: кнопки відповідей містять індекс питання (захист від дубль-тапів)."""
+"""Регрес: кнопки відповідей містять індекс питання (захист від дубль-тапів) + вихід."""
 
-from app.bot.keyboards import drill_kb, listen_kb, question_kb
+from app.bot.keyboards import drill_kb, listen_kb, mock_kb, question_kb
 
 
 def _datas(markup):
     return [b.callback_data for row in markup.inline_keyboard for b in row]
 
 
-def test_answer_kb_embeds_qidx():
-    for fn, prefix in [(question_kb, "pl:ans"), (drill_kb, "dr:ans"), (listen_kb, "ls:ans")]:
-        markup = fn(["a", "b", "c"], 3)
-        assert _datas(markup) == [f"{prefix}:3:0", f"{prefix}:3:1", f"{prefix}:3:2"]
+def test_answer_kb_embeds_qidx_and_exit():
+    cases = [
+        (question_kb, "pl:ans", "pl:stop"),
+        (drill_kb, "dr:ans", "dr:stop"),
+        (listen_kb, "ls:ans", "ls:stop"),
+        (mock_kb, "mk:ans", "mk:stop"),
+    ]
+    for fn, prefix, stop in cases:
+        datas = _datas(fn(["a", "b", "c"], 3))
+        # варіанти з індексом питання
+        assert datas[:3] == [f"{prefix}:3:0", f"{prefix}:3:1", f"{prefix}:3:2"]
+        # кнопка дострокового виходу — окремий callback, не плутається з :ans:
+        assert datas[-1] == stop

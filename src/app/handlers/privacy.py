@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from app.bot.keyboards import to_menu_kb
 from app.services import gdpr
 
 router = Router()
@@ -46,12 +47,12 @@ def _confirm_kb():
 
 @router.message(Command("prywatnosc"))
 async def cmd_privacy(message: Message) -> None:
-    await message.answer(PRIVACY_NOTICE)
+    await message.answer(PRIVACY_NOTICE, reply_markup=to_menu_kb())
 
 
 @router.message(Command("moidane"))
 async def cmd_export(message: Message) -> None:
-    await message.answer(await gdpr.export_data(message.from_user.id))
+    await message.answer(await gdpr.export_data(message.from_user.id), reply_markup=to_menu_kb())
 
 
 @router.message(Command("zapomnij"))
@@ -72,4 +73,4 @@ async def cb_delete(cb: CallbackQuery) -> None:
 @router.callback_query(F.data == "gdpr:cancel")
 async def cb_cancel(cb: CallbackQuery) -> None:
     await cb.answer("Скасовано")
-    await cb.message.answer("Ок, нічого не видалено 🙂")
+    await cb.message.answer("Ок, нічого не видалено 🙂", reply_markup=to_menu_kb())

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -67,6 +68,18 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
         "Відповідай, наприкінці — результат."
     )
     await _send_item(cb.message, section, 0)
+
+
+@router.callback_query(Mock.active, F.data == "mk:stop")
+async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer("Завершено")
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    await cb.message.answer(
+        "⏹ МОК завершено достроково — <b>без оцінки</b> (готовність рухає лише повністю пройдена секція).",
+        reply_markup=menu_kb(),
+    )
 
 
 @router.callback_query(Mock.active, F.data.startswith("mk:ans:"))

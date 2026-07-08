@@ -68,13 +68,27 @@ def approved_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
-def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
-    """Кнопки-варіанти (callback містить індекс питання — захист від дублів/сталих тапів)."""
+def cancel_kb() -> InlineKeyboardMarkup:
+    """Кнопка «Скасувати» під час введення (письмо/мовлення/керована практика)."""
     kb = InlineKeyboardBuilder()
-    for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"pl:ans:{qidx}:{i}")
+    kb.button(text="🚫 Скасувати", callback_data="nav:cancel")
     kb.adjust(1)
     return kb.as_markup()
+
+
+def _mcq_kb(options: list[str], qidx: int, ans_prefix: str, stop_cb: str) -> InlineKeyboardMarkup:
+    """Спільна MCQ-клавіатура: варіанти (з індексом питання) + вихід «⏹ Завершити»."""
+    kb = InlineKeyboardBuilder()
+    for i, opt in enumerate(options):
+        kb.button(text=opt, callback_data=f"{ans_prefix}:{qidx}:{i}")
+    kb.button(text="⏹ Завершити", callback_data=stop_cb)
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Кнопки-варіанти (callback містить індекс питання — захист від дублів/сталих тапів)."""
+    return _mcq_kb(options, qidx, "pl:ans", "pl:stop")
 
 
 def menu_kb() -> InlineKeyboardMarkup:
@@ -97,29 +111,17 @@ def menu_kb() -> InlineKeyboardMarkup:
 
 def drill_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для тренування (з індексом питання)."""
-    kb = InlineKeyboardBuilder()
-    for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"dr:ans:{qidx}:{i}")
-    kb.adjust(1)
-    return kb.as_markup()
+    return _mcq_kb(options, qidx, "dr:ans", "dr:stop")
 
 
 def listen_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для аудіювання (з індексом питання)."""
-    kb = InlineKeyboardBuilder()
-    for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"ls:ans:{qidx}:{i}")
-    kb.adjust(1)
-    return kb.as_markup()
+    return _mcq_kb(options, qidx, "ls:ans", "ls:stop")
 
 
 def mock_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для офіційного МОКу."""
-    kb = InlineKeyboardBuilder()
-    for i, opt in enumerate(options):
-        kb.button(text=opt, callback_data=f"mk:ans:{qidx}:{i}")
-    kb.adjust(1)
-    return kb.as_markup()
+    return _mcq_kb(options, qidx, "mk:ans", "mk:stop")
 
 
 def mock_menu_kb() -> InlineKeyboardMarkup:

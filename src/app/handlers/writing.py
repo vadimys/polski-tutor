@@ -11,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import menu_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.services import guidance, limits, writing
 from app.services import state as user_state
@@ -46,10 +46,11 @@ async def _give_set(message: Message, state: FSMContext) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="📝 Показати зразок", callback_data="guide:wr")
     kb.button(text="🪜 Пройти по кроках", callback_data="guidew:start")
+    kb.button(text="🚫 Скасувати", callback_data="nav:cancel")
     kb.adjust(1)
     await message.answer(
         guidance.writing_instruction(ws.a.genre, a_req, ws.a.words, ws.b.genre, b_req, ws.b.words)
-        + "\n\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням. (/menu — вийти)",
+        + "\n\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням.",
         reply_markup=kb.as_markup(),
     )
 
@@ -83,7 +84,7 @@ async def cb_guided_start(cb: CallbackQuery, state: FSMContext) -> None:
         "🪜 <b>Керована практика — офіційний лист</b>\n"
         "Складемо лист по частинах, а потім виконаєш справжнє завдання на оцінку."
     )
-    await cb.message.answer(guidance.writing_step(0))
+    await cb.message.answer(guidance.writing_step(0), reply_markup=cancel_kb())
 
 
 @router.message(GuidedW.active, F.text, ~F.text.startswith("/"))
@@ -99,7 +100,7 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
     if step < guidance.WRITING_STEPS_N:
         await state.update_data(gw_step=step, gw_lines=lines)
         await message.answer("✅ Прийнято.")
-        await message.answer(guidance.writing_step(step))
+        await message.answer(guidance.writing_step(step), reply_markup=cancel_kb())
         return
 
     await state.clear()
@@ -131,7 +132,9 @@ async def on_task_a(message: Message, state: FSMContext) -> None:
     ws = writing.set_by_id(data["set_id"])
     b = ws.b if ws else None
     hint = f"({b.genre}, ~{b.words} слів)" if b else ""
-    await message.answer(f"✅ Прийнято. Тепер напиши <b>завдання b</b> {hint}.")
+    await message.answer(
+        f"✅ Прийнято. Тепер напиши <b>завдання b</b> {hint}.", reply_markup=cancel_kb()
+    )
 
 
 @router.message(Writing.await_b, F.text, ~F.text.startswith("/"))

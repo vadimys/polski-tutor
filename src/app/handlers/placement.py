@@ -58,6 +58,18 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
     await _start(cb.message, state)
 
 
+@router.callback_query(Placement.active, F.data == "pl:stop")
+async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer("Тест завершено")
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    await cb.message.answer(
+        "⏹ Тест завершено достроково — <b>без оцінки</b> (пройди повністю, щоб визначити рівень).",
+        reply_markup=lesson_kb(),
+    )
+
+
 @router.callback_query(Placement.active, F.data.startswith("pl:ans:"))
 async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     data = await state.get_data()

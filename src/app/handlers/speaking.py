@@ -14,7 +14,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import example_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech
 from app.services import guidance, limits, speaking
@@ -46,19 +46,17 @@ async def _give_task(message: Message, state: FSMContext) -> None:
     label = speaking._KIND_LABEL[task.kind]
     await state.set_state(Speaking.waiting)
     await state.update_data(task_id=task.id)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📝 Показати зразок", callback_data=f"guide:spk:{task.kind}")
     if guidance.guided_available(task.kind):  # усі типи мовлення → є керована практика
-        kb = InlineKeyboardBuilder()
-        kb.button(text="📝 Показати зразок", callback_data=f"guide:spk:{task.kind}")
         kb.button(text="🪜 Пройти по кроках", callback_data=f"guided:start:{task.id}")
-        kb.adjust(1)
-        markup = kb.as_markup()
-    else:
-        markup = example_kb(f"guide:spk:{task.kind}")
+    kb.button(text="🚫 Скасувати", callback_data="nav:cancel")
+    kb.adjust(1)
     await message.answer(
         f"🗣 <b>Мовлення — {label}</b> ({speaking.SOURCE})\n\n{html.escape(task.prompt)}\n\n"
         f"{guidance.speaking_instruction(task.kind)}\n\n"
-        "🎤 Готовий — запиши <b>голосове</b> польською (≈ 30–60 секунд). (/menu — вийти)",
-        reply_markup=markup,
+        "🎤 Готовий — запиши <b>голосове</b> польською (≈ 30–60 секунд).",
+        reply_markup=kb.as_markup(),
     )
 
 
@@ -82,6 +80,7 @@ async def _give_photo(message: Message, state: FSMContext) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="📝 Показати зразок", callback_data="guide:spk:opis")
     kb.button(text="🪜 Пройти по кроках", callback_data=f"guided:start:{task.id}")
+    kb.button(text="🚫 Скасувати", callback_data="nav:cancel")
     kb.adjust(1)
     await message.answer(guidance.speaking_instruction("opis"), reply_markup=kb.as_markup())
 
@@ -139,7 +138,7 @@ async def cb_guided_start(cb: CallbackQuery, state: FSMContext) -> None:
             "разом і запишеш голосом.\n\n"
             f"🎭 <b>Завдання:</b>\n{html.escape(task.prompt)}"
         )
-    await cb.message.answer(guidance.guided_speak_step(task.kind, 0))
+    await cb.message.answer(guidance.guided_speak_step(task.kind, 0), reply_markup=cancel_kb())
 
 
 @router.message(Guided.active, F.text, ~F.text.startswith("/"))
@@ -157,7 +156,7 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
     if step < guidance.guided_speak_n(kind):
         await state.update_data(step=step, lines=lines)
         await message.answer("✅ Прийнято.")
-        await message.answer(guidance.guided_speak_step(kind, step))
+        await message.answer(guidance.guided_speak_step(kind, step), reply_markup=cancel_kb())
         return
 
     await state.clear()
@@ -192,11 +191,13 @@ async def cb_guided_record(cb: CallbackQuery, state: FSMContext) -> None:
                 "🎤 Тепер опиши це фото <b>голосом</b> самостійно.\n"
                 "Оціню за офіційними критеріями — і це піде в прогрес."
             ),
+            reply_markup=cancel_kb(),
         )
     else:
         await cb.message.answer(
             f"🎤 Запиши <b>голосове</b> польською за завданням:\n\n{html.escape(task.prompt)}\n\n"
-            "Оціню за офіційними критеріями — і це піде в прогрес."
+            "Оціню за офіційними критеріями — і це піде в прогрес.",
+            reply_markup=cancel_kb(),
         )
 
 
@@ -274,4 +275,8 @@ async def on_voice(message: Message, state: FSMContext) -> None:
 
 @router.message(Speaking.waiting, F.text, ~F.text.startswith("/"))
 async def on_text_instead(message: Message) -> None:
-    await message.answer("🎤 Надішли саме <b>голосове</b> повідомлення (натисни й утримуй мікрофон).")
+    await message.answer(
+        "🎤 Надішли саме <b>голосове</b> повідомлення (натисни й утримуй мікрофон).\n"
+        "Передумав? Тисни 🚫 Скасувати.",
+        reply_markup=cancel_kb(),
+    )

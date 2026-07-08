@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -78,6 +79,18 @@ async def cmd_drill(message: Message, state: FSMContext) -> None:
 async def cb_drill(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await _start(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Drill.active, F.data == "dr:stop")
+async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer("Завершено")
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    await cb.message.answer(
+        "⏹ Тренування завершено — <b>без оцінки</b> (готовність рухає лише повністю пройдена серія).",
+        reply_markup=menu_kb(),
+    )
 
 
 @router.callback_query(Drill.active, F.data.startswith("dr:ans:"))

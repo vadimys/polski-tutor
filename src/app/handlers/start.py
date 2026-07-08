@@ -6,6 +6,8 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from app.bot.keyboards import to_menu_kb
+
 router = Router()
 
 
@@ -19,5 +21,8 @@ async def cmd_help(message: Message) -> None:
         "/powtorki — повторення слів\n"
         "/pisanie — письмо · /opis — опис фото · /mowienie — мовлення\n"
         "/sluchanie — аудіювання · /mok — офіційний МОК · /trening — тренування\n"
-        "/postep — прогрес · /plan — мій план · /test — стартовий тест"
+        "/postep — прогрес · /plan — мій план · /test — стартовий тест\n"
+        "/reset — почати навчання заново · /anuluj — скасувати завдання\n"
+        "/prywatnosc — приватність · /moidane — мої дані · /zapomnij — видалити дані",
+        reply_markup=to_menu_kb(),
     )

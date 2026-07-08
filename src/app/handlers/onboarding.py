@@ -16,6 +16,7 @@ from app.bot.keyboards import (
     contact_admin_kb,
     exam_dates_kb,
     send_request_kb,
+    to_menu_kb,
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
@@ -129,7 +130,8 @@ async def cb_examdate(cb: CallbackQuery) -> None:
     await cb.answer()
     await cb.message.answer(
         f"✅ Дату іспиту збережено: <b>{exam_dates.label(iso)}</b>."
-        + (f"\nДоступ активний до <b>{until}</b>." if until else "")
+        + (f"\nДоступ активний до <b>{until}</b>." if until else ""),
+        reply_markup=to_menu_kb(),
     )
 
 
