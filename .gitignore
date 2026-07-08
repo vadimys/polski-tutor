@@ -19,4 +19,8 @@ __pycache__/
 # історія чатів плагіна
 .obsidian-claude-code/
 
+# лого/графічні чернетки (не потрібні в репо)
+logo_b1_*.png
+Gemini_Generated_Image_*.png
+
 .DS_Store
