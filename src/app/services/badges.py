@@ -5,7 +5,9 @@ from __future__ import annotations
 from app.domain.models import Module
 
 
-def earned(readiness: dict[str, int], streak: int, total_sessions: int) -> list[str]:
+def earned(
+    readiness: dict[str, int], streak: int, total_sessions: int, level: int = 0
+) -> list[str]:
     """Список зароблених бейджів за поточним станом."""
     b: list[str] = []
     if total_sessions >= 1:
@@ -18,6 +20,14 @@ def earned(readiness: dict[str, int], streak: int, total_sessions: int) -> list[
         b.append("🔥 Стрік 3+")
     if streak >= 7:
         b.append("🔥🔥 Тиждень поспіль")
+    if streak >= 30:
+        b.append("🔥🗓 Місяць поспіль")
+    if level >= 3:
+        b.append("⭐ Рівень 3")
+    if level >= 5:
+        b.append("🌟 Рівень 5")
+    if level >= 10:
+        b.append("💫 Рівень 10")
     passed = sum(1 for m in Module if readiness.get(m.value, 0) >= 50)
     if passed >= 1:
         b.append(f"✅ Модулів ≥50%: {passed}/5")

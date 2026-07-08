@@ -112,7 +112,7 @@ async def cb_grade(cb: CallbackQuery, state: FSMContext) -> None:
         await _send_word(cb.message, words[idx], idx + 1, len(words))
     else:
         await state.clear()
-        await goals.add(cb.from_user.id, goals.REVIEW_MIN)
+        await goals.add(cb.from_user.id, goals.REVIEW_MIN, goals.XP_REVIEW)
         await cb.message.answer(
             f"🏁 <b>Готово!</b> Повторено {len(words)} слів, знав {known}. "
             "Слова повернуться за графіком SRS. 🔥",

@@ -49,7 +49,7 @@ async def on_poll_answer(poll_answer: PollAnswer, bot: Bot) -> None:
             reply_markup=menu_kb() if pct >= 50 else to_menu_kb(),
         )
     else:
-        await goals.add(session["user_id"], goals.REVIEW_MIN)  # readiness рахується в update_readiness
+        await goals.add(session["user_id"], goals.REVIEW_MIN, goals.XP_REVIEW)  # readiness — в update_readiness
         await bot.send_message(
             chat_id,
             f"🔁 <b>Повторення: {correct}/{total} правильних.</b> Так тримати! 💪",

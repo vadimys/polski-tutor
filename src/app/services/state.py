@@ -89,4 +89,4 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
         await s.commit()
     from app.services import goals  # відкладений імпорт — уникаємо циклів
 
-    await goals.record_module(user_id, module_value)  # зараховуємо час у денну ціль
+    await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію

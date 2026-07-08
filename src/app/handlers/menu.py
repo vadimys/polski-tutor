@@ -76,10 +76,14 @@ async def _render_progress(user_id: int) -> str:
 
     exam_line = f"📅 До іспиту: <b>{days_left}</b> днів" if days_left is not None else "📅 Дата іспиту не підтверджена"
     g = await goals.status(user_id)
+    xp_line = f"⭐ Рівень <b>{g['level']}</b> · {g['xp']} XP (до наступного {g['to_next']})"
+    if g["freeze"]:
+        xp_line += f" · 🧊 заморозки: <b>{g['freeze']}</b>"
     lines = [
-        f"📊 <b>Прогрес</b> · рівень <b>{st.level or '—'}</b> · стрік <b>{st.streak}</b> 🔥",
+        f"📊 <b>Прогрес</b> · CEFR <b>{st.level or '—'}</b> · стрік <b>{st.streak}</b> 🔥",
         exam_line,
         _goal_line(g),
+        xp_line,
         f"🏋️ Вправ усього: <b>{total_sessions}</b> · за 7 днів: <b>{last7}</b>",
         f"📚 Слова: <b>{total_words}</b> · на повторення: <b>{due_n}</b>\n",
     ]
@@ -94,7 +98,7 @@ async def _render_progress(user_id: int) -> str:
     else:
         lines.append("Спершу пройди стартовий тест (/test), щоб я визначив готовність.")
 
-    earned = badges.earned(st.readiness, st.streak, total_sessions)
+    earned = badges.earned(st.readiness, st.streak, total_sessions, level=g["level"])
     if earned:
         lines.append("\n🏅 <b>Бейджі:</b> " + " · ".join(earned))
     return "\n".join(lines)

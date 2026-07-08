@@ -39,13 +39,15 @@ async def _personal_nudge(user_id: int) -> str:
             tail = f" До іспиту <b>{days}</b> днів."
         except ValueError:
             tail = ""
+    froze = await goals.maybe_freeze(user_id)  # врятувати серію за вчора, якщо є заморозка
     g = await goals.status(user_id)
     goal_line = f"🎯 Ціль дня: <b>{g['goal']}</b> хв"
     if g["streak"]:
         goal_line += f" · 🔥 <b>{g['streak']}</b> дн поспіль — не гасимо серію!"
+    freeze_line = "🧊 <i>Пропущений день врятовано заморозкою — серія жива!</i>\n" if froze else ""
     return (
         f"🌅 <b>Dzień dobry!</b> Час для польської.{tail}\n"
-        f"{goal_line}\n"
+        f"{freeze_line}{goal_line}\n"
         f"Сьогодні підтягнемо: <b>{weakest}</b>. Натисни нижче або /lekcja 👇"
     )
 
