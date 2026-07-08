@@ -18,7 +18,7 @@ async def cmd_help(message: Message) -> None:
         "/start — головна / запит доступу\n"
         "/menu — головне меню\n"
         "/lekcja — сьогоднішній урок\n"
-        "/powtorki — повторення слів\n"
+        "/powtorki — повторення слів · /slownik — вільний словник за темами\n"
         "/pisanie — письмо · /opis — опис фото · /mowienie — мовлення\n"
         "/sluchanie — аудіювання · /mok — офіційний МОК · /trening — тренування\n"
         "/quest — похід до B1 · /misje — місії · /cel — денна ціль\n"

@@ -104,6 +104,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.row(InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"))
     practice = [
         ("🔁 Повторення слів", "review:start"),
+        ("📚 Словник за темами", "lex:open"),
         ("✍️ Письмо", "writing:start"),
         ("🗣 Мовлення", "speaking:start"),
         ("🖼 Опис фото", "speaking:photo"),

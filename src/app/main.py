@@ -19,6 +19,7 @@ from app.handlers import (
     drills,
     errors,
     lesson,
+    lexicon,
     listening,
     menu,
     mock,
@@ -53,6 +54,7 @@ COMMANDS = [
     BotCommand(command="mok", description="Офіційний МОК (читання/граматика)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
+    BotCommand(command="slownik", description="Вільний словник за темами"),
     BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="cel", description="Денна ціль (хвилини)"),
     BotCommand(command="misje", description="Місії (щоденні виклики)"),
@@ -96,7 +98,10 @@ async def main() -> None:
 
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)
     learning = Router()
-    for r in (placement, lesson, writing, drills, review, say, speaking, listening, mock, plan, menu):
+    for r in (
+        placement, lesson, writing, drills, review, say, lexicon,
+        speaking, listening, mock, plan, menu,
+    ):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())
     learning.callback_query.middleware(AccessMiddleware())
