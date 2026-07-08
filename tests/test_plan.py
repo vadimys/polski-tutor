@@ -38,3 +38,12 @@ def test_short_sprint_no_crash():
     # іспит за 10 днів → короткий спринт, без падіння
     p = plan.build("2026-07-11", True, {}, TODAY)
     assert p.phases  # хоч одна фаза
+
+
+def test_render_uses_daily_goal_not_hardcoded_60():
+    p30 = plan.build("2026-12-05", True, {"czytanie": 100}, TODAY, daily_min=30)
+    text = plan.render(p30)
+    assert "~30 хв" in text and "твоя з /cel" in text
+    # 60 → інша розкладка (більші числа), 30 → менші
+    p60 = plan.build("2026-12-05", True, {"czytanie": 100}, TODAY, daily_min=60)
+    assert "~60 хв" in plan.render(p60)

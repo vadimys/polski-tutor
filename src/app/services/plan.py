@@ -32,6 +32,7 @@ class StudyPlan:
     days_left: int | None
     weeks_left: int | None
     weak: list[Module]  # найслабші спершу
+    daily_min: int = 60  # денна ціль учня (з /cel) — план ділить час пропорційно
     phases: list[Phase] = field(default_factory=list)
 
 
@@ -86,7 +87,9 @@ def _phases_free(top2: list[str]) -> list[Phase]:
     ]
 
 
-def build(exam_date: str, confirmed: bool, readiness: dict[str, int], today: date) -> StudyPlan:
+def build(
+    exam_date: str, confirmed: bool, readiness: dict[str, int], today: date, daily_min: int = 60
+) -> StudyPlan:
     weak = weak_order(readiness)
     top2 = [MODULE_LABELS[m] for m in weak[:2]]
     if confirmed and exam_date:
@@ -96,8 +99,8 @@ def build(exam_date: str, confirmed: bool, readiness: dict[str, int], today: dat
             exam = today
         days = max(0, (exam - today).days)
         weeks = max(1, round(days / 7))
-        return StudyPlan(True, days, weeks, weak, _phases_with_date(weeks, top2))
-    return StudyPlan(False, None, None, weak, _phases_free(top2))
+        return StudyPlan(True, days, weeks, weak, daily_min, _phases_with_date(weeks, top2))
+    return StudyPlan(False, None, None, weak, daily_min, _phases_free(top2))
 
 
 def render(plan: StudyPlan) -> str:
@@ -113,9 +116,11 @@ def render(plan: StudyPlan) -> str:
 
     weak2 = ", ".join(MODULE_LABELS[m] for m in plan.weak[:2])
     lines.append(f"\n🔎 <b>Пріоритет зараз:</b> {weak2}")
+    g = plan.daily_min
+    rep, gr, dr, ws = (max(1, round(g * x / 60)) for x in (10, 15, 20, 15))
     lines.append(
-        "\n🕐 <b>Щоденні ~60 хв:</b> 10 повторення (SRS) · 15 нова граматика/лексика · "
-        "20 дрил у форматі іспиту · 15 письмо/мовлення."
+        f"\n🕐 <b>Щоденна ціль ~{g} хв</b> (твоя з /cel): {rep} повторення (SRS) · "
+        f"{gr} граматика/лексика · {dr} дрил у форматі іспиту · {ws} письмо/мовлення."
     )
     lines.append("\nПравило іспиту: <b>≥50% у КОЖНОМУ</b> модулі — тому тягнемо найслабші.")
     return "\n".join(lines)

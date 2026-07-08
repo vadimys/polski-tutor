@@ -9,11 +9,12 @@ from datetime import date
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
-from app.bot.keyboards import menu_kb, start_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
 from app.services import access, badges, clock, exam_dates, goals, missions, progress, quest, vocab
@@ -221,12 +222,18 @@ def _goal_text(g: dict) -> str:
     )
 
 
+class GoalInput(StatesGroup):
+    waiting = State()  # очікуємо власне число хвилин
+
+
 def _goal_kb(current: int) -> object:
     kb = InlineKeyboardBuilder()
     labels = {10: "🟢 10 хв — легко", 20: "🟡 20 хв — норма", 30: "🔴 30 хв — інтенсив"}
     for m in goals.GOAL_CHOICES:
         mark = "✅ " if m == current else ""
         kb.button(text=mark + labels.get(m, f"{m} хв"), callback_data=f"goal:set:{m}")
+    star = "✅ " if current not in goals.GOAL_CHOICES else ""
+    kb.button(text=f"{star}✏️ Своя кількість", callback_data="goal:custom")
     kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()
@@ -246,6 +253,30 @@ async def cb_goal_set(cb: CallbackQuery) -> None:
     g = await goals.status(cb.from_user.id)
     with suppress(Exception):
         await cb.message.edit_text(_goal_text(g), reply_markup=_goal_kb(g["goal"]))
+
+
+@router.callback_query(F.data == "goal:custom")
+async def cb_goal_custom(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(GoalInput.waiting)
+    await cb.answer()
+    await cb.message.answer(
+        "✏️ Скільки хвилин на день ставимо за ціль? Надішли <b>число</b> (5–180).",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(GoalInput.waiting, F.text, ~F.text.startswith("/"))
+async def on_goal_input(message: Message, state: FSMContext) -> None:
+    txt = (message.text or "").strip()
+    if not txt.isdigit() or not (5 <= int(txt) <= 180):
+        await message.answer("Введи, будь ласка, число від 5 до 180 🙂", reply_markup=cancel_kb())
+        return
+    await goals.set_goal(message.from_user.id, int(txt))
+    await state.clear()
+    g = await goals.status(message.from_user.id)
+    await message.answer(
+        f"🎯 Ціль встановлено: <b>{int(txt)}</b> хв/день. Погнали!", reply_markup=_goal_kb(g["goal"])
+    )
 
 
 # --- Місії (щоденний виклик + тижнева ціль) ---

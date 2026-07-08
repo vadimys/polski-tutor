@@ -32,7 +32,9 @@ class WeeklyMission(TypedDict):
     xp: int
 
 
-# щоденні місії — рівно одна активність, досяжна за один захід
+_ALL_KINDS = ["lesson", "review", "pisanie", "mowienie", "sluchanie", "czytanie", "gramatyka"]
+
+# щоденні місії (детермінована ротація). Прогрес = сума вправ заданих типів за день.
 _DAILY: list[DailyMission] = [
     {"id": "lesson", "kinds": ["lesson"], "n": 1, "desc": "📖 Пройди урок дня", "xp": 15},
     {"id": "listen", "kinds": ["sluchanie"], "n": 1, "desc": "🎧 Зроби одне аудіювання", "xp": 15},
@@ -40,6 +42,15 @@ _DAILY: list[DailyMission] = [
     {"id": "speak", "kinds": ["mowienie"], "n": 1, "desc": "🗣 Дай одну усну відповідь", "xp": 20},
     {"id": "drill", "kinds": ["czytanie", "gramatyka"], "n": 1, "desc": "🎯 Одне тренування", "xp": 15},
     {"id": "review", "kinds": ["review"], "n": 1, "desc": "🔁 Одне повторення слів", "xp": 15},
+    {"id": "double", "kinds": _ALL_KINDS, "n": 2, "desc": "💪 Зроби 2 будь-які вправи", "xp": 18},
+    {"id": "prod2", "kinds": ["pisanie", "mowienie"], "n": 2,
+     "desc": "🗣✍️ 2 продуктивні (письмо/мовлення)", "xp": 28},
+    {"id": "listenread", "kinds": ["sluchanie", "czytanie"], "n": 2,
+     "desc": "🎧📖 Аудіювання + читання", "xp": 22},
+    {"id": "grammar2", "kinds": ["gramatyka"], "n": 2, "desc": "🔤 2 граматичні дрили", "xp": 20},
+    {"id": "reviewlesson", "kinds": ["review", "lesson"], "n": 2,
+     "desc": "📖🔁 Урок + повторення", "xp": 20},
+    {"id": "triple", "kinds": _ALL_KINDS, "n": 3, "desc": "🔥 3 вправи за день", "xp": 30},
 ]
 
 _WEEKLY: WeeklyMission = {
