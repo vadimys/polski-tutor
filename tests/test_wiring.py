@@ -12,6 +12,7 @@ def test_all_handlers_have_router():
         admin,
         drills,
         lesson,
+        lexicon,
         listening,
         menu,
         mock,
@@ -26,7 +27,6 @@ def test_all_handlers_have_router():
         start,
         writing,
     )
-    from app.handlers import lexicon
 
     mods = (
         start, onboarding, admin, privacy, quizpoll, placement, lesson, writing, drills,
