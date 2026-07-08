@@ -21,6 +21,7 @@ async def cmd_help(message: Message) -> None:
         "/powtorki — повторення слів\n"
         "/pisanie — письмо · /opis — опис фото · /mowienie — мовлення\n"
         "/sluchanie — аудіювання · /mok — офіційний МОК · /trening — тренування\n"
+        "/quest — похід до B1 · /misje — місії · /cel — денна ціль\n"
         "/postep — прогрес · /plan — мій план · /test — стартовий тест\n"
         "/reset — почати навчання заново · /anuluj — скасувати завдання\n"
         "/prywatnosc — приватність · /moidane — мої дані · /zapomnij — видалити дані",
