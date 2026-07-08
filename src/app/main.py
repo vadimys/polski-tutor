@@ -56,6 +56,7 @@ COMMANDS = [
     BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="cel", description="Денна ціль (хвилини)"),
     BotCommand(command="misje", description="Місії (щоденні виклики)"),
+    BotCommand(command="quest", description="Похід до B1 (мапа прогресу)"),
     BotCommand(command="plan", description="Мій план підготовки"),
     BotCommand(command="test", description="Стартовий тест"),
     BotCommand(command="reset", description="Почати навчання заново"),

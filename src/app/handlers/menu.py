@@ -16,7 +16,7 @@ from app.bot import charts
 from app.bot.keyboards import menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, badges, clock, exam_dates, goals, missions, progress, vocab
+from app.services import access, badges, clock, exam_dates, goals, missions, progress, quest, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -240,6 +240,28 @@ async def cmd_missions(message: Message) -> None:
 @router.callback_query(F.data == "missions:show")
 async def cb_missions(cb: CallbackQuery) -> None:
     await _send_missions(cb.message, cb.from_user.id)
+    await cb.answer()
+
+
+# --- Квест-мапа (похід до B1) ---
+
+
+async def _send_quest(msg: Message, user_id: int) -> None:
+    st = await user_state.load(user_id)
+    inf = await access.info(user_id)
+    g = await goals.status(user_id)
+    text = quest.render(st.readiness, _user_days_left(inf), g["level"], g["streak"])
+    await msg.answer(text, reply_markup=to_menu_kb())
+
+
+@router.message(Command("quest", "pohid"))
+async def cmd_quest(message: Message) -> None:
+    await _send_quest(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "quest:show")
+async def cb_quest(cb: CallbackQuery) -> None:
+    await _send_quest(cb.message, cb.from_user.id)
     await cb.answer()
 
 
