@@ -85,6 +85,11 @@ async def get_xp(user_id: int) -> int:
     return int(v) if v else 0
 
 
+async def award_bonus_xp(user_id: int, xp: int) -> int:
+    """Нарахувати XP без хвилин/типу (нагорода за місію тощо). Повертає новий сумарний XP."""
+    return int(await _r().incrby(f"polski:xp:{user_id}", xp))
+
+
 # --- заморозки ---
 
 
@@ -137,9 +142,35 @@ async def maybe_freeze(user_id: int) -> bool:
 # --- зарахування активності ---
 
 
-async def add(user_id: int, minutes: int, xp: int) -> dict:
-    """Зарахувати активність (хвилини + XP). Повертає підсумок для показу/святкування."""
+async def today_count(user_id: int, kinds: list[str]) -> int:
+    """Скільки активностей заданих типів зроблено сьогодні (для місій)."""
     r = _r()
+    total = 0
+    for k in kinds:
+        v = await r.get(f"polski:act:{user_id}:{_today()}:{k}")
+        total += int(v) if v else 0
+    return total
+
+
+async def week_goal_days(user_id: int) -> int:
+    """Скільки днів денну ціль виконано за останні 7 днів (для тижневої місії)."""
+    r = _r()
+    today = clock.today_local()
+    n = 0
+    for i in range(7):
+        d = (today - timedelta(days=i)).isoformat()
+        if await r.get(f"polski:goalmet:{user_id}:{d}"):
+            n += 1
+    return n
+
+
+async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> dict:
+    """Зарахувати активність (хвилини + XP + тип). Повертає підсумок."""
+    r = _r()
+    if kind:
+        ak = f"polski:act:{user_id}:{_today()}:{kind}"
+        if int(await r.incr(ak)) == 1:
+            await r.expire(ak, _MIN_TTL)
     prev_xp = await get_xp(user_id)
     new_xp = int(await r.incrby(f"polski:xp:{user_id}", xp))
 
@@ -170,7 +201,7 @@ async def add(user_id: int, minutes: int, xp: int) -> dict:
 
 async def record_module(user_id: int, module_value: str, score: int | None = None) -> dict:
     xp = XP_GRADED_BASE + (round(score / 10) if score is not None else 0)
-    return await add(user_id, MODULE_MIN.get(module_value, 5), xp)
+    return await add(user_id, MODULE_MIN.get(module_value, 5), xp, kind=module_value)
 
 
 async def status(user_id: int) -> dict:

@@ -16,7 +16,7 @@ from app.bot import charts
 from app.bot.keyboards import menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, badges, clock, exam_dates, goals, progress, vocab
+from app.services import access, badges, clock, exam_dates, goals, missions, progress, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -206,6 +206,41 @@ async def cb_goal_set(cb: CallbackQuery) -> None:
     g = await goals.status(cb.from_user.id)
     with suppress(Exception):
         await cb.message.edit_text(_goal_text(g), reply_markup=_goal_kb(g["goal"]))
+
+
+# --- Місії (щоденний виклик + тижнева ціль) ---
+
+
+def _mission_line(m: dict, unit: str, target: int) -> str:
+    if m["done"]:
+        return f"✅ <s>{m['desc']}</s> — виконано! <b>+{m['xp']} XP</b>"
+    return f"▫️ {m['desc']}\n  {m['progress']}/{target} {unit} · нагорода <b>+{m['xp']} XP</b>"
+
+
+async def _send_missions(msg: Message, user_id: int) -> None:
+    st = await missions.status(user_id)
+    d, w = st["daily"], st["weekly"]
+    lines = [
+        "🎲 <b>Місії</b> — виконуй, щоб заробити бонусний XP.\n",
+        "<b>Сьогодні:</b>",
+        _mission_line(d, "", d["n"]),
+        "\n<b>Цей тиждень:</b>",
+        _mission_line(w, "дн", w["days"]),
+    ]
+    if d["claimed_now"] or w["claimed_now"]:
+        lines.append("\n🎉 <b>Нагороду зараховано!</b>")
+    await msg.answer("\n".join(lines), reply_markup=to_menu_kb())
+
+
+@router.message(Command("misje"))
+async def cmd_missions(message: Message) -> None:
+    await _send_missions(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "missions:show")
+async def cb_missions(cb: CallbackQuery) -> None:
+    await _send_missions(cb.message, cb.from_user.id)
+    await cb.answer()
 
 
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---

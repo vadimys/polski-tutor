@@ -215,7 +215,7 @@ async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
 
     _bump_streak(st)
     await user_state.save(st)
-    await goals.add(user_id, goals.LESSON_MIN, goals.XP_LESSON)  # урок → час + XP
+    await goals.add(user_id, goals.LESSON_MIN, goals.XP_LESSON, kind="lesson")  # урок → час + XP
     await vocab.seed_if_empty(user_id, clock.today_local())
     _, due_n = await vocab.counts(user_id, clock.today_local())
 
