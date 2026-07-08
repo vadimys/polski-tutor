@@ -21,6 +21,7 @@ def test_all_handlers_have_router():
         privacy,
         quizpoll,
         review,
+        say,
         speaking,
         start,
         writing,
@@ -28,7 +29,7 @@ def test_all_handlers_have_router():
 
     mods = (
         start, onboarding, admin, privacy, quizpoll, placement, lesson, writing, drills,
-        review, speaking, listening, mock, plan, menu,
+        review, say, speaking, listening, mock, plan, menu,
     )
     for module in mods:
         assert isinstance(module.router, Router), module.__name__

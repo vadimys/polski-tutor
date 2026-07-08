@@ -9,9 +9,11 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import menu_kb, review_grade_kb, review_show_kb, to_menu_kb
-from app.services import clock, pollquiz, vocab
+from app.bot.keyboards import menu_kb, review_grade_kb, to_menu_kb
+from app.integrations import tts
+from app.services import clock, pollquiz, tts_say, vocab
 
 router = Router()
 
@@ -23,10 +25,15 @@ class Review(StatesGroup):
 
 
 async def _send_word(message: Message, pl: str, n: int, total: int) -> None:
+    kb = InlineKeyboardBuilder()
+    if tts.available():  # 🔊 послухати вимову слова
+        kb.button(text="🔊 Послухати", callback_data=f"say:{await tts_say.stash(pl)}")
+    kb.button(text="👁 Показати переклад", callback_data="rv:show")
+    kb.adjust(1)
     await message.answer(
         f"🔁 <b>Повторення {n}/{total}</b>\n\n"
         f"🇵🇱 <b>{html.escape(pl)}</b>\n\nЗгадай переклад 👇",
-        reply_markup=review_show_kb(),
+        reply_markup=kb.as_markup(),
     )
 
 

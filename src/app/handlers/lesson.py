@@ -19,12 +19,12 @@ from datetime import timedelta
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.domain.models import MODULE_LABELS, Module
-from app.integrations import ai
-from app.services import clock, limits, vocab
+from app.integrations import ai, tts
+from app.services import clock, limits, tts_say, vocab
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -96,6 +96,7 @@ def _parse_lesson(raw: str, module: Module) -> dict | None:
     if not all(k in obj for k in ("topic", "grammar", "vocab", "task")):
         return None
     voc = obj["vocab"] if isinstance(obj["vocab"], list) else []
+    pl_words = [str(w["pl"]).strip() for w in voc if isinstance(w, dict) and w.get("pl")][:7]
     return {
         "module": module.value,
         "label": MODULE_LABELS[module],
@@ -103,6 +104,7 @@ def _parse_lesson(raw: str, module: Module) -> dict | None:
         "grammar": str(obj["grammar"]),
         "vocab": _vocab_html(voc),
         "vocab_n": len(voc),
+        "vocab_pl": pl_words,  # для кнопок 🔊 у розділі «Слова»
         "task": html.escape(str(obj["task"])),
     }
 
@@ -122,6 +124,7 @@ def _fallback_lesson(module: Module) -> dict:
             "🔑 <b>sprawa</b> — справа\n📌 Poznaj stan sprawy."
         ),
         "vocab_n": 3,
+        "vocab_pl": ["wniosek", "urząd", "sprawa"],
         "task": "Перепиши польською у минулому часі: 1) Czytam książkę 2) Idę do sklepu 3) Ona pracuje.",
     }
 
@@ -234,15 +237,26 @@ _SECTION_TITLE = {
 }
 
 
-def _section_kb(section: str, module_value: str) -> object:
+def _section_kb(
+    section: str, module_value: str, say_items: list[tuple[str, str]] | None = None
+) -> object:
     kb = InlineKeyboardBuilder()
-    kb.button(text="⬅️ Назад", callback_data="les:menu")
+    if say_items:  # розділ «Слова» — кнопка 🔊 на кожне слово (по 2 в ряд)
+        row: list[InlineKeyboardButton] = []
+        for word, sid in say_items:
+            row.append(InlineKeyboardButton(text=f"🔊 {word}", callback_data=f"say:{sid}"))
+            if len(row) == 2:
+                kb.row(*row)
+                row = []
+        if row:
+            kb.row(*row)
+    nav = [InlineKeyboardButton(text="⬅️ Назад", callback_data="les:menu")]
     if section == "task":
         exec_cb = _EXERCISE_CB.get(module_value, "menu:home")
-        kb.button(text="✍️ Виконати й здати", callback_data=exec_cb)
+        nav.append(InlineKeyboardButton(text="✍️ Виконати й здати", callback_data=exec_cb))
     else:
-        kb.button(text="✍️ До завдання", callback_data="les:sec:task")
-    kb.adjust(2)
+        nav.append(InlineKeyboardButton(text="✍️ До завдання", callback_data="les:sec:task"))
+    kb.row(*nav)
     return kb.as_markup()
 
 
@@ -257,6 +271,11 @@ async def cb_section(cb: CallbackQuery, state: FSMContext) -> None:
 
     body = lesson.get(section, "")
     text = f"🇵🇱 <b>Урок — {lesson['label']}</b>\n➖➖➖➖➖\n{_SECTION_TITLE[section]}\n\n{body}"
+    say_items: list[tuple[str, str]] | None = None
+    if section == "vocab" and tts.available():  # кнопки 🔊 для кожного слова
+        say_items = [(w, await tts_say.stash(w)) for w in lesson.get("vocab_pl", []) if w]
+        if say_items:
+            text += "\n\n🔊 Тисни слово, щоб почути вимову."
     if section == "task":
         text += (
             "\n\nℹ️ <i>Матеріал уроку сам по собі не оцінюється. Тисни «Виконати й здати» — я дам "
@@ -264,7 +283,9 @@ async def cb_section(cb: CallbackQuery, state: FSMContext) -> None:
             "прогрес готовності.</i>"
         )
     with suppress(Exception):
-        await cb.message.edit_text(text, reply_markup=_section_kb(section, lesson["module"]))
+        await cb.message.edit_text(
+            text, reply_markup=_section_kb(section, lesson["module"], say_items)
+        )
 
 
 @router.callback_query(F.data == "les:menu")

@@ -39,3 +39,25 @@ def test_menu_kb_review_button_uses_registered_callback():
     datas = _datas(lesson._menu_kb(fb, due_n=5))
     assert "review:start" in datas
     assert "review:show" not in datas  # review:show — стан-залежний rv-флоу, не вхід
+
+
+def test_parse_lesson_extracts_vocab_pl():
+    raw = (
+        '{"topic":"T","grammar":"G","task":"zrób","vocab":['
+        '{"pl":"kot","ua":"кіт","example":"To kot."},'
+        '{"pl":"pies","ua":"пес","example":"To pies."}]}'
+    )
+    out = lesson._parse_lesson(raw, Module.PISANIE)
+    assert out["vocab_pl"] == ["kot", "pies"]  # польські слова для кнопок 🔊
+
+
+def test_fallback_lesson_has_vocab_pl():
+    assert lesson._fallback_lesson(Module.GRAMATYKA)["vocab_pl"]  # непорожній
+
+
+def test_section_kb_vocab_has_speak_buttons():
+    """Розділ «Слова» містить кнопки say:<id> для кожного слова + навігацію."""
+    say_items = [("kot", "abc123"), ("pies", "def456")]
+    datas = _datas(lesson._section_kb("vocab", "pisanie", say_items))
+    assert "say:abc123" in datas and "say:def456" in datas
+    assert "les:menu" in datas  # навігація «Назад» на місці

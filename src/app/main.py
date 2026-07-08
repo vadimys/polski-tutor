@@ -28,6 +28,7 @@ from app.handlers import (
     privacy,
     quizpoll,
     review,
+    say,
     speaking,
     start,
     writing,
@@ -92,7 +93,7 @@ async def main() -> None:
 
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)
     learning = Router()
-    for r in (placement, lesson, writing, drills, review, speaking, listening, mock, plan, menu):
+    for r in (placement, lesson, writing, drills, review, say, speaking, listening, mock, plan, menu):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())
     learning.callback_query.middleware(AccessMiddleware())
