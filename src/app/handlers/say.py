@@ -37,11 +37,21 @@ async def cb_say(cb: CallbackQuery) -> None:
         await cb.answer("Озвучення тимчасово недоступне", show_alert=True)
         return
 
-    await cb.answer("🔊 Озвучую…")
-    data = await tts.synthesize(text)
-    if not data:
-        await cb.answer("Не вдалось озвучити 😔", show_alert=True)
+    # анти-дубль: якщо озвучення вже готується (подвійний тап) — не генеруємо вдруге
+    if not await tts_say.lock(sid):
+        await cb.answer("⏳ Аудіо вже готується…")
         return
-    msg = await cb.message.answer_voice(BufferedInputFile(data, filename="say.ogg"))
-    if msg and msg.voice:  # закешувати file_id для миттєвого повтору
-        await tts_say.set_file_id(sid, msg.voice.file_id)
+
+    await cb.answer("🔊 Готую аудіо…")
+    try:
+        with suppress(Exception):  # видимий індикатор «надсилає голосове…» у чаті
+            await cb.bot.send_chat_action(cb.message.chat.id, "upload_voice")
+        data = await tts.synthesize(text)
+        if not data:
+            await cb.message.answer("Не вдалось озвучити 😔 Спробуй ще раз.")
+            return
+        msg = await cb.message.answer_voice(BufferedInputFile(data, filename="say.ogg"))
+        if msg and msg.voice:  # закешувати file_id для миттєвого повтору
+            await tts_say.set_file_id(sid, msg.voice.file_id)
+    finally:
+        await tts_say.unlock(sid)

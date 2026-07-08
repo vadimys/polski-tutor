@@ -46,3 +46,12 @@ async def get_file_id(sid: str) -> str | None:
 
 async def set_file_id(sid: str, file_id: str) -> None:
     await _r().set(f"polski:say:fid:{sid}", file_id, ex=_TTL)
+
+
+async def lock(sid: str) -> bool:
+    """Взяти лок на генерацію (анти-дубль подвійного тапу). True — узято щойно."""
+    return bool(await _r().set(f"polski:say:lock:{sid}", "1", nx=True, ex=30))
+
+
+async def unlock(sid: str) -> None:
+    await _r().delete(f"polski:say:lock:{sid}")

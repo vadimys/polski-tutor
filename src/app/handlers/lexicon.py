@@ -83,10 +83,15 @@ async def _render_card(msg: Message, state: FSMContext, reveal: bool) -> None:
         body = f"🇵🇱 <b>{html.escape(w['pl'])}</b> — {html.escape(w['ua'])}"
         if w["example"]:
             body += f"\n📌 <i>{html.escape(w['example'])}</i>"
+        body += "\n\nЗнаєш це слово? <b>➕ Додай у словник</b>, щоб повторити пізніше, або <b>➡️ Далі</b>."
         kb.button(text="➕ У мій словник", callback_data="lex:add")
         kb.button(text="➡️ Далі", callback_data="lex:next")
     else:
-        body = f"🇵🇱 <b>{html.escape(w['pl'])}</b>\n\n<i>Згадай переклад…</i>"
+        body = (
+            f"🇵🇱 <b>{html.escape(w['pl'])}</b>\n\n"
+            "🧠 Згадай переклад у голові, послухай вимову — тоді тисни "
+            "<b>👁 Показати переклад</b>, щоб перевірити себе."
+        )
         kb.button(text="👁 Показати переклад", callback_data="lex:show")
         kb.button(text="➡️ Далі", callback_data="lex:next")
     kb.button(text="⬅️ Теми", callback_data="lex:topics")
