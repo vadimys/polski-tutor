@@ -38,12 +38,18 @@ async def stash(text: str) -> str:
     return sid
 
 
+def _as_str(v: object) -> str | None:
+    if v is None:
+        return None
+    return v.decode() if isinstance(v, bytes) else str(v)
+
+
 async def fetch(sid: str) -> str | None:
-    return await _r().get(f"polski:say:txt:{sid}")
+    return _as_str(await _r().get(f"polski:say:txt:{sid}"))
 
 
 async def get_file_id(sid: str) -> str | None:
-    return await _r().get(f"polski:say:fid:{sid}")
+    return _as_str(await _r().get(f"polski:say:fid:{sid}"))
 
 
 async def set_file_id(sid: str, file_id: str) -> None:
