@@ -7,13 +7,16 @@
 
 from __future__ import annotations
 
-from app.content import b1_2019
+from app.content import b1_2019, b1_2020
 from app.content.schema import Exam, MCQItem
 
-# порядок: найстаріший → найновіший (latest = останній). Реальні іспити додаються нижче.
+# порядок: найстаріший → найновіший. Реальні іспити додаються в кінець.
 EXAMS: list[Exam] = [
     b1_2019.EXAM,
+    b1_2020.EXAM,
 ]
+
+_COMPLETE_MIN_SECTIONS = 2  # «повний» тест = має ≥2 секції (щоб не стати дефолтом частковим)
 
 
 def all_exams() -> list[Exam]:
@@ -22,7 +25,9 @@ def all_exams() -> list[Exam]:
 
 
 def latest() -> Exam:
-    return EXAMS[-1]
+    """Найновіший ПОВНИЙ тест (дефолт /egzamin). Частковий (напр. лише читання) — не дефолт."""
+    complete = [e for e in EXAMS if len({it.section for it in e.items}) >= _COMPLETE_MIN_SECTIONS]
+    return complete[-1] if complete else EXAMS[-1]
 
 
 def by_id(exam_id: str) -> Exam | None:

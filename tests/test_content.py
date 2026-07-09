@@ -3,16 +3,18 @@
 from app import content
 
 
-def test_registry_nonempty_and_latest():
-    assert content.EXAMS
-    assert content.latest() is content.EXAMS[-1]
-    assert content.by_id(content.latest().id) is content.latest()
+def test_registry_nonempty_and_latest_is_complete():
+    assert len(content.EXAMS) >= 2
+    lt = content.latest()
+    assert content.by_id(lt.id) is lt
+    assert len({it.section for it in lt.items}) >= 2  # дефолт /egzamin — повний тест
 
 
-def test_all_items_aggregates_sections():
+def test_all_items_aggregates_across_exams():
     r = content.all_items("czytanie")
     g = content.all_items("gramatyka")
-    assert len(r) >= 10 and len(g) >= 20
+    # 2019 (11 чит + 23 грам) + 2020 (12 чит) → пул виріс
+    assert len(r) >= 23 and len(g) >= 20
     assert len(content.all_items_flat()) == len(r) + len(g)
 
 
