@@ -10,6 +10,7 @@ from aiogram import Router
 def test_all_handlers_have_router():
     from app.handlers import (
         admin,
+        dopasowanie,
         drills,
         exam,
         lesson,
@@ -32,7 +33,7 @@ def test_all_handlers_have_router():
 
     mods = (
         start, onboarding, admin, privacy, quizpoll, placement, lesson, writing, drills,
-        review, say, lexicon, mistakes, speaking, listening, mock, exam, plan, menu,
+        review, say, lexicon, mistakes, speaking, listening, mock, exam, dopasowanie, plan, menu,
     )
     for module in mods:
         assert isinstance(module.router, Router), module.__name__
@@ -46,6 +47,7 @@ def test_main_entrypoint_intact():
     cmds = {c.command for c in COMMANDS}
     assert {"prywatnosc", "moidane", "zapomnij"} <= cmds  # GDPR-команди на місці
     assert {"cel", "anuluj", "misje", "quest", "slownik", "zaraz", "pomylki", "egzamin"} <= cmds
+    assert "dopasowanie" in cmds
 
 
 def test_privacy_notice_present():

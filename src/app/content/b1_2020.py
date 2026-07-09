@@ -9,7 +9,7 @@ pytania/transformacje Gram V/VI, аудіювання) — після рушії
 
 from __future__ import annotations
 
-from app.content.schema import Exam, MCQItem
+from app.content.schema import Exam, MatchTask, MCQItem
 
 # ── CZYTANIE — Zad I: «Z tego tekstu wynika…» (a/b/c) ────────────────────
 _READING: list[MCQItem] = [
@@ -221,10 +221,100 @@ _GRAMMAR: list[MCQItem] = [
             "наслідок («тому/отже») → <b>więc</b>."),
 ]
 
+# ── CZYTANIE — Zad III: вставити фрагменти (A–H) у текст про кіберспорт ──
+# Приклад (PRZYKŁAD) = фрагмент C → у пул не входить. Ключ (klucz): 1-D,2-B,3-E,4-G,5-A,6-H,7-F.
+_ZAD3 = MatchTask(
+    section="czytanie",
+    title="Читання Zad III — встав фрагменти в текст (e-sport)",
+    intro=(
+        "Прочитай текст про комп'ютерні ігри та e-sport. Кожен пропуск (1–7) треба "
+        "заповнити одним із фрагментів A–G. Читай, який фрагмент логічно й граматично "
+        "продовжує речення.\n\n<i>«Раніше, щоб зіграти у футбол, треба було зустрітися з "
+        "друзями… Сьогодні діти дедалі частіше обирають гру на комп'ютері…»</i>"
+    ),
+    options=[
+        "natomiast teraz także w telewizji",  # A
+        "ale powoli stają się pracą i źródłem dochodów",  # B
+        "a nawet z mieszkańcami innych kontynentów",  # D
+        "w tym także w Polsce",  # E
+        "którzy interesują się e-sportem",  # F
+        "że oglądają je ludzie z całego świata",  # G
+        "w której uczą się przyszli zawodnicy",  # H
+    ],
+    prompts=[
+        "1. Grają z rodziną, kolegami, przyjaciółmi, ze znajomymi z całej Polski, ___",
+        "2. Gry nie są już tylko rozrywką, ___",
+        "3. Turnieje e-sportowe odbywają się już w wielu krajach, ___",
+        "4. Widowiska te są tak bardzo popularne, ___",
+        "5. Kiedyś można je było oglądać tylko w internecie, ___",
+        "6. W jednej z polskich szkół powstała nawet klasa, ___",
+        "7. Stają się oni idolami nastolatków, ___",
+    ],
+    key=[2, 1, 3, 5, 0, 6, 4],  # D,B,E,G,A,H,F
+    explain=[
+        "нарощення переліку («навіть з мешканцями інших континентів») → D.",
+        "протиставлення «не лише розвага, ___» → B (але стають працею й джерелом доходу).",
+        "«у багатьох країнах, ___» → E (зокрема й у Польщі).",
+        "конструкція «tak popularne, ___» (такі популярні, що…) → G.",
+        "контраст kiedyś/teraz: «tylko w internecie, ___» → A (натомість тепер і в ТБ).",
+        "означальне речення «klasa, ___» → H (у якій навчаються майбутні гравці).",
+        "означальне речення «idolami nastolatków, ___» → F (які цікавляться e-sportem).",
+    ],
+)
+
+# ── CZYTANIE — Zad IV: зіставити заголовки з фрагментами (A–H) ──────────
+# Приклад: «Pierwszy raz w Polsce» → B (у пул не входить). Ключ: 1-H,2-E,3-C,4-G,5-A,6-F,7-D.
+_ZAD4 = MatchTask(
+    section="czytanie",
+    title="Читання Zad IV — добери заголовок до тексту",
+    intro=(
+        "«W Polsce ciągle coś się dzieje!» До кожного заголовка (1–7) добери правильний "
+        "фрагмент новини A–G. Читай суть кожного повідомлення."
+    ),
+    options=[
+        "Trzeba mieć ukończone 21 lat i średnie wykształcenie. Zarobki powinny być wysokie, "
+        "szczególnie dla tych, którzy zdadzą dobrze egzaminy.",  # A
+        "Restauracja „Nowa” ogłosiła zimową promocję. W niedziele (od grudnia do końca lutego) "
+        "będzie można kupić niektóre dania o 50% taniej.",  # C
+        "Od 1 kwietnia będziemy musieli dzielić śmieci na więcej grup niż do tej pory. "
+        "Nowością będą obowiązkowe brązowe kosze na odpady BIO.",  # D
+        "Palenie w domowych piecach to jedna z przyczyn powstawania smogu, dlatego zimą "
+        "częściej pojawiają się infekcje gardła, kaszel, astma.",  # E
+        "W ostatnich latach więcej płacimy za mięso, masło, jajka i czekoladę. Wzrost cen "
+        "z roku na rok staje się bardziej odczuwalny.",  # F
+        "Od nowego roku ceny za wywiezienie śmieci będą wyższe, a tych, którzy nie będą "
+        "segregować, czekają kary.",  # G
+        "Straż miejska wypisuje mandaty wszystkim zmotoryzowanym, którzy nie przestrzegają "
+        "nowych przepisów.",  # H
+    ],
+    prompts=[
+        "1. Kary dla kierowców",
+        "2. Choroby w okresie zimowym",
+        "3. Za pół ceny",
+        "4. Opłaty w górę",
+        "5. Praca w straży miejskiej",
+        "6. Zakupy coraz droższe",
+        "7. Nowe zasady segregacji",
+    ],
+    key=[6, 3, 1, 5, 0, 4, 2],  # H,E,C,G,A,F,D
+    explain=[
+        "штрафи водіям → H (straż miejska виписує мандати водіям).",
+        "хвороби взимку → E (смог, інфекції горла, кашель).",
+        "за півціни → C (промоція −50% у ресторані).",
+        "плата вгору → G (ціни за вивіз сміття вищі + штрафи).",
+        "робота в міській варті → A (вимоги: 21 рік, освіта, іспити).",
+        "покупки дорожчають → F (більше платимо за м'ясо, масло, яйця).",
+        "нові правила сортування → D (від 1 квітня більше груп, кошики BIO).",
+    ],
+)
+
+_MATCHING = [_ZAD3, _ZAD4]
+
 EXAM = Exam(
     id="2020",
     label="Пробний тест 2020 (офіц.)",
     kind="sample",
     year=2020,
     items=_READING + _GRAMMAR,
+    tasks=_MATCHING,
 )

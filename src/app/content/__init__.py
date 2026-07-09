@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from app.content import b1_2019, b1_2020
-from app.content.schema import Exam, MCQItem
+from app.content.schema import Exam, MatchTask, MCQItem
 
 # порядок: найстаріший → найновіший. Реальні іспити додаються в кінець.
 EXAMS: list[Exam] = [
@@ -46,6 +46,16 @@ def all_items_flat() -> list[MCQItem]:
 def exam_items(exam_id: str, section: str) -> list[MCQItem]:
     e = by_id(exam_id)
     return e.section(section) if e else []
+
+
+def all_match_tasks(section: str | None = None) -> list[MatchTask]:
+    """Агрегат завдань-зіставлень (dopasowanie) по ВСІХ тестах (стабільний порядок)."""
+    return [t for e in EXAMS for t in e.match_tasks(section)]
+
+
+def exam_match_tasks(exam_id: str, section: str | None = None) -> list[MatchTask]:
+    e = by_id(exam_id)
+    return e.match_tasks(section) if e else []
 
 
 def exam_sections(exam_id: str) -> list[str]:

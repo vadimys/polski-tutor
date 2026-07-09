@@ -111,6 +111,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🖼 Опис фото", "speaking:photo"),
         ("🎧 Аудіювання", "listening:start"),
         ("🎯 Тренування", "drill:start"),
+        ("🧩 Зіставлення", "match:open"),
         ("📋 Офіційний МОК", "mock:open"),
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
@@ -140,6 +141,23 @@ def mistakes_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
 def exam_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для повного моку (режим іспиту — без миттєвого вердикту)."""
     return _mcq_kb(options, qidx, "ex:ans", "ex:stop")
+
+
+def match_kb(n_options: int, qidx: int) -> InlineKeyboardMarkup:
+    """Зіставлення: літерні кнопки A, B, C… (фрагменти показані в інтро) + вихід.
+
+    Фрагменти бувають довгі — тому на кнопках лише літери, самі фрагменти — у списку
+    вгорі. Callback сумісний із quiz.read_answer: 'ma:ans:<qidx>:<opt>'.
+    """
+    kb = InlineKeyboardBuilder()
+    letters = [
+        InlineKeyboardButton(text=chr(65 + i), callback_data=f"ma:ans:{qidx}:{i}")
+        for i in range(n_options)
+    ]
+    for j in range(0, len(letters), 4):
+        kb.row(*letters[j : j + 4])
+    kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="ma:stop"))
+    return kb.as_markup()
 
 
 def mock_menu_kb() -> InlineKeyboardMarkup:
