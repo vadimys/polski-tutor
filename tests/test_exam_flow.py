@@ -20,6 +20,12 @@ def test_2019_seq_mcq_only():
     assert {s["t"] for s in seq} == {"mcq"}
 
 
+def test_all_exams_buildable_for_picker():
+    # пікер /egzamin показує всі тести — кожен має будувати непорожній мок
+    for e in content.all_exams():
+        assert exam._build_seq(e.id), f"порожній seq для {e.id}"
+
+
 def test_seq_sections_stable_order():
     assert exam._seq_sections(exam._build_seq("2020")) == ["czytanie", "gramatyka"]
 

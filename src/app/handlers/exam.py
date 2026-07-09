@@ -87,11 +87,13 @@ async def _intro(message: Message) -> None:
         return
     labels = " → ".join(_LABEL[s] for s in _seq_sections(seq))
     b = InlineKeyboardBuilder()
-    b.button(text="▶️ Почати мок", callback_data=f"exam:begin:{exam.id}")
+    b.button(text=f"▶️ Почати ({exam.label})", callback_data=f"exam:begin:{exam.id}")
+    if len(content.all_exams()) > 1:
+        b.button(text="📚 Обрати інший тест", callback_data="exam:pick")
     b.button(text="⬅️ Меню", callback_data="menu:home")
     b.adjust(1)
     await message.answer(
-        f"🎓 <b>Повний мок іспиту</b>\nТест: <b>{exam.label}</b>\n\n"
+        f"🎓 <b>Повний мок іспиту</b>\nЗа замовчуванням — найновіший: <b>{exam.label}</b>\n\n"
         f"Секції: {labels} — <b>{len(seq)}</b> завдань (усі типи: вибір, зіставлення, "
         "форми, трансформації).\n"
         "⏱ Режим іспиту: <b>без підказок і вердиктів</b>, результат у балах — у кінці. "
@@ -101,11 +103,31 @@ async def _intro(message: Message) -> None:
     )
 
 
+@router.callback_query(F.data == "exam:pick")
+async def cb_pick(cb: CallbackQuery) -> None:
+    await cb.answer()
+    b = InlineKeyboardBuilder()
+    for e in content.all_exams():  # найновіші спершу
+        n = len(_build_seq(e.id))
+        secs = "".join(_LABEL[s].split()[0] for s in _seq_sections(_build_seq(e.id)))  # емодзі секцій
+        b.button(text=f"{e.label} · {n} зав. {secs}", callback_data=f"exam:begin:{e.id}")
+    b.button(text="⬅️ Меню", callback_data="menu:home")
+    b.adjust(1)
+    await cb.message.answer(
+        "📚 <b>Обери тест для повного моку</b>\n"
+        "Кожен — окремий офіційний тест Держкомісії. Тренуватись корисно на всіх.",
+        reply_markup=b.as_markup(),
+    )
+
+
 @router.callback_query(F.data.startswith("exam:begin:"))
 async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     exam_id = cb.data.split(":", 2)[2]
     seq = _build_seq(exam_id)
+    if not seq:
+        await cb.message.answer("Цей тест тимчасово недоступний.", reply_markup=to_menu_kb())
+        return
     await state.set_state(Exam.active)
     await state.update_data(exam_id=exam_id, seq=seq, pos=0, answers={})
     await _send_step(cb.message, exam_id, seq, 0)
