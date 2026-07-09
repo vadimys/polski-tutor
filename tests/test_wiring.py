@@ -43,7 +43,7 @@ def test_main_entrypoint_intact():
     assert len(COMMANDS) >= 7  # усі команди на місці
     cmds = {c.command for c in COMMANDS}
     assert {"prywatnosc", "moidane", "zapomnij"} <= cmds  # GDPR-команди на місці
-    assert {"cel", "anuluj", "misje", "quest", "slownik"} <= cmds  # + словник
+    assert {"cel", "anuluj", "misje", "quest", "slownik", "zaraz"} <= cmds  # + словник + коуч
 
 
 def test_privacy_notice_present():

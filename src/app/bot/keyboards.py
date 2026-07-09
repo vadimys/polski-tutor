@@ -99,7 +99,8 @@ def menu_kb() -> InlineKeyboardMarkup:
     Похід/Місії/Прогрес окремими кнопками НЕ дублюємо — вони в «📱 Панелі»
     (лишаються командами /quest /misje /postep для тих, хто без панелі)."""
     kb = InlineKeyboardBuilder()
-    if settings.webapp_url:  # хаб прогресу — вгорі, коли Mini App увімкнено
+    kb.row(InlineKeyboardButton(text="⚡ Навчатись зараз", callback_data="coach:now"))  # головний CTA
+    if settings.webapp_url:  # хаб прогресу — коли Mini App увімкнено
         kb.row(InlineKeyboardButton(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url)))
     kb.row(InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"))
     practice = [
@@ -170,5 +171,14 @@ def lesson_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="▶️ Почати урок", callback_data="lesson:start")
     kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def coach_kb() -> InlineKeyboardMarkup:
+    """Нагадування: головний CTA — розумний автопідбір дії."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⚡ Навчатись зараз", callback_data="coach:now")
+    kb.button(text="📋 Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()

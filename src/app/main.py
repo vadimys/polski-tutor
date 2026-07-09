@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 COMMANDS = [
     BotCommand(command="start", description="Головна + рівень"),
     BotCommand(command="menu", description="Меню"),
+    BotCommand(command="zaraz", description="⚡ Навчатись зараз (розумний підбір)"),
     BotCommand(command="lekcja", description="Почати урок"),
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),

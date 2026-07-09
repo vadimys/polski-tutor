@@ -11,7 +11,7 @@ from datetime import date, timedelta
 
 from aiogram import Bot
 
-from app.bot.keyboards import lesson_kb
+from app.bot.keyboards import coach_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
 from app.services import access, clock, gdpr, goals, state
@@ -48,7 +48,8 @@ async def _personal_nudge(user_id: int) -> str:
     return (
         f"🌅 <b>Dzień dobry!</b> Час для польської.{tail}\n"
         f"{freeze_line}{goal_line}\n"
-        f"Сьогодні підтягнемо: <b>{weakest}</b>. Натисни нижче або /lekcja 👇"
+        f"Сьогодні варто підтягнути: <b>{weakest}</b>.\n"
+        "Тисни <b>⚡ Навчатись зараз</b> — сам підберу найкорисніше 👇"
     )
 
 
@@ -62,7 +63,7 @@ async def daily_nudge_loop(bot: Bot) -> None:
                 if not await access.is_allowed(uid, settings.admin_id):
                     continue  # не турбуємо не-схвалених
                 try:
-                    await bot.send_message(uid, await _personal_nudge(uid), reply_markup=lesson_kb())
+                    await bot.send_message(uid, await _personal_nudge(uid), reply_markup=coach_kb())
                     sent += 1
                 except Exception:
                     logger.exception("nudge failed uid=%s", uid)

@@ -17,7 +17,18 @@ from app.bot import charts
 from app.bot.keyboards import cancel_kb, menu_kb, start_kb, to_menu_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, badges, clock, exam_dates, goals, missions, progress, quest, vocab
+from app.services import (
+    access,
+    badges,
+    clock,
+    coach,
+    exam_dates,
+    goals,
+    missions,
+    progress,
+    quest,
+    vocab,
+)
 from app.services import state as user_state
 
 router = Router()
@@ -32,17 +43,18 @@ async def _menu_header(user_id: int) -> str:
     dm = missions.daily_mission(user_id, clock.today_local().isoformat())
     m_done = await goals.today_count(user_id, dm["kinds"]) >= dm["n"]
 
-    streak = f"🔥 <b>{g['streak']}</b> дн" if g["streak"] else "🔥 почни серію"
+    streak = f"🔥 {g['streak']} дн" if g["streak"] else "🔥 почни серію"
     frz = f" · 🧊{g['freeze']}" if g["freeze"] else ""
-    exam = f" · до іспиту <b>{days}</b> дн" if days is not None else ""
+    exam = f" · іспит через <b>{days}</b> дн" if days is not None else ""
     mission = f"🎲 Місія дня: {dm['desc']} <b>+{dm['xp']} XP</b>" + (" ✅" if m_done else "")
     return (
-        "📋 <b>Меню</b>\n"
-        f"⭐ <b>Рівень {g['level']}</b> · {g['xp']} XP · {streak}{frz}\n"
-        f"🎯 Ціль дня: {g['today']}/{g['goal']} хв  {bar(gp)}" + (" ✅" if g["done"] else "") + "\n"
-        f"🗺 Похід до B1: <b>{qp}%</b>{exam}\n"
+        "📋 <b>Меню</b>\n\n"
+        f"🏁 <b>Готовність до B1: {qp}%</b>{exam}\n"
+        "<i>головна мета — ≥50% у КОЖНОМУ модулі (деталі — /postep)</i>\n\n"
+        f"⏱ Ціль дня: {g['today']}/{g['goal']} хв  {bar(gp)}" + (" ✅" if g["done"] else "") + "\n"
+        f"⭐ рів. {g['level']} · {g['xp']} XP · {streak}{frz} <i>— для мотивації</i>\n"
         f"{mission}\n\n"
-        "Обери, чим займемось 👇"
+        "Обери дію або тисни <b>⚡ Навчатись зараз</b> 👇"
     )
 
 
@@ -73,6 +85,38 @@ async def cb_menu(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await cb.message.answer(await _menu_header(cb.from_user.id), reply_markup=menu_kb())
     await cb.answer()
+
+
+# --- ⚡ Навчатись зараз (розумний автопідбір найкориснішої дії) ---
+
+
+async def _send_coach(msg: Message, user_id: int) -> None:
+    st = await user_state.load(user_id)
+    stats = await progress.compute(user_id)
+    attempts = {k: v.attempts for k, v in stats.items()}
+    _, due_n = await vocab.counts(user_id, clock.today_local())
+    act = coach.choose(st.placement_done, progress.pcts(stats), attempts, due_n)
+    kb = InlineKeyboardBuilder()
+    kb.button(text=f"▶️ Почати: {act.label}", callback_data=act.cb)
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await msg.answer(
+        f"⚡ <b>Навчатись зараз</b>\n\nНайкорисніше зараз: <b>{act.label}</b>\n💡 {act.reason}",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.message(Command("zaraz"))
+async def cmd_coach(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await _send_coach(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "coach:now")
+async def cb_coach(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer()
+    await _send_coach(cb.message, cb.from_user.id)
 
 
 @router.message(Command("anuluj", "cancel"))
