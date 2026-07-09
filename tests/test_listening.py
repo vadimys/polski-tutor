@@ -37,6 +37,19 @@ def test_2020_listening_present_and_sized():
         assert q.options == ["TAK", "NIE"]
 
 
+def test_2024_listening_present_and_sized():
+    # реальний іспит лютий-2024: Zad I=14, II=6, III=5, IV=6 (офіц. ключ)
+    assert listening.total_questions(listening.by_id("s2024_1")) == 14
+    assert listening.total_questions(listening.by_id("s2024_2")) == 6
+    assert listening.total_questions(listening.by_id("s2024_3")) == 5
+    z4 = listening.by_id("s2024_4")
+    assert listening.total_questions(z4) == 6
+    for q in z4.segments[0].questions:
+        assert q.options == ["TAK", "NIE"]
+    # Zad III — одне довге аудіо (інтерв'ю) з 5 питаннями
+    assert len(listening.by_id("s2024_3").segments) == 1
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5

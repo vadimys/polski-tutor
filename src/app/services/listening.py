@@ -297,6 +297,187 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит лютий-2024 ══════════════════════════════════════════
+    # Zad I: 14 коротких висловлювань (a/b/c). Ключ: b,b,a,c,b,c,a,c,a,a,c,b,c,a.
+    Exercise(
+        "s2024_1", "Іспит 2024 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Z przykrością, ale muszę ci odmówić.",
+                    [LQ("Ta wypowiedź oznacza:",
+                        ["zgodę na propozycję", "odrzucenie propozycji", "brak decyzji"], 1,
+                        "«muszę odmówić» → відмова.")]),
+            Segment("Czy wie pan, jak dojść do urzędu miasta?",
+                    [LQ("Ta wypowiedź jest pytaniem o:", ["czas", "drogę", "transport"], 1,
+                        "«jak dojść» → дорога.")]),
+            Segment("Pociąg do Wrocławia jest opóźniony piętnaście minut.",
+                    [LQ("Ta wypowiedź oznacza, że pociąg:",
+                        ["przyjedzie niezgodnie z rozkładem", "będzie dokładnie o czasie",
+                         "będzie kwadrans stał na stacji"], 0, "«opóźniony» → не за розкладом.")]),
+            Segment("Jak mogłeś jej to wszystko powiedzieć!",
+                    [LQ("Ta wypowiedź oznacza:", ["zadowolenie", "zainteresowanie", "krytykę"], 2,
+                        "докір → критика.")]),
+            Segment("Podczas wykładu obowiązuje zakaz używania telefonów.",
+                    [LQ("Ta wypowiedź oznacza, że podczas wykładu:",
+                        ["można korzystać z telefonów", "nie wolno używać telefonów",
+                         "trzeba włączyć telefon"], 1, "«zakaz» → не можна.")]),
+            Segment("Chciałabym skrócić tę spódnicę o sześć centymetrów.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u szewca", "u fryzjera", "u krawca"], 2,
+                        "spódnica (укоротити) → кравець.")]),
+            Segment("Synku, odrobiłeś już zadanie domowe?",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["rodzica", "nauczyciela", "brata"], 0,
+                        "«synku» → батько/мати.")]),
+            Segment("Pakiet dodatkowych minut jest w cenie abonamentu.",
+                    [LQ("Ta wypowiedź oznacza, że:",
+                        ["pakiet jest dodatkowo płatny", "abonament jest darmowy",
+                         "pakiet jest wliczony w opłaty"], 2, "«w cenie» → включено в оплату.")]),
+            Segment("Poszedłbyś wreszcie z psem na spacer!",
+                    [LQ("Ta wypowiedź oznacza:", ["prośbę", "zaproszenie", "gratulacje"], 0,
+                        "спонукання-прохання.")]),
+            Segment("Bagaż podręczny należy umieścić pod siedzeniem.",
+                    [LQ("Ta wypowiedź jest typowa:",
+                        ["w czasie podróży", "w czasie wizyty u lekarza", "w sklepie turystycznym"],
+                        0, "ручна поклажа під сидінням → у подорожі (літак/потяг).")]),
+            Segment("Niesamowita historia! Co było potem?",
+                    [LQ("Ta wypowiedź oznacza:", ["obojętność", "znudzenie", "zaciekawienie"], 2,
+                        "«co było potem?» → зацікавлення.")]),
+            Segment("Proszę brać leki przeciwgorączkowe i odpoczywać.",
+                    [LQ("Ta wypowiedź to fragment:",
+                        ["prognozy pogody", "porady lekarskiej", "audycji sportowej"], 1,
+                        "ліки + відпочинок → лікарська порада.")]),
+            Segment("Czy mają państwo w ofercie dania warzywne?",
+                    [LQ("Ta wypowiedź oznacza, że klient chce:",
+                        ["zestaw z rybą", "potrawę z mięsem", "danie wegetariańskie"], 2,
+                        "«dania warzywne» → овочеве/вегетаріанське.")]),
+            Segment("Na kurs zapraszamy wszystkie osoby pełnoletnie.",
+                    [LQ("Ta wypowiedź oznacza, że kurs jest dla osób:",
+                        ["które mają co najmniej 18 lat", "które mają mniej niż 18 lat",
+                         "bez względu na wiek"], 0, "«pełnoletnie» → щонайменше 18 років.")]),
+        ],
+    ),
+    # Zad II: 6 діалогів (a/b/c). Ключ: a,b,c,c,b,a.
+    Exercise(
+        "s2024_2", "Іспит 2024 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Czy problem jest poważny? – To płyta główna. Powinna pani zostawić "
+                    "komputer w serwisie.",
+                    [LQ("Z dialogu wynika, że komputer:",
+                        ["należy naprawić", "jest sprawny", "trzeba sprzedać"], 0,
+                        "«zostawić w serwisie» → треба ремонтувати.")]),
+            Segment("– Co myślisz o tym nowym sklepie ze zdrową żywnością? – Nie polecam ci. "
+                    "Tam jest bardzo drogo.",
+                    [LQ("Z dialogu wynika, że kobieta:",
+                        ["zachęca do kupowania w tym sklepie", "informuje o wysokich cenach w sklepie",
+                         "poleca pracę w sklepie"], 1, "«bardzo drogo» → високі ціни.")]),
+            Segment("– O nie, znowu wszystkie miejsca parkingowe przed sklepem są zajęte. "
+                    "– Mówiłem ci, że trzeba wychodzić wcześniej z domu.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["para wyszła za wcześnie z domu", "kobieta bardzo się spieszy na zakupy",
+                         "na parkingu nie ma wolnych miejsc"], 2, "усі місця зайняті.")]),
+            Segment("– Czy autobus do centrum już odjechał? – Tak, pięć minut temu.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["autobus przyjedzie za kilka minut", "mężczyzna nie wie, o której był autobus",
+                         "kobieta przyszła za późno na przystanek"], 2,
+                        "автобус поїхав 5 хв тому → прийшла запізно.")]),
+            Segment("– Co kupiłaś Basi na imieniny? – Nie mogę powiedzieć, to niespodzianka.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["kobieta jeszcze nic nie kupiła", "prezent dla Basi to sekret",
+                         "Basia nie chce prezentu na urodziny"], 1, "«niespodzianka» → секрет.")]),
+            Segment("– Czy wszystko panu smakowało? – Tak, ale zupa mogłaby być trochę cieplejsza.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["potrawa była trochę za zimna", "klient jest bardzo niezadowolony",
+                         "mężczyzna chwali potrawę"], 0, "«mogłaby być cieplejsza» → трохи холодна.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю про фірму Wtórpol (a/b/c). Ключ: c,b,b,b,c.
+    Exercise(
+        "s2024_3", "Іспит 2024 — Zad III (інтерв'ю Wtórpol)",
+        "Прослухай інтерв'ю про фірму, що переробляє непотрібний одяг. Лунає двічі.",
+        [
+            Segment(
+                "Proszę powiedzieć, czym zajmuje się firma Wtórpol. "
+                "Dajemy drugie życie ubraniom. Zbieramy odzież używaną do charakterystycznych, "
+                "kremowych pojemników naszych lub Polskiego Czerwonego Krzyża. Dodatkowo "
+                "prowadzimy akcje edukacyjne w szkołach. "
+                "W jaki sposób odzież trafia do waszej firmy? "
+                "Najpierw ubrania trafiają do kontenerów, które znajdują się w każdej mniejszej "
+                "lub większej miejscowości. Potem jest sortowanie. Wtórpol to jedna z największych "
+                "sortowni w Europie, ale nasza firma sortuje jedynie polską odzież. "
+                "Co się potem dzieje z ubraniami? "
+                "Te najwyższej jakości – czyste i niezniszczone – trafiają do sklepów z odzieżą "
+                "używaną w różnych miastach Polski. Odzież, która nie nadaje się do noszenia, "
+                "trafia do schronisk dla zwierząt. "
+                "Proszę powiedzieć więcej o akcjach edukacyjnych. "
+                "Jedna z nich nazywa się „Zrób porządek w szafie”. Uczniowie zbierają niepotrzebne "
+                "ubrania, przygotowują prezentacje i zdobywają wiedzę na temat recyklingu. "
+                "Co uczniowie mogą zrobić z ubraniami, których już nie potrzebują? "
+                "Mogą je sprzedać na przeznaczonych do tego platformach lub oddać osobom, których "
+                "nie stać na nowe rzeczy. Najgorsze to wrzucić ubrania do kosza na odpady zmieszane.",
+                [
+                    LQ("Kontenery na ubrania znajdują się:",
+                       ["przy każdej większej szkole w Polsce", "w największych miastach w Polsce",
+                        "zarówno w małych, jak i dużych miastach w Polsce"], 2,
+                       "«w każdej mniejszej lub większej miejscowości»."),
+                    LQ("Firma Wtórpol:",
+                       ["produkuje ubrania z odpadów", "zajmuje się recyklingiem polskich ubrań",
+                        "importuje ubrania z Zachodu i sprzedaje w Polsce"], 1,
+                       "«drugie życie», сортує лише польський одяг."),
+                    LQ("Najlepsze ubrania firmy Wtórpol są:",
+                       ["wysyłane za granicę do biedniejszych krajów",
+                        "sprzedawane w sklepach w Polsce",
+                        "oddawane do miejsc dla bezdomnych psów lub kotów"], 1,
+                       "найвищої якості → магазини вживаного одягу в Польщі."),
+                    LQ("Podczas akcji „Zrób porządek w szafie” uczniowie:",
+                       ["zajmują się w firmie sortowaniem ubrań",
+                        "robią prezentacje i uczą się o recyklingu",
+                        "pomagają sprzątać w schroniskach"], 1, "презентації + знання про рециклінг."),
+                    LQ("Ubrania, których uczniowie już nie potrzebują:",
+                       ["powinny być oddane firmie Wtórpol",
+                        "muszą zostać wrzucone do specjalnego kontenera",
+                        "mogą być przekazane biedniejszym"], 2,
+                       "«oddać osobom, których nie stać na nowe rzeczy»."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: інфо про застосунок Pola, TAK/NIE (6). Ключ: N,T,N,T,T,N.
+    Exercise(
+        "s2024_4", "Іспит 2024 — Zad IV (застосунок Pola)",
+        "Прослухай інформацію про застосунок Pola й познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Po co nam ta nowa aplikacja? Żeby sprawdzić, czy sok lub wędlina, które kupujemy, "
+                "wyprodukowano w Polsce. Dzięki aplikacji Pola możemy zrobić to sami – wystarczy "
+                "zeskanować kod kreskowy. "
+                "Jak działa aplikacja? To bardzo proste. Bierzemy na przykład jogurt, uruchamiamy "
+                "aplikację w smartfonie i skanujemy kod kreskowy. Po chwili możemy sprawdzić, czy "
+                "producent jest z Polski i czy płaci tu podatki. "
+                "Jak oceniacie produkty? Jest pięć kryteriów. Najwięcej punktów jest za wielkość "
+                "polskiego kapitału, produkcję na terenie kraju i badania naukowe. Najmniej za "
+                "rejestrację firmy w Polsce. "
+                "Ile to kosztuje? Aplikacja jest całkowicie bezpłatna, zarówno dla firm, jak i dla "
+                "użytkowników. "
+                "Czy tylko z aplikacją możemy sprawdzić, czy kupujemy polskie produkty? Nie – na "
+                "przykład jedna z sieci sklepów drukuje takie informacje na paragonie. Pomocny może "
+                "być też sam kod kreskowy: trzy pierwsze liczby 590 oznaczają, że firma "
+                "zarejestrowała się w Polsce, ale nie ma gwarancji, że tutaj wyprodukowała produkt.",
+                [
+                    LQ("Dzięki aplikacji możemy sprawdzić, z jakiego kraju pochodzi produkt.",
+                       _TAKNIE, 1, "НІ — перевіряє, чи вироблено В ПОЛЬЩІ, не країну загалом."),
+                    LQ("Aplikacja jest łatwa w obsłudze.", _TAKNIE, 0, "ТАК — «to bardzo proste»."),
+                    LQ("Każdy produkt może otrzymać maksymalnie 5 punktów.", _TAKNIE, 1,
+                       "НІ — п'ять КРИТЕРІЇВ, не максимум 5 балів."),
+                    LQ("Aplikacja jest darmowa dla klientów i producentów.", _TAKNIE, 0,
+                       "ТАК — «bezpłatna dla firm i użytkowników»."),
+                    LQ("Czasami z paragonu można dowiedzieć się, czy kupiliśmy polskie produkty.",
+                       _TAKNIE, 0, "ТАК — мережа друкує це на чеку."),
+                    LQ("Początek kodu 590 oznacza, że firma produkuje towar w Polsce.", _TAKNIE, 1,
+                       "НІ — 590 = зареєстрована в Польщі, але не гарантія виробництва тут."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
