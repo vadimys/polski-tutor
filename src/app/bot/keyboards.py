@@ -180,6 +180,28 @@ def open_kb(pos: int) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def exam_match_kb(n_options: int, qidx: int) -> InlineKeyboardMarkup:
+    """Зіставлення в РЕЖИМІ ІСПИТУ — літерні кнопки (ex:ans, без вердикту) + вихід."""
+    kb = InlineKeyboardBuilder()
+    letters = [
+        InlineKeyboardButton(text=chr(65 + i), callback_data=f"ex:ans:{qidx}:{i}")
+        for i in range(n_options)
+    ]
+    for j in range(0, len(letters), 4):
+        kb.row(*letters[j : j + 4])
+    kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="ex:stop"))
+    return kb.as_markup()
+
+
+def exam_text_kb(pos: int) -> InlineKeyboardMarkup:
+    """Текстовий крок моку (free-fill/open) — відповідь ТЕКСТОМ; пропустити / вихід."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⏭ Пропустити", callback_data=f"ex:skip:{pos}")
+    kb.button(text="⏹ Завершити", callback_data="ex:stop")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
 def mock_menu_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="📖 Читання (офіц.)", callback_data="mock:czytanie")
