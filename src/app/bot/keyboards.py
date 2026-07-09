@@ -112,6 +112,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎧 Аудіювання", "listening:start"),
         ("🎯 Тренування", "drill:start"),
         ("🧩 Зіставлення", "match:open"),
+        ("✏️ Впиши форму", "fill:open"),
         ("📋 Офіційний МОК", "mock:open"),
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
@@ -157,6 +158,15 @@ def match_kb(n_options: int, qidx: int) -> InlineKeyboardMarkup:
     for j in range(0, len(letters), 4):
         kb.row(*letters[j : j + 4])
     kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="ma:stop"))
+    return kb.as_markup()
+
+
+def fill_kb(pos: int) -> InlineKeyboardMarkup:
+    """Free-fill: відповідь вводиться ТЕКСТОМ; кнопки лише «не знаю» / вихід."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⏭ Не знаю", callback_data=f"ff:skip:{pos}")
+    kb.button(text="⏹ Завершити", callback_data="ff:stop")
+    kb.adjust(2)
     return kb.as_markup()
 
 

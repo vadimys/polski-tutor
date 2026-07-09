@@ -37,6 +37,7 @@ from app.handlers import (
     say,
     speaking,
     start,
+    uzupelnianie,
     writing,
 )
 from app.health import start_health_server
@@ -62,6 +63,7 @@ COMMANDS = [
     BotCommand(command="egzamin", description="Повний мок іспиту (усі секції)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="dopasowanie", description="Зіставлення (фрагменти/заголовки)"),
+    BotCommand(command="formy", description="Впиши форму (граматика)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
     BotCommand(command="slownik", description="Вільний словник за темами"),
     BotCommand(command="postep", description="Мій прогрес"),
@@ -111,7 +113,7 @@ async def main() -> None:
     learning = Router()
     for r in (
         placement, lesson, writing, drills, review, say, lexicon, mistakes,
-        speaking, listening, mock, exam, dopasowanie, plan, menu,
+        speaking, listening, mock, exam, dopasowanie, uzupelnianie, plan, menu,
     ):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())

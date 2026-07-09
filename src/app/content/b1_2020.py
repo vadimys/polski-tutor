@@ -9,7 +9,7 @@ pytania/transformacje Gram V/VI, аудіювання) — після рушії
 
 from __future__ import annotations
 
-from app.content.schema import Exam, MatchTask, MCQItem
+from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem
 
 # ── CZYTANIE — Zad I: «Z tego tekstu wynika…» (a/b/c) ────────────────────
 _READING: list[MCQItem] = [
@@ -310,11 +310,60 @@ _ZAD4 = MatchTask(
 
 _MATCHING = [_ZAD3, _ZAD4]
 
+# ── GRAMATYKA — Zad IV: вписати форми дієслів (тепер./майб. час) → free-fill ──
+# Ключ звірено з klucz PDF; варіанти («/») внесено як окремі прийнятні відповіді.
+_GRAM_ZAD4 = FreeFillTask(
+    section="gramatyka",
+    title="Граматика Zad IV — впиши форму дієслова",
+    intro=(
+        "Впиши правильну форму дієслова (у дужках — інфінітив; час теперішній або "
+        "майбутній). Текст про «Łódź Design Festival».\n\n"
+        "<i>Приклад: co roku <b>zaprasza</b> (zapraszać) projektantów w nadziei, że "
+        "<b>pokażą</b> (pokazać) nowe trendy.</i>"
+    ),
+    prompts=[
+        "1. …o tym, co ___ (dawać) nam poczucie komfortu",
+        "2. …w jaki sposób na potrzeby człowieka ___ (odpowiadać) artyści",
+        "3. – ___ (mówić) Michał Piernikowski, dyrektor",
+        "4. …jak ___ (my — pracować) za kilkanaście lat",
+        "5. …jak nasze miejsca pracy się ___ (zmienić) za jakiś czas",
+        "6. Katarzyna Dubik z biura organizacyjnego ___ (informować):",
+        "7. Do Łodzi ___ (przyjechać) najważniejsi projektanci",
+        "8. …a jutro ___ (my — mieć) ogromną przyjemność gościć artystów",
+        "9. …artystów ze Szwecji, którzy ___ (poprowadzić) warsztaty dla dzieci",
+        "10. Już wkrótce wszyscy ___ (móc) oglądać festiwalowe wystawy",
+    ],
+    accepted=[
+        ["daje"],
+        ["odpowiadają"],
+        ["mówi"],
+        ["będziemy pracowali", "będziemy pracować"],
+        ["zmienią"],
+        ["informuje"],
+        ["przyjadą"],
+        ["będziemy mieli", "będziemy mieć"],
+        ["poprowadzą"],
+        ["będą mogli", "będziemy mogli"],
+    ],
+    explain=[
+        "теперішній час, 3 ос. одн. (co = воно) → <b>daje</b>.",
+        "теперішній, 3 ос. мн. (artyści) → <b>odpowiadają</b>.",
+        "теперішній, 3 ос. одн. (Michał) → <b>mówi</b>.",
+        "майбутній, 1 ос. мн. (my) → <b>będziemy pracowali</b> (або <b>będziemy pracować</b>).",
+        "майбутній доконаний, 3 ос. мн. (miejsca się) → <b>zmienią</b>.",
+        "теперішній, 3 ос. одн. (Katarzyna) → <b>informuje</b>.",
+        "майбутній доконаний, 3 ос. мн. (projektanci) → <b>przyjadą</b>.",
+        "майбутній, 1 ос. мн. (my) → <b>będziemy mieli</b> (або <b>będziemy mieć</b>).",
+        "майбутній доконаний, 3 ос. мн. (którzy) → <b>poprowadzą</b>.",
+        "майбутній, 3 ос. мн. (wszyscy) → <b>będą mogli</b> (або <b>będziemy mogli</b>).",
+    ],
+)
+
 EXAM = Exam(
     id="2020",
     label="Пробний тест 2020 (офіц.)",
     kind="sample",
     year=2020,
     items=_READING + _GRAMMAR,
-    tasks=_MATCHING,
+    tasks=[*_MATCHING, _GRAM_ZAD4],
 )

@@ -40,16 +40,47 @@ class MatchTask:
 
 
 @dataclass
+class FreeFillTask:
+    """Вписати форму (free-fill) — офіц. тип Gramatyka Zad IV.
+
+    Учень ВПИСУЄ форму слова (не вибір!). `prompts[i]` = локальний контекст із
+    інфінітивом у дужках; `accepted[i]` = список прийнятних відповідей (варіанти,
+    напр. ["będziemy mieli", "będziemy mieć"]). Порівняння — нормалізоване
+    (регістр/пробіли/пунктуація), діакритика зберігається.
+    """
+
+    section: str  # 'gramatyka'
+    title: str
+    intro: str  # інструкція + приклад/уривок, показ раз
+    prompts: list[str]  # по одному на пропуск (локальний контекст + інфінітив)
+    accepted: list[list[str]]  # прийнятні відповіді на кожен пропуск
+    explain: list[str]  # пояснення на кожен пропуск
+
+
+# усі структуровані (не плоскі MCQ) завдання
+Task = MatchTask | FreeFillTask
+
+
+@dataclass
 class Exam:
     id: str  # стабільний ключ, напр. "2019", "2024-06"
     label: str  # людяна назва для UI
     kind: str  # 'sample' (пробний) | 'real' (минулий іспит)
     year: int
     items: list[MCQItem] = field(default_factory=list)
-    tasks: list[MatchTask] = field(default_factory=list)  # структуровані (не-MCQ) завдання
+    tasks: list[Task] = field(default_factory=list)  # структуровані (не-MCQ) завдання
 
     def section(self, section: str) -> list[MCQItem]:
         return [it for it in self.items if it.section == section]
 
     def match_tasks(self, section: str | None = None) -> list[MatchTask]:
-        return [t for t in self.tasks if section is None or t.section == section]
+        return [
+            t for t in self.tasks
+            if isinstance(t, MatchTask) and (section is None or t.section == section)
+        ]
+
+    def fill_tasks(self, section: str | None = None) -> list[FreeFillTask]:
+        return [
+            t for t in self.tasks
+            if isinstance(t, FreeFillTask) and (section is None or t.section == section)
+        ]

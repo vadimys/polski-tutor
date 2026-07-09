@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from app.content import b1_2019, b1_2020
-from app.content.schema import Exam, MatchTask, MCQItem
+from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem
 
 # порядок: найстаріший → найновіший. Реальні іспити додаються в кінець.
 EXAMS: list[Exam] = [
@@ -56,6 +56,16 @@ def all_match_tasks(section: str | None = None) -> list[MatchTask]:
 def exam_match_tasks(exam_id: str, section: str | None = None) -> list[MatchTask]:
     e = by_id(exam_id)
     return e.match_tasks(section) if e else []
+
+
+def all_fill_tasks(section: str | None = None) -> list[FreeFillTask]:
+    """Агрегат завдань «вписати форму» (free-fill) по ВСІХ тестах."""
+    return [t for e in EXAMS for t in e.fill_tasks(section)]
+
+
+def exam_fill_tasks(exam_id: str, section: str | None = None) -> list[FreeFillTask]:
+    e = by_id(exam_id)
+    return e.fill_tasks(section) if e else []
 
 
 def exam_sections(exam_id: str) -> list[str]:
