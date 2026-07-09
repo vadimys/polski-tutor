@@ -38,6 +38,16 @@ SOURCE = "офіційний зразок Держкомісії (B1)"
 
 _TAKNIE = ["TAK", "NIE"]
 
+# спільні описи-опції для Zad V тесту 2020 (порядок A-F; C — дистрактор із прикладу)
+_ZAD5_OPTS = [
+    "sport, który nie wymagał specjalnego stroju",  # A
+    "dyscyplina, w której Polacy odnosili sukcesy",  # B
+    "sport tak samo popularny jak jazda na nartach",  # C (przykład: hokej)
+    "aktywność związana też z turystyką",  # D
+    "sport stosunkowo niedrogi",  # E
+    "dyscyplina związana z modą sportową",  # F
+]
+
 EXERCISES: list[Exercise] = [
     # Zadanie I — короткі висловлювання: «до чого належить фраза» (офіц. ключ I)
     Exercise(
@@ -248,6 +258,41 @@ EXERCISES: list[Exercise] = [
                        "«to zależy od kraju» (Таїланд — скутер, Нідерланди — велосипеди)."),
                     LQ("Boi się kłopotów z powodu braku znajomości języków obcych.", _TAKNIE, 1,
                        "знає англійську, скрізь порозуміється й дасть раду."),
+                ],
+            )
+        ],
+    ),
+    # ── Тест 2020 — Zad V: зіставлення (спорт 100 років тому) → MCQ-per-item ──
+    # Опис-опції A-F спільні; C (як хокей у прикладі) — дистрактор. Ключ: E,D,B,F,A.
+    Exercise(
+        "s2020_5", "Тест 2020 — Zad V (спорт 100 років тому)",
+        "Прослухай текст про популярні колись види спорту й добери опис до кожного. "
+        "На іспиті лунає двічі.",
+        [
+            Segment(
+                "Sto lat temu, podobnie jak dzisiaj, Polacy uwielbiali sport. Zimą dodatkowe "
+                "pociągi kursowały do górskich miejscowości, aby można było pojeździć na nartach. "
+                "Równie popularny był hokej, ale najwięcej osób jeździło na łyżwach, gdyż sport "
+                "ten był dość tani – w miastach były dostępne dla mieszkańców lodowiska, a na "
+                "prowincji wystarczyło zamarznięte jezioro. Pływanie żaglówką czy łodzią to "
+                "sporty dla bogatych. Pozwalały one zwiedzać kraj, podziwiać piękne, nadwodne "
+                "krajobrazy. Jazdę konną uprawiali przede wszystkim żołnierze. Zdobywali liczne "
+                "medale na zawodach w Polsce i za granicą. W tenisa chętnie grały panie, więc to "
+                "dla nich projektanci mody wymyślili specjalne sportowe stroje. Jednak większość "
+                "dyscyplin sportowych kobiety, zwłaszcza te mniej zamożne, uprawiały w zwykłych, "
+                "codziennych ubraniach – w tych samych sukienkach robiły zakupy, jeździły na "
+                "rowerach, grały w siatkówkę czy badmintona.",
+                [
+                    LQ("«Łyżwy» to był:", _ZAD5_OPTS, 4,
+                       "дешевий спорт: лодовиська в містах, замерзлі озера на провінції."),
+                    LQ("«Sporty wodne» (żaglówka, łódź) to:", _ZAD5_OPTS, 3,
+                       "дозволяли zwiedzać kraj і милуватися краєвидами → туризм."),
+                    LQ("«Jazda konna» to była:", _ZAD5_OPTS, 1,
+                       "żołnierze zdobywali medale → Polacy odnosili sukcesy."),
+                    LQ("«Tenis» to była:", _ZAD5_OPTS, 5,
+                       "projektanci mody створили спеціальні строї → związana z modą."),
+                    LQ("«Gra w siatkówkę» to był:", _ZAD5_OPTS, 0,
+                       "kobiety grały w zwykłych ubraniach → nie wymagał specjalnego stroju."),
                 ],
             )
         ],

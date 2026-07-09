@@ -35,3 +35,14 @@ def test_2020_listening_present_and_sized():
     assert len(z3.segments) == 1 and len(z3.segments[0].questions) == 5
     for q in z3.segments[0].questions:
         assert q.options == ["TAK", "NIE"]
+
+
+def test_2020_zad5_matching_as_mcq():
+    z5 = listening.by_id("s2020_5")
+    assert listening.total_questions(z5) == 5
+    seg = z5.segments[0]
+    # 6 спільних описів-опцій, ключ E,D,B,F,A (індекси 4,3,1,5,0), C(2) — дистрактор
+    assert [q.correct for q in seg.questions] == [4, 3, 1, 5, 0]
+    for q in seg.questions:
+        assert len(q.options) == 6
+    assert 2 not in [q.correct for q in seg.questions]  # C ніколи не правильний
