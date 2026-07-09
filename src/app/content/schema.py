@@ -57,8 +57,26 @@ class FreeFillTask:
     explain: list[str]  # пояснення на кожен пропуск
 
 
+@dataclass
+class OpenTask:
+    """Відкрите завдання (постав питання / трансформація) — офіц. Gramatyka Zad V/VI.
+
+    Однозначного ключа НЕМА («зараховувати всі інші правильні розв'язання»). Оцінює
+    AI, ЗАЗЕМЛЕНА офіційним зразком (`models[i]`), або — якщо AI вимкнено — self-check
+    (показ зразка, готовність НЕ рухаємо, чесно). `words[i]` = обов'язкове слово.
+    """
+
+    section: str  # 'gramatyka'
+    title: str
+    intro: str
+    criterion: str  # що перевіряти (для AI-промпту й показу)
+    prompts: list[str]  # оригінальне речення (для показу)
+    words: list[str]  # обов'язкове слово в дужках (per prompt)
+    models: list[list[str]]  # офіційні зразки (заземлення AI + reveal у self-check)
+
+
 # усі структуровані (не плоскі MCQ) завдання
-Task = MatchTask | FreeFillTask
+Task = MatchTask | FreeFillTask | OpenTask
 
 
 @dataclass
@@ -83,4 +101,10 @@ class Exam:
         return [
             t for t in self.tasks
             if isinstance(t, FreeFillTask) and (section is None or t.section == section)
+        ]
+
+    def open_tasks(self, section: str | None = None) -> list[OpenTask]:
+        return [
+            t for t in self.tasks
+            if isinstance(t, OpenTask) and (section is None or t.section == section)
         ]

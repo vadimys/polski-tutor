@@ -9,7 +9,7 @@ pytania/transformacje Gram V/VI, аудіювання) — після рушії
 
 from __future__ import annotations
 
-from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem
+from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem, OpenTask
 
 # ── CZYTANIE — Zad I: «Z tego tekstu wynika…» (a/b/c) ────────────────────
 _READING: list[MCQItem] = [
@@ -359,11 +359,41 @@ _GRAM_ZAD4 = FreeFillTask(
     ],
 )
 
+# ── GRAMATYKA — Zad VI: трансформація речення (зберегти сенс) → open ────
+# Однозначного ключа нема (офіц. «зараховувати всі інші правильні»). Зразки з klucz PDF.
+_GRAM_ZAD6 = OpenTask(
+    section="gramatyka",
+    title="Граматика Zad VI — перетвори речення",
+    intro=(
+        "Перепиши речення так, щоб зберегти той самий сенс, ОБОВ'ЯЗКОВО вживши слово з "
+        "дужок (у потрібній формі). Пиши кожне речення текстом.\n\n"
+        "<i>Приклад: «Anna lubi literaturę polską.» (interesuje się) → "
+        "Anna interesuje się literaturą polską.</i>\n\n"
+        "📊 Оцінює AI за офіційним зразком (можливі й інші правильні варіанти)."
+    ),
+    criterion="Той самий сенс, що в оригіналі + вжите слово з дужок у правильній формі, граматично коректно.",
+    prompts=[
+        "Joanna przyglądała się małemu kotu.",
+        "W twoim pokoju zawsze jest bałagan.",
+        "Marta bez przerwy wspomina ten koncert.",
+        "Wczoraj Michał był w teatrze pierwszy raz w życiu.",
+        "Czy znasz adres tego sklepu?",
+    ],
+    words=["obserwowała", "porządku", "opowiada", "poszedł", "wiesz"],
+    models=[
+        ["Joanna obserwowała małego kota."],
+        ["W twoim pokoju nigdy nie ma porządku."],
+        ["Marta bez przerwy opowiada o tym koncercie."],
+        ["Wczoraj Michał poszedł do teatru pierwszy raz w życiu."],
+        ["Czy wiesz, jaki jest adres tego sklepu?", "Czy wiesz, jaki adres ma ten sklep?"],
+    ],
+)
+
 EXAM = Exam(
     id="2020",
     label="Пробний тест 2020 (офіц.)",
     kind="sample",
     year=2020,
     items=_READING + _GRAMMAR,
-    tasks=[*_MATCHING, _GRAM_ZAD4],
+    tasks=[*_MATCHING, _GRAM_ZAD4, _GRAM_ZAD6],
 )

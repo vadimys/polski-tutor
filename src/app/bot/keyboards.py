@@ -113,6 +113,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎯 Тренування", "drill:start"),
         ("🧩 Зіставлення", "match:open"),
         ("✏️ Впиши форму", "fill:open"),
+        ("🔄 Трансформації", "open:open"),
         ("📋 Офіційний МОК", "mock:open"),
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
@@ -166,6 +167,15 @@ def fill_kb(pos: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="⏭ Не знаю", callback_data=f"ff:skip:{pos}")
     kb.button(text="⏹ Завершити", callback_data="ff:stop")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+def open_kb(pos: int) -> InlineKeyboardMarkup:
+    """Open-таск (трансформація): відповідь ТЕКСТОМ; «пропустити» / вихід."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⏭ Пропустити", callback_data=f"op:skip:{pos}")
+    kb.button(text="⏹ Завершити", callback_data="op:stop")
     kb.adjust(2)
     return kb.as_markup()
 
