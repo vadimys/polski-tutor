@@ -1,16 +1,17 @@
 """РЕАЛЬНИЙ минулий іспит B1 — лютий 2024 (certyfikatpolski.pl, egzamin certyfikatowy).
 
 Джерело: 4-5.02.2024-B1_arkusz_egzaminacyjny.pdf + …_transkrypcja.pdf (містить KLUCZ).
-ДОСЛІВНО з arkusz, КОЖЕН ключ звірено з офіц. klucz. Наразі — секція Czytanie:
-- Zad I (a/b/c ×5, ключ b,a,c,b,c) + Zad II (TAK/NIE ×6, ключ N,N,T,T,T,T)
-  + Zad V (вибір слова ×10) — MCQ;
-- Zad III (вставити фрагменти) + Zad IV (заголовки↔тексти) — matching.
-Далі: Gramatyka (8 Zad) + Słuchanie (5 Zad).
+ДОСЛІВНО з arkusz, КОЖЕН ключ звірено з офіц. klucz. Czytanie + Gramatyka (усі 8 Zad):
+- Czytanie: Zad I (a/b/c ×5) + Zad II (TAK/NIE ×6) + Zad V (вибір слова ×10) — MCQ;
+  Zad III/IV — matching (tasks).
+- Gramatyka: I(форми ×10) + II(сполучники ×5) + III(ступ. ×5) + VII(способи ×10)
+  + VIII(прийменники ×5) — MCQ; IV(форми ×10) + V(питання ×5) — free-fill; VI(×5) — open.
+Далі: Słuchanie (5 Zad).
 """
 
 from __future__ import annotations
 
-from app.content.schema import Exam, MatchTask, MCQItem
+from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem, OpenTask
 
 # ── CZYTANIE — Zad I: «Z tego tekstu wynika…» (a/b/c) ────────────────────
 _READING: list[MCQItem] = [
@@ -206,11 +207,185 @@ _ZAD4 = MatchTask(
 
 _MATCHING = [_ZAD3, _ZAD4]
 
+# ══ GRAMATYKA ═══════════════════════════════════════════════════════════
+# ── Zad I: підкресли форму (відмінювання) — MCQ. Текст про фільм «Chłopi». ──
+_GRAMMAR: list[MCQItem] = [
+    MCQItem("gramatyka", "Текст про екранізацію «Chłopi» Реймонта.",
+            "Reżyserzy to twórcy animacji ___ „Twój Vincent”.",
+            ["malarskiego", "malarskiej", "malarską"], 1, "animacji (якої?) → <b>malarskiej</b>."),
+    MCQItem("gramatyka", "", "„Chłopi” nie są ___ filmem.",
+            ["typowym", "typowego", "typowemu"], 0, "być + орудний → <b>typowym</b> filmem."),
+    MCQItem("gramatyka", "", "W ___ realizacji wzięli udział nie tylko aktorzy…",
+            ["jemu", "jego", "go"], 1, "присвійний (у його реалізації) → <b>jego</b>."),
+    MCQItem("gramatyka", "", "…wzięli udział nie tylko ___, lecz także ponad 100 malarzy.",
+            ["aktorzy", "aktorów", "aktorach"], 0, "підмет (наз. мн., чол.-ос.) → <b>aktorzy</b>."),
+    MCQItem("gramatyka", "", "…malarzy, którzy pracowali nad każdym ___.",
+            ["kadru", "kadr", "kadrem"], 2, "nad + орудний → <b>kadrem</b>."),
+    MCQItem("gramatyka", "", "Całe dzieło składa się z ___ obrazów.",
+            ["fascynujących", "fascynującymi", "fascynującym"], 0,
+            "z + родовий множини → <b>fascynujących</b>."),
+    MCQItem("gramatyka", "", "Fabuła jest podobna do ___ z powieści.",
+            ["tą", "tę", "tej"], 2, "podobna do + родовий → <b>tej</b>."),
+    MCQItem("gramatyka", "", "…opowiada nam o ___, Macieju Borynie.",
+            ["ojca", "ojcu", "ojcem"], 1, "o + місцевий → <b>ojcu</b>."),
+    MCQItem("gramatyka", "", "Jagna bardzo podoba się ___ obydwu.",
+            ["ich", "im", "nim"], 1, "podobać się + давальний → <b>im</b>."),
+    MCQItem("gramatyka", "", "Relacja doprowadza do wielu konfliktów we ___.",
+            ["wsie", "wsią", "wsi"], 2, "we + місцевий → <b>wsi</b>."),
+    # ── Zad III: ступенювання — MCQ. Текст про зимові види спорту. ──
+    MCQItem("gramatyka", "Текст про нетипові зимові види спорту.",
+            "Zima to ___ ze wszystkich pora roku (dla sportowców).",
+            ["najtrudniej", "trudniejsza", "najtrudniejsza"], 2,
+            "«ze wszystkich» → найвищий ступінь → <b>najtrudniejsza</b>."),
+    MCQItem("gramatyka", "", "Można uprawiać ___ spotykane aktywności fizyczne.",
+            ["rzadziej", "rzadkie", "rzadsze"], 0, "«___ spotykane» (рідше стрічувані) → <b>rzadziej</b>."),
+    MCQItem("gramatyka", "", "Snowkiting rozwija się ___ niż myślicie.",
+            ["szybsza", "szybciej", "najszybciej"], 1, "порівняння (niż) → <b>szybciej</b>."),
+    MCQItem("gramatyka", "", "Snow polo każdego roku zyskuje coraz ___ fanów.",
+            ["więcej", "najwięcej", "największych"], 0, "coraz ___ (дедалі більше) → <b>więcej</b>."),
+    MCQItem("gramatyka", "", "Biathlon jest sportem ___ w Niemczech, Włoszech i Skandynawii.",
+            ["popularnym", "popularniej", "popularnie"], 0, "jest + орудний (яким?) → <b>popularnym</b>."),
+    # ── Zad II: сполучники з рамки (1 зайвий: dlaczego) → MCQ-per-gap ──
+    MCQItem("gramatyka",
+            "Текст про проблеми зі сном. Встав сполучник (зайве слово — <i>dlaczego</i>).",
+            "Budzisz się często w nocy, ___ rano jesteś zmęczony?",
+            ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 0,
+            "зіставлення («а вранці») → <b>a</b>."),
+    MCQItem("gramatyka", "", "Nie tylko ty masz taki kłopot, ___ także miliony ludzi.",
+            ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 1, "«nie tylko… ___ także» → <b>lecz</b>."),
+    MCQItem("gramatyka", "", "To wina stresu, ___ odczuwasz przez cały dzień.",
+            ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 2, "означальне (який відчуваєш) → <b>który</b>."),
+    MCQItem("gramatyka", "", "Nie zaśniesz, ___ wieczorem będziesz myślał o problemach.",
+            ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 3, "умова («якщо») → <b>jeśli</b>."),
+    MCQItem("gramatyka", "", "Weź ciepłą kąpiel ___ prysznic.",
+            ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 4, "вибір («або») → <b>lub</b>."),
+    # ── Zad VII: підкресли форму (вид і способи) — MCQ. Діалог чоловік/дружина. ──
+    MCQItem("gramatyka", "Діалог: чоловікові пропонують підвищення в столиці.",
+            "„___ swoją żonę, czy chciałaby zamieszkać w stolicy” – powiedział szef.",
+            ["Zapytaj", "Zapytałbym", "Pytajmy"], 0, "наказ до «ty» → <b>Zapytaj</b>."),
+    MCQItem("gramatyka", "", "…czy ___ zamieszkać w stolicy?",
+            ["chcielibyście", "chciałabyś", "chciałaby"], 2, "умовний, 3 ос. одн. жін. (żona) → <b>chciałaby</b>."),
+    MCQItem("gramatyka", "", "Pieniądze oczywiście by się nam ___.",
+            ["przydałyby", "przydały", "przydawały"], 1, "«by się ___» — розділений умовний → <b>przydały</b>."),
+    MCQItem("gramatyka", "", "Może na razie ___ się do Warszawy sam?",
+            ["przeprowadziłby", "przeprowadziłbyś", "przeprowadzałbyś"], 1,
+            "умовний, 2 ос. одн. (ty) → <b>przeprowadziłbyś</b>."),
+    MCQItem("gramatyka", "", "Sam? Nie ___, proszę!",
+            ["zażartuj", "żartowałbyś", "żartuj"], 2, "наказ (недок.) до «ty» → <b>żartuj</b>."),
+    MCQItem("gramatyka", "", "Całymi dniami ___ za tobą.",
+            ["tęsknij", "tęskniłbym", "zatęskniłbym"], 1, "умовний, 1 ос. одн. → <b>tęskniłbym</b>."),
+    MCQItem("gramatyka", "", "Przecież wszystkie weekendy ___ razem.",
+            ["spędzalibyśmy", "spędzajmy", "spędzilibyśmy"], 0, "умовний недок., 1 ос. мн. → <b>spędzalibyśmy</b>."),
+    MCQItem("gramatyka", "", "Proszę cię, ___ razem!",
+            ["pojechalibyśmy", "pojedźmy", "jeździmy"], 1, "спонукання «нумо» (1 ос. мн. наказ) → <b>pojedźmy</b>."),
+    MCQItem("gramatyka", "", "Może na razie niech firma ___ ci służbowy pokój.",
+            ["dałaby", "da", "dawałaby"], 1, "«niech ___» + докон. → <b>da</b>."),
+    MCQItem("gramatyka", "", "___ z nim o tym jutro.",
+            ["Porozmawiaj", "Rozmawiaj", "Rozmawiałbyś"], 0, "наказ докон. (одна розмова) → <b>Porozmawiaj</b>."),
+    # ── Zad VIII: прийменники з рамки (1 зайвий: bez) → MCQ-per-gap ──
+    MCQItem("gramatyka",
+            "Текст про проєктування саду. Встав прийменник (зайве слово — <i>bez</i>).",
+            "Plany ogrodów to nie tylko rośliny ___ domu.",
+            ["wokół", "z", "na", "w", "bez"], 0, "навколо дому → <b>wokół</b> (+ родовий)."),
+    MCQItem("gramatyka", "", "Ogrody mają łączyć się ___ budynkiem i otoczeniem.",
+            ["wokół", "z", "na", "w", "bez"], 1, "łączyć się z + орудний → <b>z</b>."),
+    MCQItem("gramatyka", "", "…służyć wypoczynkowi ___ świeżym powietrzu.",
+            ["wokół", "z", "na", "w", "bez"], 2, "стійке «na świeżym powietrzu» → <b>na</b>."),
+    MCQItem("gramatyka", "", "…będą się mogły bawić ___ bezpieczny sposób.",
+            ["wokół", "z", "na", "w", "bez"], 3, "«w ___ sposób» → <b>w</b> bezpieczny sposób."),
+    MCQItem("gramatyka", "", "…zbudujemy im domek ___ drzewie.",
+            ["wokół", "z", "na", "w", "bez"], 2, "na + місцевий (на дереві) → <b>na</b>."),
+]
+
+# ── Zad IV: вписати форми дієслів (тепер./майб.) → free-fill ──
+_GRAM_ZAD4 = FreeFillTask(
+    section="gramatyka",
+    title="2024 Граматика Zad IV — впиши форму дієслова",
+    intro=("Впиши правильну форму дієслова (тепер. або майб. час). Текст про підготовку "
+           "до матури.\n\n<i>Приклад: Egzamin <b>ma</b> (mieć) wpływ na przyszłość.</i>"),
+    prompts=[
+        "1. Młodzi ludzie intensywnie ___ (zastanawiać się), jak się przygotować.",
+        "2. Często oni ___ (prosić) o radę nauczycieli.",
+        "3. …albo ___ (kupować) książki z testami.",
+        "4. Moja córka ___ (chcieć) zapisać się na kurs.",
+        "5. Jednak ja ___ (tłumaczyć) jej i innym uczniom.",
+        "6. Przez najbliższe miesiące ___ (wy – móc) dobrze się przygotowywać.",
+        "7. Ta strategia na pewno ___ (zmotywować) was.",
+        "8. …___ (zapewnić) wam poczucie spokoju.",
+        "9. W maju nikt nie ___ (musieć) uczyć się w stresie.",
+        "10. Na maturę ___ (wy – przyjść) dobrze przygotowani.",
+    ],
+    accepted=[
+        ["zastanawiają się"], ["proszą"], ["kupują"], ["chce"], ["tłumaczę"],
+        ["będziecie mogli"], ["zmotywuje"], ["zapewni"], ["będzie musiał"], ["przyjdziecie"],
+    ],
+    explain=[
+        "тепер., 3 ос. мн. → <b>zastanawiają się</b>.",
+        "тепер., 3 ос. мн. (oni) → <b>proszą</b>.",
+        "тепер., 3 ос. мн. → <b>kupują</b>.",
+        "тепер., 3 ос. одн. (ona) → <b>chce</b>.",
+        "тепер., 1 ос. одн. (ja) → <b>tłumaczę</b>.",
+        "майб., 2 ос. мн. (wy) → <b>będziecie mogli</b>.",
+        "майб. докон., 3 ос. одн. → <b>zmotywuje</b>.",
+        "майб. докон., 3 ос. одн. → <b>zapewni</b>.",
+        "майб., 3 ос. одн. (nikt) → <b>będzie musiał</b>.",
+        "майб. докон., 2 ос. мн. (wy) → <b>przyjdziecie</b>.",
+    ],
+)
+
+# ── Zad V: постав питання до підкресленого → free-fill ──
+_GRAM_ZAD5 = FreeFillTask(
+    section="gramatyka",
+    title="2024 Граматика Zad V — постав питання",
+    intro=("Постав питання до виділеної в «лапках» частини. Впиши ЛИШЕ питальне слово.\n\n"
+           "<i>Приклад: Staś był u «brata» → U kogo?</i>"),
+    prompts=[
+        "Robert zaraził się «grypą» od Stefana.",
+        "Długo czekałem pod szkołą «na mamę».",
+        "Basia studiuje medycynę «piąty» rok.",
+        "Babcia cieszy się «z wizyty wnuków».",
+        "Nauczyciel sprawdzi testy «na początku przyszłego tygodnia».",
+    ],
+    accepted=[["czym"], ["na kogo"], ["który"], ["z czego"], ["kiedy"]],
+    explain=[
+        "grypą — орудний (чим?) → <b>Czym?</b>",
+        "na mamę — na + знах. → <b>Na kogo?</b>",
+        "piąty (rok) — порядковий → <b>Który?</b>",
+        "z wizyty — z + род. → <b>Z czego?</b>",
+        "час → <b>Kiedy?</b>",
+    ],
+)
+
+# ── Zad VI: трансформація речення → open (AI-оцінка) ──
+_GRAM_ZAD6 = OpenTask(
+    section="gramatyka",
+    title="2024 Граматика Zad VI — перетвори речення",
+    intro=("Перепиши речення, зберігаючи сенс і вживши слово з дужок.\n\n"
+           "<i>Приклад: «Mój tata świetnie mówi po francusku.» (zna) → "
+           "Mój tata świetnie zna francuski.</i>\n\n📊 Оцінює AI за офіційним зразком."),
+    criterion="Той самий сенс + вжите слово з дужок у правильній формі, граматично коректно.",
+    prompts=[
+        "Mateusz z zainteresowaniem przyglądał się kolorowym wystawom sklepów.",
+        "Proszę ustawić ławki wzdłuż tamtej żółtej ściany.",
+        "Uczniów z mojej klasy nie stresuje egzamin pisemny.",
+        "Kto jest autorem tego opowiadania?",
+        "Mój syn jest starszym programistą.",
+    ],
+    words=["patrzył", "pod", "nie boją się", "napisał", "jako"],
+    models=[
+        ["Mateusz z zainteresowaniem patrzył na kolorowe wystawy sklepów."],
+        ["Proszę ustawić ławki pod tamtą żółtą ścianą."],
+        ["Uczniowie z mojej klasy nie boją się egzaminu pisemnego."],
+        ["Kto napisał to opowiadanie?"],
+        ["Mój syn pracuje jako starszy programista."],
+    ],
+)
+
 EXAM = Exam(
     id="2024-02",
     label="Реальний іспит лютий-2024 (офіц.)",
     kind="real",
     year=2024,
-    items=_READING,
-    tasks=_MATCHING,
+    items=_READING + _GRAMMAR,
+    tasks=[*_MATCHING, _GRAM_ZAD4, _GRAM_ZAD5, _GRAM_ZAD6],
 )
