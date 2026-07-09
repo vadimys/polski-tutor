@@ -161,6 +161,29 @@ _GRAMMAR: list[MCQItem] = [
             "Pan Jurek zajął się grafiką i teraz jest w tym ___ od swojego wnuka.",
             ["lepiej", "najlepszy", "lepszy"], 2,
             "jest ___ od… → вищий ступінь прикметника → <b>lepszy</b>."),
+    # ── Zad II: сполучники з рамки (luki z ramki, 1 зайвий) → MCQ-per-gap ──
+    # Банк: że/oraz/ale/czyli/ani/więc (приклад «chociaż» вже використано; зайве — ani).
+    MCQItem("gramatyka",
+            "Текст про «Niemy Chór». Встав сполучник із рамки (одне слово — зайве: <i>ani</i>).",
+            "Studenci używają języka migowego, ___ języka osób niesłyszących.",
+            ["że", "oraz", "ale", "czyli", "ani", "więc"], 3,
+            "пояснення/уточнення («тобто») → <b>czyli</b>."),
+    MCQItem("gramatyka", "",
+            "W chórze występują osoby po kursach tego języka ___ tacy, którzy go nie znają…",
+            ["że", "oraz", "ale", "czyli", "ani", "więc"], 1,
+            "перелік («та/і») → <b>oraz</b>."),
+    MCQItem("gramatyka", "",
+            "…tacy, którzy go nie znają, ___ bardzo chcą się go nauczyć.",
+            ["że", "oraz", "ale", "czyli", "ani", "więc"], 2,
+            "протиставлення («але») → <b>ale</b>."),
+    MCQItem("gramatyka", "",
+            "Utwory są tak ciekawe, ___ wszyscy mogą się czegoś nowego dowiedzieć.",
+            ["że", "oraz", "ale", "czyli", "ani", "więc"], 0,
+            "конструкція «tak… ___» (так… що) → <b>że</b>."),
+    MCQItem("gramatyka", "",
+            "Zainteresowanie chórem rośnie, ___ spotkania muszą odbywać się coraz częściej.",
+            ["że", "oraz", "ale", "czyli", "ani", "więc"], 5,
+            "наслідок («тому/отже») → <b>więc</b>."),
 ]
 
 EXAM = Exam(
