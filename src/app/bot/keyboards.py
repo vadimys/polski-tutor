@@ -112,6 +112,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎧 Аудіювання", "listening:start"),
         ("🎯 Тренування", "drill:start"),
         ("📋 Офіційний МОК", "mock:open"),
+        ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
         ("📅 Мій план", "plan:show"),
     ]
@@ -139,6 +140,11 @@ def mock_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
 def mistakes_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для опрацювання колоди помилок."""
     return _mcq_kb(options, qidx, "mi:ans", "mi:stop")
+
+
+def exam_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
+    """Варіанти відповіді для повного моку (режим іспиту — без миттєвого вердикту)."""
+    return _mcq_kb(options, qidx, "ex:ans", "ex:stop")
 
 
 def mock_menu_kb() -> InlineKeyboardMarkup:
