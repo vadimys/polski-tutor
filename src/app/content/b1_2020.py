@@ -1,10 +1,10 @@
 """Офіційний ПРОБНИЙ тест B1 2020 (certyfikatpolski.pl /2020/12/B1_przykladowy_test_2020_03.pdf).
 
 Наразі авто-оцінювані MCQ-завдання, ДОСЛІВНО з arkusz, ключ звірено з офіц. klucz PDF:
-- Czytanie Zad I (a/b/c ×5, ключ a,b,c,a,c) + Zad II (TAK/NIE ×7, ключ N,T,N,T,N,T,N);
-- Gramatyka Zad I (форми ×10) + Zad III (ступенювання ×5) — «podkreślić poprawną formę».
-Решта (dopasowanie Czyt III/IV, luki Czyt V/Gram II, форми Gram IV, pytania Gram V/VI,
-аудіювання) додаються після рушіїв відповідних типів.
+- Czytanie Zad I (a/b/c ×5) + Zad II (TAK/NIE ×7) + Zad V (вибір слова ×8);
+- Gramatyka Zad I (форми ×10) + Zad III (ступенювання ×5) + Zad II (сполучники ×5).
+Разом 40 авто-оцінюваних питань. Решта (dopasowanie Czyt III/IV, форми Gram IV,
+pytania/transformacje Gram V/VI, аудіювання) — після рушіїв відповідних типів.
 """
 
 from __future__ import annotations
@@ -93,6 +93,41 @@ _READING: list[MCQItem] = [
     MCQItem("czytanie", "",
             "TAK/NIE: Cały serial jest dostępny w telewizji i w internecie.",
             ["TAK", "NIE"], 1, "НІ — лише НАЙНОВІШІ епізоди також в інтернеті, не весь серіал."),
+    # ── Zad V: обери найкращий варіант у дужках (текст про свято Holi) ──────
+    MCQItem("czytanie",
+            "Текст про індійське свято кольорів Holi. Обери найкраще слово.",
+            "Na ulicach można ___ radość.",
+            ["widać", "zobaczyć", "przeglądać"], 1,
+            "«можна + інфінітив» → <b>zobaczyć</b> (побачити). «можна widać» — граматично хибно."),
+    MCQItem("czytanie", "",
+            "Ludzie są dla siebie bardziej serdeczni niż ___.",
+            ["zwykle", "często", "rzadko"], 0,
+            "«ніж зазвичай» → <b>zwykle</b>."),
+    MCQItem("czytanie", "",
+            "___ dnia rano odbywa się karnawał kolorów.",
+            ["Następnego", "dalszego", "przyszłego"], 0,
+            "наступного дня → <b>Następnego</b> (dalszego/przyszłego dnia так не кажуть)."),
+    MCQItem("czytanie", "",
+            "Uczestnicy ___ przyjaciół i rodzinę, żeby podzielić się radością.",
+            ["zwiedzają", "odwiedzają", "widzą"], 1,
+            "⚠️ фальшивий друг: <b>odwiedzają</b> = відвідують ЛЮДЕЙ; zwiedzać = оглядати "
+            "місця (музей, місто)."),
+    MCQItem("czytanie", "",
+            "W Polsce także ___ to święto – nazywa się Festiwal Kolorów.",
+            ["odbywamy", "obchodzimy", "bierzemy"], 1,
+            "«obchodzić święto» = святкувати → <b>obchodzimy</b>."),
+    MCQItem("czytanie", "",
+            "Jednak nie ma wiele ___ z kulturą Indii.",
+            ["takiego samego", "identycznego", "wspólnego"], 2,
+            "стійкий вислів «mieć wspólnego z» = мати спільне → <b>wspólnego</b>."),
+    MCQItem("czytanie", "",
+            "To ma być przede wszystkim dobra ___.",
+            ["gra", "zabawa", "nauka"], 1,
+            "добра розвага → <b>zabawa</b> (gra = гра за правилами)."),
+    MCQItem("czytanie", "",
+            "Dla uczestników przygotowano wiele dodatkowych ___.",
+            ["spektakli", "pomysłów", "atrakcji"], 2,
+            "багато атракцій/розваг → <b>atrakcji</b>."),
 ]
 
 # ── GRAMATYKA — Zad I: підкресли правильну форму (відмінювання) ──────────
