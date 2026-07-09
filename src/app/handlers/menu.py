@@ -23,6 +23,7 @@ from app.services import (
     clock,
     coach,
     exam_dates,
+    exam_scale,
     goals,
     missions,
     progress,
@@ -155,16 +156,21 @@ async def _render_progress(user_id: int, stats: dict) -> str:
         f"📚 Слова: <b>{total_words}</b> · на повторення: <b>{due_n}</b>\n",
     ]
     if any(s.attempts for s in stats.values()):
-        lines.append("<b>Готовність за модулями</b> (обсяг × регулярність × свіжість):")
+        lines.append("<b>Готовність за модулями</b> (≈ орієнтовні бали іспиту):")
         for mod in Module:
             s = stats[mod.value]
             if s.attempts == 0:
                 lines.append(f"❔ {MODULE_LABELS[mod]} — ще не виміряно")
                 continue
             mark = "✅" if s.mastered else "🔸"
-            hint = "" if (s.attempts >= 8 and s.days >= 3) else "  <i>мало практики</i>"
-            lines.append(f"{mark} {MODULE_LABELS[mod]}\n  {bar(s.pct)}{hint}")
-        lines.append("\n" + progress.projection(r, days_left is not None, days_left))
+            hint = "  <i>мало практики</i>" if not (s.attempts >= 8 and s.days >= 3) else ""
+            lines.append(
+                f"{mark} {MODULE_LABELS[mod]} — {exam_scale.module_line(mod.value, s.pct)}\n"
+                f"  {bar(s.pct)}{hint}"
+            )
+        got, mx = exam_scale.total_points(r)
+        lines.append(f"\n📊 Орієнтовно <b>≈{got}/{mx}</b> балів (але поріг — у КОЖНОМУ окремо!)")
+        lines.append(progress.projection(r, days_left is not None, days_left))
         lines.append(
             "<i>ℹ️ Готовність росте від СТАБІЛЬНОЇ практики (багато вправ, різні дні) "
             "і тане без повторення — щоб оцінка була чесною.</i>"
