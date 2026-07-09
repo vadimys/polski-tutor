@@ -1,8 +1,9 @@
-"""Прогресія: денна ціль (хв) + серія + XP/рівні + заморозка стріку. Стан у Redis.
+"""Прогресія: денна ціль (хв) + серія + XP/рівні + заморозка стріку.
 
-Час не міряємо секундоміром — оцінюємо за завершеними активностями. XP — «валюта»,
-що живить рівні й досягнення; денна ціль — у хвилинах. Серія = дні поспіль з виконаною
-ціллю (прапорці по датах); заморозка бриджить один пропущений день, якщо є запас.
+DURABLE-стан (XP, ціль, заморозки, серія+дата) — у Postgres (User.gamify), щоб не
+втратити при flushdb Redis. Ефемерне денне (лічильник хвилин, лічильники активностей
+за типом, прапорці «ціль виконано» для тижневої місії, святкування) — у Redis.
+Наявні Redis-значення мігруються ліниво при першому доступі.
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ from datetime import timedelta
 from redis.asyncio import Redis
 
 from app.config import settings
+from app.db.base import session_factory
+from app.db.models import User
 from app.services import clock
 
 _redis: Redis | None = None
@@ -20,20 +23,20 @@ _redis: Redis | None = None
 DEFAULT_GOAL = 15
 GOAL_CHOICES = (10, 20, 30)
 
-# оцінка тривалості активності (хв)
 MODULE_MIN = {"pisanie": 12, "mowienie": 8, "sluchanie": 7, "czytanie": 5, "gramatyka": 5}
 LESSON_MIN = 10
 REVIEW_MIN = 5
 
-# XP за активність
-XP_GRADED_BASE = 10  # + бонус за бал (score/10)
+XP_GRADED_BASE = 10
 XP_LESSON = 12
 XP_REVIEW = 8
 
-MAX_FREEZE = 2  # запас «заморозок» стріку
+MAX_FREEZE = 2
 
 _MIN_TTL = 3 * 24 * 3600
-_MET_TTL = 45 * 24 * 3600
+_MET_TTL = 45 * 24 * 3600  # прапорці «ціль виконано» — лише для тижневої місії
+
+_DEFAULT = {"xp": 0, "goal": DEFAULT_GOAL, "freeze": MAX_FREEZE, "streak": 0, "last": ""}
 
 
 def _r() -> Redis:
@@ -47,66 +50,41 @@ def _today() -> str:
     return clock.today_local().isoformat()
 
 
-# --- рівні ---
+# --- рівні (чисті функції) ---
 
 
 def level_start_xp(level: int) -> int:
-    """XP, потрібне, щоб ДОСЯГТИ рівня (L≥1): 25·(L-1)·L → L1=0, L2=50, L3=150, L4=300…"""
     return 25 * (level - 1) * level
 
 
 def level_of(xp: int) -> int:
-    """Рівень за сумарним XP (обернене до level_start_xp)."""
     return max(1, int((1 + math.isqrt(1 + 4 * xp // 25)) // 2))
 
 
-# --- ціль (налаштування) ---
+# --- durable-стан у Postgres (User.gamify) ---
 
 
-async def get_goal(user_id: int) -> int:
-    v = await _r().get(f"polski:goal:{user_id}")
-    return int(v) if v else DEFAULT_GOAL
+async def _get(user_id: int) -> dict:
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        g = dict(u.gamify) if (u and u.gamify) else None
+    if g is None:
+        g = await _migrate_from_redis(user_id)  # перший доступ — забрати старі Redis-значення
+    return {**_DEFAULT, **g}
 
 
-async def set_goal(user_id: int, minutes: int) -> None:
-    await _r().set(f"polski:goal:{user_id}", int(minutes))
+async def _set(user_id: int, g: dict) -> None:
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            u = User(id=user_id, lesson_hour=settings.lesson_hour)
+            s.add(u)
+        u.gamify = {**_DEFAULT, **g}
+        await s.commit()
 
 
-async def today_minutes(user_id: int) -> int:
-    v = await _r().get(f"polski:min:{user_id}:{_today()}")
-    return int(v) if v else 0
-
-
-# --- XP ---
-
-
-async def get_xp(user_id: int) -> int:
-    v = await _r().get(f"polski:xp:{user_id}")
-    return int(v) if v else 0
-
-
-async def award_bonus_xp(user_id: int, xp: int) -> int:
-    """Нарахувати XP без хвилин/типу (нагорода за місію тощо). Повертає новий сумарний XP."""
-    return int(await _r().incrby(f"polski:xp:{user_id}", xp))
-
-
-# --- заморозки ---
-
-
-async def get_freeze(user_id: int) -> int:
-    v = await _r().get(f"polski:freeze:{user_id}")
-    return int(v) if v is not None else MAX_FREEZE
-
-
-async def _set_freeze(user_id: int, n: int) -> None:
-    await _r().set(f"polski:freeze:{user_id}", max(0, min(MAX_FREEZE, n)))
-
-
-# --- серія ---
-
-
-async def current_streak(user_id: int) -> int:
-    """Дні поспіль (до сьогодні) з виконаною ціллю. Сьогодні без цілі не рве серію."""
+async def _legacy_streak(user_id: int) -> int:
+    """Старий стрік — з goalmet-прапорців Redis (для одноразової міграції)."""
     r = _r()
     today = clock.today_local()
     d = today
@@ -119,31 +97,88 @@ async def current_streak(user_id: int) -> int:
     return n
 
 
-async def maybe_freeze(user_id: int) -> bool:
-    """Бридж пропущеного вчора дня заморозкою (виклик раз на день, у нагадуванні).
-
-    True — заморозку застосовано (серія збережена). Ідемпотентно."""
+async def _migrate_from_redis(user_id: int) -> dict:
+    """Забрати наявні XP/ціль/заморозки/серію з Redis у Postgres (одноразово)."""
     r = _r()
+    today = clock.today_local()
+    goalv = await r.get(f"polski:goal:{user_id}")
+    freezev = await r.get(f"polski:freeze:{user_id}")
+    last = ""
+    if await r.get(f"polski:goalmet:{user_id}:{today.isoformat()}"):
+        last = today.isoformat()
+    elif await r.get(f"polski:goalmet:{user_id}:{(today - timedelta(days=1)).isoformat()}"):
+        last = (today - timedelta(days=1)).isoformat()
+    g = {
+        "xp": int(await r.get(f"polski:xp:{user_id}") or 0),
+        "goal": int(goalv) if goalv else DEFAULT_GOAL,
+        "freeze": int(freezev) if freezev is not None else MAX_FREEZE,
+        "streak": await _legacy_streak(user_id),
+        "last": last,
+    }
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is not None:  # для неіснуючого користувача не створюємо запис
+            u.gamify = g
+            await s.commit()
+    return g
+
+
+async def get_goal(user_id: int) -> int:
+    return int((await _get(user_id))["goal"])
+
+
+async def set_goal(user_id: int, minutes: int) -> None:
+    g = await _get(user_id)
+    g["goal"] = int(minutes)
+    await _set(user_id, g)
+
+
+async def get_xp(user_id: int) -> int:
+    return int((await _get(user_id))["xp"])
+
+
+async def award_bonus_xp(user_id: int, xp: int) -> int:
+    g = await _get(user_id)
+    g["xp"] = int(g["xp"]) + xp
+    await _set(user_id, g)
+    return int(g["xp"])
+
+
+async def get_freeze(user_id: int) -> int:
+    return int((await _get(user_id))["freeze"])
+
+
+async def current_streak(user_id: int) -> int:
+    """Серія жива, якщо ціль виконано сьогодні або вчора; інакше 0."""
+    g = await _get(user_id)
+    today = clock.today_local()
+    alive = {today.isoformat(), (today - timedelta(days=1)).isoformat()}
+    return int(g["streak"]) if g["last"] in alive else 0
+
+
+async def maybe_freeze(user_id: int) -> bool:
+    """Бридж пропущеного вчора дня заморозкою (виклик раз на день у нагадуванні)."""
+    g = await _get(user_id)
     today = clock.today_local()
     y = (today - timedelta(days=1)).isoformat()
     yy = (today - timedelta(days=2)).isoformat()
-    if await r.get(f"polski:goalmet:{user_id}:{y}"):
-        return False  # учора й так виконано
-    if not await r.get(f"polski:goalmet:{user_id}:{yy}"):
-        return False  # не було активної серії — нічого рятувати
-    freeze = await get_freeze(user_id)
-    if freeze <= 0:
-        return False
-    await r.set(f"polski:goalmet:{user_id}:{y}", "F", ex=_MET_TTL)  # F = день врятовано заморозкою
-    await _set_freeze(user_id, freeze - 1)
+    if g["last"] == y or g["last"] != yy or int(g["freeze"]) <= 0:
+        return False  # учора виконано / не було активної серії / нема заморозки
+    g["last"] = y  # день врятовано — серія тягнеться далі
+    g["freeze"] = int(g["freeze"]) - 1
+    await _set(user_id, g)
     return True
 
 
-# --- зарахування активності ---
+# --- ефемерні денні лічильники (Redis) ---
+
+
+async def today_minutes(user_id: int) -> int:
+    v = await _r().get(f"polski:min:{user_id}:{_today()}")
+    return int(v) if v else 0
 
 
 async def today_count(user_id: int, kinds: list[str]) -> int:
-    """Скільки активностей заданих типів зроблено сьогодні (для місій)."""
     r = _r()
     total = 0
     for k in kinds:
@@ -153,26 +188,22 @@ async def today_count(user_id: int, kinds: list[str]) -> int:
 
 
 async def week_goal_days(user_id: int) -> int:
-    """Скільки днів денну ціль виконано за останні 7 днів (для тижневої місії)."""
     r = _r()
     today = clock.today_local()
     n = 0
     for i in range(7):
-        d = (today - timedelta(days=i)).isoformat()
-        if await r.get(f"polski:goalmet:{user_id}:{d}"):
+        if await r.get(f"polski:goalmet:{user_id}:{(today - timedelta(days=i)).isoformat()}"):
             n += 1
     return n
 
 
 async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> dict:
-    """Зарахувати активність (хвилини + XP + тип). Повертає підсумок."""
+    """Зарахувати активність (хвилини + XP + тип). Оновлює durable-стан і денні лічильники."""
     r = _r()
     if kind:
         ak = f"polski:act:{user_id}:{_today()}:{kind}"
         if int(await r.incr(ak)) == 1:
             await r.expire(ak, _MIN_TTL)
-    prev_xp = await get_xp(user_id)
-    new_xp = int(await r.incrby(f"polski:xp:{user_id}", xp))
 
     key = f"polski:min:{user_id}:{_today()}"
     prev_min = int(await r.get(key) or 0)
@@ -180,33 +211,47 @@ async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> d
     if prev_min == 0:
         await r.expire(key, _MIN_TTL)
 
-    goal = await get_goal(user_id)
+    g = await _get(user_id)
+    prev_xp = int(g["xp"])
+    g["xp"] = prev_xp + xp
+    goal = int(g["goal"])
     reached_now = prev_min < goal <= total_min
+    today, tstr = clock.today_local(), _today()
+    ystr = (today - timedelta(days=1)).isoformat()
     if reached_now:
-        await r.set(f"polski:goalmet:{user_id}:{_today()}", "1", ex=_MET_TTL)
-    streak = await current_streak(user_id)
-    if reached_now and streak and streak % 7 == 0:  # +заморозка за кожні 7 днів серії
-        await _set_freeze(user_id, await get_freeze(user_id) + 1)
+        await r.set(f"polski:goalmet:{user_id}:{tstr}", "1", ex=_MET_TTL)  # для тижневої місії
+        if g["last"] != tstr:
+            g["streak"] = int(g["streak"]) + 1 if g["last"] == ystr else 1
+            g["last"] = tstr
+            if int(g["streak"]) % 7 == 0:
+                g["freeze"] = min(MAX_FREEZE, int(g["freeze"]) + 1)
 
-    level = level_of(new_xp)
+    level = level_of(int(g["xp"]))
     leveled_up = level > level_of(prev_xp)
+    await _set(user_id, g)
+
     if reached_now or leveled_up:  # відкласти святкування — хендлер покаже після вправи
         parts = []
         if leveled_up:
             parts.append(f"🎉 <b>Новий рівень {level}!</b> ⭐")
         if reached_now:
-            parts.append(f"🎯 <b>Денну ціль виконано!</b> 🔥 Серія {streak} дн.")
+            parts.append(f"🎯 <b>Денну ціль виконано!</b> 🔥 Серія {g['streak']} дн.")
         await r.set(f"polski:celeb:{user_id}", "\n".join(parts), ex=180)
 
     return {
         "today": total_min,
         "goal": goal,
         "reached_now": reached_now,
-        "streak": streak,
-        "xp": new_xp,
+        "streak": int(g["streak"]) if reached_now else await current_streak(user_id),
+        "xp": int(g["xp"]),
         "level": level,
         "leveled_up": leveled_up,
     }
+
+
+async def record_module(user_id: int, module_value: str, score: int | None = None) -> dict:
+    xp = XP_GRADED_BASE + (round(score / 10) if score is not None else 0)
+    return await add(user_id, MODULE_MIN.get(module_value, 5), xp, kind=module_value)
 
 
 async def pop_celebration(user_id: int) -> str | None:
@@ -220,16 +265,12 @@ async def pop_celebration(user_id: int) -> str | None:
     return msg.decode() if isinstance(msg, bytes) else str(msg)
 
 
-async def record_module(user_id: int, module_value: str, score: int | None = None) -> dict:
-    xp = XP_GRADED_BASE + (round(score / 10) if score is not None else 0)
-    return await add(user_id, MODULE_MIN.get(module_value, 5), xp, kind=module_value)
-
-
 async def status(user_id: int) -> dict:
     """Зведення для показу (без зарахування)."""
+    g = await _get(user_id)
     today = await today_minutes(user_id)
-    goal = await get_goal(user_id)
-    xp = await get_xp(user_id)
+    goal = int(g["goal"])
+    xp = int(g["xp"])
     lvl = level_of(xp)
     return {
         "today": today,
@@ -239,5 +280,5 @@ async def status(user_id: int) -> dict:
         "xp": xp,
         "level": lvl,
         "to_next": level_start_xp(lvl + 1) - xp,
-        "freeze": await get_freeze(user_id),
+        "freeze": int(g["freeze"]),
     }

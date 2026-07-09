@@ -23,6 +23,8 @@ class User(Base):
     placement_done: Mapped[bool] = mapped_column(Boolean, default=False)
     lesson_hour: Mapped[int] = mapped_column(Integer, default=8)
     readiness: Mapped[dict] = mapped_column(JSON, default=dict)
+    # прогресія (durable): {xp, goal, freeze, streak, last} — щоб не втратити при flushdb Redis
+    gamify: Mapped[dict] = mapped_column(JSON, default=dict)
 
     # контроль доступу (для грандіозного плану; наразі дефолти)
     exam_date: Mapped[str] = mapped_column(String(16), default="")
