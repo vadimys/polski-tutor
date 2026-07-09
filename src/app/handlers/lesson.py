@@ -21,13 +21,38 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from redis.asyncio import Redis
 
+from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
 from app.services import clock, goals, limits, tts_say, vocab
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
+
+_redis: Redis | None = None
+
+
+def _r() -> Redis:
+    global _redis
+    if _redis is None:
+        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+async def _cache_get(user_id: int) -> dict | None:
+    """Урок дня з кешу (той самий день → не перегенеровуємо)."""
+    v = await _r().get(f"polski:lesson:{user_id}:{clock.today_local().isoformat()}")
+    return json.loads(v) if v else None
+
+
+async def _cache_set(user_id: int, lesson: dict) -> None:
+    await _r().set(
+        f"polski:lesson:{user_id}:{clock.today_local().isoformat()}",
+        json.dumps(lesson, ensure_ascii=False),
+        ex=26 * 3600,
+    )
 router = Router()
 
 # Кнопка «Виконати й здати» веде до реальної (оцінюваної) вправи модуля
@@ -207,10 +232,17 @@ async def _animate(msg: Message) -> None:
                 await msg.edit_text(_FRAMES[i])
 
 
-async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
-    st = await user_state.load(user_id)
-    module = st.weakest_module()
+async def _show(msg: Message, user_id: int, fsm: FSMContext, lesson: dict, st, edit: bool) -> None:
+    await vocab.seed_if_empty(user_id, clock.today_local())
+    _, due_n = await vocab.counts(user_id, clock.today_local())
+    await fsm.update_data(lesson=lesson)
+    text, kb = _menu_text(lesson, st), _menu_kb(lesson, due_n)
+    with suppress(Exception):
+        await (msg.edit_text(text, reply_markup=kb) if edit else msg.answer(text, reply_markup=kb))
 
+
+async def _generate(user_id: int, st) -> dict:
+    module = st.weakest_module()
     lesson: dict | None = None
     if ai.enabled() and await limits.allow_ai(user_id):
         # 2500 — запас над реальними ~1300–1600 токенами уроку (кирилиця дорога),
@@ -226,41 +258,47 @@ async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
                 )
         if not raw or lesson is None:
             await limits.refund_ai(user_id)  # виклик не вдався/невалідний — не палимо квоту
-    if lesson is None:
-        lesson = _fallback_lesson(module)
+    return lesson if lesson is not None else _fallback_lesson(module)
 
+
+async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
+    """Згенерувати новий урок дня (перший раз за день), закешувати, показати."""
+    st = await user_state.load(user_id)
+    lesson = await _generate(user_id, st)
+    await _cache_set(user_id, lesson)
     _bump_streak(st)
     await user_state.save(st)
-    await goals.add(user_id, goals.LESSON_MIN, goals.XP_LESSON, kind="lesson")  # урок → час + XP
-    await vocab.seed_if_empty(user_id, clock.today_local())
-    _, due_n = await vocab.counts(user_id, clock.today_local())
-
-    await fsm.update_data(lesson=lesson)
-    with suppress(Exception):
-        await status.edit_text(_menu_text(lesson, st), reply_markup=_menu_kb(lesson, due_n))
+    # урок — ПІДГОТОВКА: 0 хвилин у денну ціль (хвилини рухає лише виконана вправа),
+    # але XP + зарахування місії «пройди урок» раз на день
+    await goals.add(user_id, 0, goals.XP_LESSON, kind="lesson")
+    await _show(status, user_id, fsm, lesson, st, edit=True)
     if c := await goals.pop_celebration(user_id):
         await status.answer(c)
 
 
-@router.message(Command("lekcja", "lesson"))
-async def cmd_lesson(message: Message, state: FSMContext) -> None:
+async def _open(message: Message, user_id: int, state: FSMContext) -> None:
+    cached = await _cache_get(user_id)
+    if cached is not None:  # той самий день — миттєво з кешу, без AI/анімації/повторного нарахування
+        st = await user_state.load(user_id)
+        await _show(message, user_id, state, cached, st, edit=False)
+        return
     status = await message.answer(_FRAMES[0])
     task = asyncio.create_task(_animate(status))
     try:
-        await _deliver(status, message.from_user.id, state)
+        await _deliver(status, user_id, state)
     finally:
         task.cancel()
+
+
+@router.message(Command("lekcja", "lesson"))
+async def cmd_lesson(message: Message, state: FSMContext) -> None:
+    await _open(message, message.from_user.id, state)
 
 
 @router.callback_query(F.data == "lesson:start")
 async def cb_lesson(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
-    status = await cb.message.answer(_FRAMES[0])
-    task = asyncio.create_task(_animate(status))
-    try:
-        await _deliver(status, cb.from_user.id, state)
-    finally:
-        task.cancel()
+    await _open(cb.message, cb.from_user.id, state)
 
 
 _SECTION_TITLE = {
