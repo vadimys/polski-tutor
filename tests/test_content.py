@@ -13,8 +13,8 @@ def test_registry_nonempty_and_latest_is_complete():
 def test_all_items_aggregates_across_exams():
     r = content.all_items("czytanie")
     g = content.all_items("gramatyka")
-    # 2019 (11 чит + 23 грам) + 2020 (12 чит) → пул виріс
-    assert len(r) >= 23 and len(g) >= 20
+    # 2019 (11 чит + 23 грам) + 2020 (12 чит + 15 грам) → пул виріс
+    assert len(r) >= 23 and len(g) >= 38
     assert len(content.all_items_flat()) == len(r) + len(g)
 
 

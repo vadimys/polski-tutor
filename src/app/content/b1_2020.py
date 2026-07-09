@@ -1,8 +1,10 @@
 """Офіційний ПРОБНИЙ тест B1 2020 (certyfikatpolski.pl /2020/12/B1_przykladowy_test_2020_03.pdf).
 
-Наразі — секція Czytanie, Zad I (a/b/c ×5) + Zad II (TAK/NIE ×7), ДОСЛІВНО з arkusz;
-ключ звірено з офіційним klucz PDF (Zad I: a,b,c,a,c; Zad II: NIE,TAK,NIE,TAK,NIE,TAK,NIE).
-Решта завдань (dopasowanie/luki/граматика) додаються після рушіїв відповідних типів.
+Наразі авто-оцінювані MCQ-завдання, ДОСЛІВНО з arkusz, ключ звірено з офіц. klucz PDF:
+- Czytanie Zad I (a/b/c ×5, ключ a,b,c,a,c) + Zad II (TAK/NIE ×7, ключ N,T,N,T,N,T,N);
+- Gramatyka Zad I (форми ×10) + Zad III (ступенювання ×5) — «podkreślić poprawną formę».
+Решта (dopasowanie Czyt III/IV, luki Czyt V/Gram II, форми Gram IV, pytania Gram V/VI,
+аудіювання) додаються після рушіїв відповідних типів.
 """
 
 from __future__ import annotations
@@ -93,10 +95,78 @@ _READING: list[MCQItem] = [
             ["TAK", "NIE"], 1, "НІ — лише НАЙНОВІШІ епізоди також в інтернеті, не весь серіал."),
 ]
 
+# ── GRAMATYKA — Zad I: підкресли правильну форму (відмінювання) ──────────
+# «podkreślić poprawne formy» = вибір 1 з 3 = MCQ. Ключ звірено з klucz PDF.
+_GRAMMAR: list[MCQItem] = [
+    MCQItem("gramatyka",
+            "Текст про шкільні лектури (учень Mateusz ділиться враженнями).",
+            "W szkole czytamy wiele ___ – ale czy wszystkie podobają się nam tak samo?",
+            ["książki", "książek", "książkach"], 1,
+            "wiele + родовий множини → <b>książek</b>."),
+    MCQItem("gramatyka", "",
+            "Czy wszystkie podobają się ___ tak samo?",
+            ["nam", "nas", "nami"], 0,
+            "podobać się + давальний → <b>nam</b> (нам)."),
+    MCQItem("gramatyka", "",
+            "Poprosiliśmy ___ ludzi, żeby opisali te, które zapamiętali.",
+            ["młodzi", "młodymi", "młodych"], 2,
+            "poprosić кого? знахідний → <b>młodych</b> ludzi."),
+    MCQItem("gramatyka", "",
+            "Mateusz zna opinie ___ o różnych lekturach.",
+            ["koledzy", "kolegom", "kolegów"], 2,
+            "opinie кого? родовий множини → <b>kolegów</b>."),
+    MCQItem("gramatyka", "",
+            "Uważa, że przeczytał już ___ najtrudniejszą lekturę.",
+            ["tej", "te", "tę"], 2,
+            "знахідний однини жін. роду → <b>tę</b>."),
+    MCQItem("gramatyka", "",
+            "Historia w „Krzyżakach” jest dosyć ___.",
+            ["ciekawą", "ciekawa", "ciekawej"], 1,
+            "jest + називний (яка?) → <b>ciekawa</b>."),
+    MCQItem("gramatyka", "",
+            "…ale napisana trudnym ___.",
+            ["językiem", "języka", "języku"], 0,
+            "napisana чим? орудний → <b>językiem</b>."),
+    MCQItem("gramatyka", "",
+            "„Krzyżaków” czytałem razem z ___.",
+            ["rodzicach", "rodzicami", "rodziców"], 1,
+            "z + орудний → <b>rodzicami</b>."),
+    MCQItem("gramatyka", "",
+            "Musiałem pytać, co znaczą ___ słowa.",
+            ["dawni", "dawne", "dawnymi"], 1,
+            "słowa (ніяк. множина, наз./знах.) → <b>dawne</b>."),
+    MCQItem("gramatyka", "",
+            "Ale już po kilku ___ wiedziałem, że to książka dla mnie.",
+            ["stron", "stronach", "strony"], 1,
+            "po + місцевий → <b>stronach</b>."),
+    # ── Zad III: підкресли правильну форму (ступенювання) ──────────────
+    MCQItem("gramatyka",
+            "Текст про активних сеньйорів на пенсії.",
+            "Starzy ludzie nie chcą być ___ od młodych.",
+            ["gorszymi", "gorsi", "najgorsze"], 1,
+            "być + називний множини чол.-особ. → <b>gorsi</b> (вищий ступінь від zły)."),
+    MCQItem("gramatyka", "",
+            "Emeryci mają ___ obowiązków, więc mają czas na pasje.",
+            ["mniej", "mniejszych", "najmniejsze"], 0,
+            "___ + родовий (менше чого?) → <b>mniej</b> obowiązków."),
+    MCQItem("gramatyka", "",
+            "___ wybierane przez seniorów formy aktywności to sport i podróże.",
+            ["Częste", "Najczęstsze", "Najczęściej"], 2,
+            "прислівник при дієприкметнику → <b>Najczęściej</b> (найчастіше)."),
+    MCQItem("gramatyka", "",
+            "Dzisiaj jest ___ niż kiedyś rozwijać niezwykłe zainteresowania.",
+            ["łatwo", "łatwiej", "łatwiejszy"], 1,
+            "порівняння (niż) → вищий ступінь прислівника → <b>łatwiej</b>."),
+    MCQItem("gramatyka", "",
+            "Pan Jurek zajął się grafiką i teraz jest w tym ___ od swojego wnuka.",
+            ["lepiej", "najlepszy", "lepszy"], 2,
+            "jest ___ od… → вищий ступінь прикметника → <b>lepszy</b>."),
+]
+
 EXAM = Exam(
     id="2020",
     label="Пробний тест 2020 (офіц.)",
     kind="sample",
     year=2020,
-    items=_READING,
+    items=_READING + _GRAMMAR,
 )
