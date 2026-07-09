@@ -1,10 +1,12 @@
 """Офіційний ПРОБНИЙ тест B1 2020 (certyfikatpolski.pl /2020/12/B1_przykladowy_test_2020_03.pdf).
 
-Наразі авто-оцінювані MCQ-завдання, ДОСЛІВНО з arkusz, ключ звірено з офіц. klucz PDF:
-- Czytanie Zad I (a/b/c ×5) + Zad II (TAK/NIE ×7) + Zad V (вибір слова ×8);
-- Gramatyka Zad I (форми ×10) + Zad III (ступенювання ×5) + Zad II (сполучники ×5).
-Разом 40 авто-оцінюваних питань. Решта (dopasowanie Czyt III/IV, форми Gram IV,
-pytania/transformacje Gram V/VI, аудіювання) — після рушіїв відповідних типів.
+ДОСЛІВНО з arkusz, КОЖЕН ключ звірено з офіц. klucz PDF. Покрито майже весь тест:
+- Czytanie: Zad I (a/b/c ×5), Zad II (TAK/NIE ×7), Zad V (вибір слова ×8) — MCQ;
+  Zad III/IV — matching (tasks нижче);
+- Gramatyka (усі 8 Zad): I(форми ×10), II(сполучники ×5), III(ступенювання ×5),
+  VII(вид/способи ×10), VIII(прийменники ×5) — MCQ; IV(форми ×10) + V(питання ×5) —
+  free-fill (tasks); VI(трансформація ×5) — open (tasks).
+Лишилось для повного 2020: лише Słuchanie (аудіо + транскрипти).
 """
 
 from __future__ import annotations
@@ -219,6 +221,71 @@ _GRAMMAR: list[MCQItem] = [
             "Zainteresowanie chórem rośnie, ___ spotkania muszą odbywać się coraz częściej.",
             ["że", "oraz", "ale", "czyli", "ani", "więc"], 5,
             "наслідок («тому/отже») → <b>więc</b>."),
+    # ── Zad VII: підкресли правильну форму (вид і способи дієслова) ────────
+    MCQItem("gramatyka",
+            "Діалог Adama й Piotra: що б вони зробили, маючи багато грошей.",
+            "___, czy wtedy ty i twoja żona kupilibyście wszystko, o czym marzycie?",
+            ["Powiedziałbyś", "Mówcie", "Powiedz"], 2,
+            "наказовий спосіб до «ty» → <b>Powiedz</b> (скажи)."),
+    MCQItem("gramatyka", "",
+            "Czy ty i żona od razu ___ wszystko, o czym marzycie?",
+            ["kupujcie", "kupilibyście", "kupiliby"], 1,
+            "умовний спосіб, 2 ос. мн. (wy) → <b>kupilibyście</b>."),
+    MCQItem("gramatyka", "",
+            "Nie wiem, ___ się dłużej nad tym zastanowić.",
+            ["musiałem", "musiałbym", "musiałybyśmy"], 1,
+            "умовний, 1 ос. одн. чол. → <b>musiałbym</b>."),
+    MCQItem("gramatyka", "",
+            "Myślę, że często byśmy ___ innym.",
+            ["pomogli", "pomagaliśmy", "pomagali"], 2,
+            "«byśmy ___» — умовний, форма на -li → <b>pomagali</b>."),
+    MCQItem("gramatyka", "",
+            "Moja córka pewnie ___, żeby kupić jedzenie dla zwierząt.",
+            ["proponowałabym", "proponuje", "zaproponowałaby"], 2,
+            "умовний, 3 ос. одн. жін. → <b>zaproponowałaby</b>."),
+    MCQItem("gramatyka", "",
+            "…a syn by ___ dać pieniądze na ubrania sportowe.",
+            ["wolałby", "wolał", "woli"], 1,
+            "розділена частка «by ___» + форма на -ł → <b>wolał</b> (умовний)."),
+    MCQItem("gramatyka", "",
+            "Proszę was, ___ o naszym dziadku.",
+            ["pamiętajcie", "pamiętalibyśmy", "zapamiętajcie"], 0,
+            "наказовий спосіб до «wy», недок. вид → <b>pamiętajcie</b>."),
+    MCQItem("gramatyka", "",
+            "___ w nim wygodnie resztę życia.",
+            ["Niech spędzi", "Spędzałby", "Spędziłaby"], 0,
+            "спонукання до 3 ос. → <b>Niech spędzi</b>."),
+    MCQItem("gramatyka", "",
+            "Jestem pewien, że tam ___ w pierwszej kolejności.",
+            ["pojechalibyśmy", "jedźmy", "pojechaliby"], 0,
+            "умовний, 1 ос. мн. (my) → <b>pojechalibyśmy</b>."),
+    MCQItem("gramatyka", "",
+            "Niech każdy z was ___ swój pomysł na kartce.",
+            ["piszcie", "napiszcie", "napisze"], 2,
+            "«każdy» = 3 ос. одн. → <b>napisze</b>."),
+    # ── Zad VIII: прийменники з рамки (luki z ramki, 1 зайвий: z) → MCQ-per-gap ──
+    # Банк: do/w/nad/przed/z/na (приклад «w»). Текст: Piotr i Ola шукають домик на море.
+    MCQItem("gramatyka",
+            "Текст: Piotr і Ola шукають дачний будиночок. Встав прийменник (зайве слово — <i>z</i>).",
+            "Kilka miesięcy ___ wakacjami szukali domku.",
+            ["do", "w", "nad", "przed", "z", "na"], 3,
+            "przed + орудний (часу — «перед») → <b>przed</b> wakacjami."),
+    MCQItem("gramatyka", "",
+            "Szukali ___ internecie ładnego domku kampingowego.",
+            ["do", "w", "nad", "przed", "z", "na"], 1,
+            "w + місцевий (де?) → <b>w</b> internecie."),
+    MCQItem("gramatyka", "",
+            "…domku kampingowego ___ polskim morzem.",
+            ["do", "w", "nad", "przed", "z", "na"], 2,
+            "nad + орудний (над/біля води) → <b>nad</b> morzem."),
+    MCQItem("gramatyka", "",
+            "Chcieli wynająć go ___ trzy tygodnie.",
+            ["do", "w", "nad", "przed", "z", "na"], 5,
+            "na + знахідний (на який період) → <b>na</b> trzy tygodnie."),
+    MCQItem("gramatyka", "",
+            "Zdecydowali się na dwutygodniowy wyjazd ___ Grecji.",
+            ["do", "w", "nad", "przed", "z", "na"], 0,
+            "do + родовий (напрямок «куди») → <b>do</b> Grecji."),
 ]
 
 # ── CZYTANIE — Zad III: вставити фрагменти (A–H) у текст про кіберспорт ──
@@ -389,11 +456,45 @@ _GRAM_ZAD6 = OpenTask(
     ],
 )
 
+# ── GRAMATYKA — Zad V: постав питання до підкресленого → free-fill ──────
+# Фокус — питальне слово (перевіряє відмінок). Ключ (klucz) з варіантами.
+_GRAM_ZAD5 = FreeFillTask(
+    section="gramatyka",
+    title="Граматика Zad V — постав питання",
+    intro=(
+        "Постав питання до виділеної в «лапках» частини речення. Впиши ЛИШЕ питальне "
+        "слово (одне-два), з якого почнеться питання.\n\n"
+        "<i>Приклад: «Nasza decyzja będzie zależeć od pogody» (від «od pogody») → "
+        "Od czego?</i>"
+    ),
+    prompts=[
+        "Michał próbował podzielić jabłko «widelcem».",
+        "Koledzy czekali «dwa tygodnie» na wyniki egzaminu.",
+        "Znalazłem to ogłoszenie «w sklepie».",
+        "Matka pomogła «Piotrowi» znaleźć pracę.",
+        "Anna czekała na schodach «na koleżankę».",
+    ],
+    accepted=[
+        ["czym", "w jaki sposób"],
+        ["jak długo", "ile tygodni", "ile czasu"],
+        ["gdzie"],
+        ["komu"],
+        ["na kogo"],
+    ],
+    explain=[
+        "widelcem — орудний (чим?) → <b>Czym?</b> (або W jaki sposób?)",
+        "dwa tygodnie — тривалість → <b>Jak długo?</b> (Ile czasu? / Ile tygodni?)",
+        "w sklepie — місце → <b>Gdzie?</b>",
+        "Piotrowi — давальний (кому?) → <b>Komu?</b>",
+        "na koleżankę — na + знахідний → <b>Na kogo?</b>",
+    ],
+)
+
 EXAM = Exam(
     id="2020",
     label="Пробний тест 2020 (офіц.)",
     kind="sample",
     year=2020,
     items=_READING + _GRAMMAR,
-    tasks=[*_MATCHING, _GRAM_ZAD4, _GRAM_ZAD6],
+    tasks=[*_MATCHING, _GRAM_ZAD4, _GRAM_ZAD5, _GRAM_ZAD6],
 )
