@@ -114,7 +114,7 @@ async def _advance(cb: CallbackQuery, state: FSMContext) -> None:
         kb = InlineKeyboardBuilder()
         kb.button(text="🔁 Спочатку", callback_data=f"lex:t:{data['topic']}")
         kb.button(text="⬅️ Теми", callback_data="lex:topics")
-        kb.button(text="🏠 Меню", callback_data="menu:home")
+        kb.button(text="⬅️ Меню", callback_data="menu:home")
         kb.adjust(1)
         await cb.message.edit_text(
             "🎉 <b>Тему пройдено!</b> Додані слова чекають на тебе у /powtorki 🔁",

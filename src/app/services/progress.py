@@ -134,18 +134,6 @@ async def counts(user_id: int) -> tuple[int, int]:
         return int(total), int(last7)
 
 
-async def recent_scores(user_id: int, module_value: str, limit: int = 5) -> list[int]:
-    """Останні бали модуля (найновіші спершу)."""
-    async with session_factory()() as s:
-        rows = await s.execute(
-            select(Session.score)
-            .where(Session.user_id == user_id, Session.module == module_value)
-            .order_by(Session.created_at.desc())
-            .limit(limit)
-        )
-        return [r[0] for r in rows.all()]
-
-
 READY_THRESHOLD = 70  # усі 5 модулів ≥ цього → «схоже, готовий до іспиту» (запас над 50%)
 
 
@@ -167,17 +155,6 @@ def verdict(stats: dict[str, ModuleStat], is_mock_ok: bool) -> tuple[str, list[M
     if not is_mock_ok:
         return "almost", []
     return "ready", []
-
-
-def trend(scores: list[int]) -> str:
-    """Стрілка тренду за останніми двома балами (найновіші спершу)."""
-    if len(scores) < 2:
-        return "→"
-    if scores[0] > scores[1]:
-        return "↑"
-    if scores[0] < scores[1]:
-        return "↓"
-    return "→"
 
 
 def projection(readiness: dict[str, int], has_date: bool, days_left: int | None) -> str:

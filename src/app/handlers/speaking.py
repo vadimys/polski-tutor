@@ -171,7 +171,7 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
     dialogue = "\n".join(f"{i + 1}. {html.escape(ln)}" for i, ln in enumerate(lines))
     kb = InlineKeyboardBuilder()
     kb.button(text="🎤 Виконати самостійно й здати", callback_data=f"guided:record:{task_id}")
-    kb.button(text="🏠 Меню", callback_data="menu:home")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     await message.answer(
         "🎉 <b>Готово!</b> Ось твоя репліка з 5 кроків:\n\n"

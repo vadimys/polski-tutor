@@ -168,7 +168,7 @@ def _menu_kb(lesson: dict, due_n: int) -> object:
     kb.button(text="✍️ Завдання", callback_data="les:sec:task")
     if due_n:
         kb.button(text=f"🔁 Повторити слова · {due_n}", callback_data="review:start")
-    kb.button(text="🏠 Меню", callback_data="menu:home")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(2, 2, 1, 1)
     return kb.as_markup()
 

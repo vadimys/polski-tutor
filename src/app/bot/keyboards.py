@@ -65,7 +65,7 @@ def approved_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="▶️ Пройти стартовий тест", callback_data="placement:start")
     kb.button(text="📅 Вказати/змінити дату іспиту", callback_data="onb:setdate")
-    kb.button(text="📋 Меню", callback_data="menu:home")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -127,11 +127,6 @@ def drill_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     return _mcq_kb(options, qidx, "dr:ans", "dr:stop")
 
 
-def listen_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
-    """Варіанти відповіді для аудіювання (з індексом питання)."""
-    return _mcq_kb(options, qidx, "ls:ans", "ls:stop")
-
-
 def mock_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для офіційного МОКу."""
     return _mcq_kb(options, qidx, "mk:ans", "mk:stop")
@@ -152,13 +147,6 @@ def mock_menu_kb() -> InlineKeyboardMarkup:
     kb.button(text="📖 Читання (офіц.)", callback_data="mock:czytanie")
     kb.button(text="🔤 Граматика (офіц.)", callback_data="mock:gramatyka")
     kb.button(text="⬅️ Меню", callback_data="menu:home")
-    kb.adjust(1)
-    return kb.as_markup()
-
-
-def review_show_kb() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="👁 Показати переклад", callback_data="rv:show")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -191,6 +179,6 @@ def coach_kb() -> InlineKeyboardMarkup:
     """Нагадування: головний CTA — розумний автопідбір дії."""
     kb = InlineKeyboardBuilder()
     kb.button(text="⚡ Навчатись зараз", callback_data="coach:now")
-    kb.button(text="📋 Меню", callback_data="menu:home")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()

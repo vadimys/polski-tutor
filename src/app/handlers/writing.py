@@ -93,7 +93,7 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
     step = int(data.get("gw_step", 0))
     lines = list(data.get("gw_lines", []))
     if len(message.text.strip()) < 2:
-        await message.answer("Напиши, будь ласка, цю частину польською 🙂")
+        await message.answer("Напиши, будь ласка, цю частину польською 🙂", reply_markup=cancel_kb())
         return
     lines.append(message.text.strip())
     step += 1
@@ -107,7 +107,7 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
     letter = "\n".join(html.escape(ln) for ln in lines)
     kb = InlineKeyboardBuilder()
     kb.button(text="✍️ Виконати офіційне завдання й здати", callback_data="writing:start")
-    kb.button(text="🏠 Меню", callback_data="menu:home")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     await message.answer(
         "🎉 <b>Готово!</b> Ось твій лист із 4 частин:\n\n"
@@ -121,10 +121,15 @@ async def on_guided_step(message: Message, state: FSMContext) -> None:
 @router.message(Writing.await_a, F.text, ~F.text.startswith("/"))
 async def on_task_a(message: Message, state: FSMContext) -> None:
     if len(message.text.split()) < MIN_WORDS:
-        await message.answer("Напиши, будь ласка, повноцінний текст завдання a 🙂")
+        await message.answer(
+            "Напиши, будь ласка, повноцінний текст завдання a 🙂", reply_markup=cancel_kb()
+        )
         return
     if len(message.text) > MAX_CHARS:
-        await message.answer(f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂")
+        await message.answer(
+            f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂",
+            reply_markup=cancel_kb(),
+        )
         return
     await state.update_data(text_a=message.text)
     await state.set_state(Writing.await_b)
@@ -140,10 +145,15 @@ async def on_task_a(message: Message, state: FSMContext) -> None:
 @router.message(Writing.await_b, F.text, ~F.text.startswith("/"))
 async def on_task_b(message: Message, state: FSMContext) -> None:
     if len(message.text.split()) < MIN_WORDS:
-        await message.answer("Напиши, будь ласка, повноцінний текст завдання b 🙂")
+        await message.answer(
+            "Напиши, будь ласка, повноцінний текст завдання b 🙂", reply_markup=cancel_kb()
+        )
         return
     if len(message.text) > MAX_CHARS:
-        await message.answer(f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂")
+        await message.answer(
+            f"Текст задовгий (>{MAX_CHARS} символів). На іспиті B1 обсяг невеликий — скороти 🙂",
+            reply_markup=cancel_kb(),
+        )
         return
     data = await state.get_data()
     ws = writing.set_by_id(data["set_id"])

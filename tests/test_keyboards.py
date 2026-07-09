@@ -1,6 +1,6 @@
 """Регрес: кнопки відповідей містять індекс питання (захист від дубль-тапів) + вихід."""
 
-from app.bot.keyboards import drill_kb, listen_kb, mock_kb, question_kb
+from app.bot.keyboards import drill_kb, mock_kb, question_kb
 
 
 def _datas(markup):
@@ -11,7 +11,6 @@ def test_answer_kb_embeds_qidx_and_exit():
     cases = [
         (question_kb, "pl:ans", "pl:stop"),
         (drill_kb, "dr:ans", "dr:stop"),
-        (listen_kb, "ls:ans", "ls:stop"),
         (mock_kb, "mk:ans", "mk:stop"),
     ]
     for fn, prefix, stop in cases:
