@@ -63,10 +63,23 @@ def _prompt(module: Module, level: str) -> str:
         '• "topic" — рядок: одне життєве речення-вступ (можна <b>).\n'
         '• "grammar" — рядок: ОДНЕ правило (назва простими словами → чому так → '
         "шаблон/закінчення → контраст з українською → приклад; <b> дозволено).\n"
-        '• "vocab" — масив 5–7 обʼєктів {"pl","ua","example"} (слово за темою + приклад речення).\n'
+        '• "vocab" — масив 5–7 обʼєктів {"pl","ua","example"}: pl=польське слово; '
+        "ua=стислий український переклад (БЕЗ тегів і приміток); example=ОДНЕ коротке речення "
+        "ЛИШЕ польською з цим словом (без перекладу, без HTML-тегів).\n"
         '• "task" — рядок: коротке завдання САМЕ цього модуля з життєвою ситуацією (без markdown).\n'
         "Тільки валідний JSON, нічого поза ним."
     )
+
+
+def _strip_tags(s: str) -> str:
+    return re.sub(r"<[^>]+>", "", str(s)).strip()
+
+
+def _clean_pl(s: str) -> str:
+    """Лишити ЧИСТЕ польське речення: без HTML і без укр. перекладу/приміток після «—»."""
+    s = _strip_tags(s)
+    s = re.split(r"\s[—–-]\s|⚠", s, maxsplit=1)[0]  # AI часто криє переклад/примітку після тире
+    return s.strip()
 
 
 def _vocab_html(items: list) -> str:
@@ -74,11 +87,11 @@ def _vocab_html(items: list) -> str:
     for w in items[:7]:
         if not isinstance(w, dict):
             continue
-        pl, ua, ex = w.get("pl", ""), w.get("ua", ""), w.get("example", "")
-        # переклад ховаємо під spoiler — спершу пригадай сам, тоді тапни
-        lines.append(f"🔑 <b>{html.escape(str(pl))}</b> — <tg-spoiler>{html.escape(str(ua))}</tg-spoiler>")
+        pl, ua, ex = _strip_tags(w.get("pl", "")), _strip_tags(w.get("ua", "")), _clean_pl(w.get("example", ""))
+        # урок = перше знайомство → переклад ВІДКРИТИЙ (спойлер лишається для /powtorki, /slownik)
+        lines.append(f"🔑 <b>{html.escape(pl)}</b> — {html.escape(ua)}")
         if ex:
-            lines.append(f"📌 {html.escape(str(ex))}")
+            lines.append(f"📌 <i>{html.escape(ex)}</i>")
     return "\n".join(lines)
 
 
@@ -109,13 +122,16 @@ def _parse_lesson(raw: str, module: Module) -> dict | None:
 
 
 def _vocab_say(items: list) -> list[list[str]]:
-    """Пари [мітка-слово, текст-для-озвучення] — слово + приклад, щоб чути в контексті."""
+    """Пари [мітка-слово, текст-для-озвучення] — слово + ЧИСТИЙ польський приклад.
+
+    Тільки польська (без укр. перекладу/тегів/приміток) — інакше 🔊 читає кашу.
+    """
     out: list[list[str]] = []
     for w in items[:7]:
         if not isinstance(w, dict) or not w.get("pl"):
             continue
-        pl = str(w["pl"]).strip()
-        ex = str(w.get("example", "")).strip()
+        pl = _strip_tags(w["pl"])
+        ex = _clean_pl(w.get("example", ""))
         out.append([pl, f"{pl}. {ex}" if ex else pl])
     return out
 

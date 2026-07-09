@@ -57,6 +57,20 @@ def test_vocab_say_word_only_when_no_example():
     assert out == [["dom", "dom"]]
 
 
+def test_vocab_sanitizes_messy_ai_output():
+    """Регрес: AI пхає теги+переклад+примітку в example → чистимо (баг «страшне вікно» + 37с аудіо)."""
+    raw = (
+        '{"topic":"T","grammar":"G","task":"z","vocab":[{"pl":"wniosek","ua":"<b>заява</b>",'
+        '"example":"<b>Składam wniosek.</b> — Я подаю заяву. ⚠️ Не плутай з wkład!"}]}'
+    )
+    out = lesson._parse_lesson(raw, Module.PISANIE)
+    # без ЕКРАНОВАНИХ тегів (&lt;), без спойлера, переклад відкритий, без укр. у прикладі
+    assert "&lt;" not in out["vocab"] and "tg-spoiler" not in out["vocab"]
+    assert "заява" in out["vocab"] and "Я подаю" not in out["vocab"]
+    # аудіо — тільки чиста польська
+    assert out["vocab_say"][0][1] == "wniosek. Składam wniosek."
+
+
 def test_fallback_lesson_has_vocab_say():
     assert lesson._fallback_lesson(Module.GRAMATYKA)["vocab_say"]  # непорожній
 
