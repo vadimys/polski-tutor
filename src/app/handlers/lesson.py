@@ -222,6 +222,8 @@ async def _deliver(status: Message, user_id: int, fsm: FSMContext) -> None:
     await fsm.update_data(lesson=lesson)
     with suppress(Exception):
         await status.edit_text(_menu_text(lesson, st), reply_markup=_menu_kb(lesson, due_n))
+    if c := await goals.pop_celebration(user_id):
+        await status.answer(c)
 
 
 @router.message(Command("lekcja", "lesson"))

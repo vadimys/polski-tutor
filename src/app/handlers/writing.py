@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
-from app.services import guidance, limits, writing
+from app.services import goals, guidance, limits, writing
 from app.services import state as user_state
 
 router = Router()
@@ -183,3 +183,5 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
         await user_state.update_readiness(message.from_user.id, Module.PISANIE.value, pct)
 
     await message.answer(header + fb, reply_markup=to_menu_kb())
+    if c := await goals.pop_celebration(message.from_user.id):
+        await message.answer(c)

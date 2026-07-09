@@ -118,3 +118,5 @@ async def cb_grade(cb: CallbackQuery, state: FSMContext) -> None:
             "Слова повернуться за графіком SRS. 🔥",
             reply_markup=to_menu_kb(),
         )
+        if c := await goals.pop_celebration(cb.from_user.id):
+            await cb.message.answer(c)

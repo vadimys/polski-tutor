@@ -188,15 +188,36 @@ async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> d
     if reached_now and streak and streak % 7 == 0:  # +заморозка за кожні 7 днів серії
         await _set_freeze(user_id, await get_freeze(user_id) + 1)
 
+    level = level_of(new_xp)
+    leveled_up = level > level_of(prev_xp)
+    if reached_now or leveled_up:  # відкласти святкування — хендлер покаже після вправи
+        parts = []
+        if leveled_up:
+            parts.append(f"🎉 <b>Новий рівень {level}!</b> ⭐")
+        if reached_now:
+            parts.append(f"🎯 <b>Денну ціль виконано!</b> 🔥 Серія {streak} дн.")
+        await r.set(f"polski:celeb:{user_id}", "\n".join(parts), ex=180)
+
     return {
         "today": total_min,
         "goal": goal,
         "reached_now": reached_now,
         "streak": streak,
         "xp": new_xp,
-        "level": level_of(new_xp),
-        "leveled_up": level_of(new_xp) > level_of(prev_xp),
+        "level": level,
+        "leveled_up": leveled_up,
     }
+
+
+async def pop_celebration(user_id: int) -> str | None:
+    """Забрати відкладене святкування (level-up / ціль виконано), якщо є. Одноразово."""
+    r = _r()
+    key = f"polski:celeb:{user_id}"
+    msg = await r.get(key)
+    if msg is None:
+        return None
+    await r.delete(key)
+    return msg.decode() if isinstance(msg, bytes) else str(msg)
 
 
 async def record_module(user_id: int, module_value: str, score: int | None = None) -> dict:

@@ -14,7 +14,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import quiz
 from app.bot.keyboards import drill_kb, menu_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import drills, mock, pollquiz
+from app.services import drills, goals, mock, pollquiz
 from app.services import state as user_state
 
 router = Router()
@@ -126,3 +126,5 @@ async def _finalize(
         f"Готовність {MODULE_LABELS[Module(section)]} оновлено.",
         reply_markup=menu_kb() if score >= 50 else to_menu_kb(),
     )
+    if c := await goals.pop_celebration(user_id):
+        await message.answer(c)

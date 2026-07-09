@@ -18,7 +18,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech, tts
-from app.services import guidance, limits, speaking, tts_say
+from app.services import goals, guidance, limits, speaking, tts_say
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -279,6 +279,8 @@ async def on_voice(message: Message, state: FSMContext) -> None:
         await user_state.update_readiness(message.from_user.id, Module.MOWIENIE.value, pct)
 
     await message.answer(header + fb, reply_markup=to_menu_kb())
+    if c := await goals.pop_celebration(message.from_user.id):
+        await message.answer(c)
 
 
 @router.message(Speaking.waiting, F.text, ~F.text.startswith("/"))

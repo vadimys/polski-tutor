@@ -55,3 +55,5 @@ async def on_poll_answer(poll_answer: PollAnswer, bot: Bot) -> None:
             f"🔁 <b>Повторення: {correct}/{total} правильних.</b> Так тримати! 💪",
             reply_markup=to_menu_kb(),
         )
+    if c := await goals.pop_celebration(session["user_id"]):
+        await bot.send_message(chat_id, c)

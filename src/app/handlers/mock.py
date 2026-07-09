@@ -14,7 +14,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import quiz
 from app.bot.keyboards import menu_kb, mock_kb, mock_menu_kb, to_menu_kb
 from app.domain.models import Module
-from app.services import mock, progress
+from app.services import goals, mock, progress
 from app.services import state as user_state
 
 router = Router()
@@ -117,3 +117,5 @@ async def _finalize(
         f"{passed}. Готовність оновлено.",
         reply_markup=menu_kb() if pct >= 50 else to_menu_kb(),
     )
+    if c := await goals.pop_celebration(user_id):
+        await message.answer(c)
