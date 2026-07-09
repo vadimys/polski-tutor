@@ -14,7 +14,7 @@ from aiogram.types import CallbackQuery, Message
 from app.bot import quiz
 from app.bot.keyboards import drill_kb, menu_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import drills, goals, mock, pollquiz
+from app.services import drills, goals, mistakes, mock, pollquiz
 from app.services import state as user_state
 
 router = Router()
@@ -105,6 +105,8 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     it = mock.section_items(section)[idxs[pos]]
     if await quiz.show_verdict(cb, chosen, it.correct, it.options, it.question, it.explain):
         correct += 1
+    else:
+        await mistakes.add(cb.from_user.id, section, it.question, list(it.options), it.correct, it.explain)
 
     pos += 1
     await state.update_data(pos=pos, correct=correct)

@@ -16,7 +16,7 @@ from app.bot import quiz
 from app.bot.keyboards import lesson_kb, question_kb
 from app.bot.ui import bar
 from app.domain.models import MODULE_LABELS, Module
-from app.services import mock, placement, progress
+from app.services import mistakes, mock, placement, progress
 from app.services import state as user_state  # aiogram інжектить FSM у параметр `state`
 
 router = Router()
@@ -125,6 +125,7 @@ async def _finalize(
         it = mock.section_items(section)[idx]
         if ch != it.correct:
             wrong.append(it)
+            await mistakes.add(user_id, section, it.question, list(it.options), it.correct, it.explain)
     if wrong:
         lines.append("\n<b>Розбір помилок:</b>")
         for it in wrong[:5]:

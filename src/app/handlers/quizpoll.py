@@ -7,7 +7,7 @@ from aiogram.types import PollAnswer
 
 from app.bot.keyboards import menu_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import clock, goals, pollquiz, vocab
+from app.services import clock, goals, mistakes, pollquiz, vocab
 from app.services import state as user_state
 
 router = Router()
@@ -28,6 +28,9 @@ async def on_poll_answer(poll_answer: PollAnswer, bot: Bot) -> None:
         await vocab.review(session["user_id"], item["key"], ok, clock.today_local())
     if ok:
         session["correct"] += 1
+    elif session["kind"] == "readiness":  # аудіювання — помилку в колоду
+        await mistakes.add(session["user_id"], session.get("module", ""), item["q"],
+                           list(item["opts"]), int(item["correct"]), item.get("explain", ""))
 
     session["idx"] = idx + 1
     if session["idx"] < len(session["items"]):

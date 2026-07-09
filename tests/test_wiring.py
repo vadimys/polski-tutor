@@ -15,6 +15,7 @@ def test_all_handlers_have_router():
         lexicon,
         listening,
         menu,
+        mistakes,
         mock,
         onboarding,
         placement,
@@ -30,7 +31,7 @@ def test_all_handlers_have_router():
 
     mods = (
         start, onboarding, admin, privacy, quizpoll, placement, lesson, writing, drills,
-        review, say, lexicon, speaking, listening, mock, plan, menu,
+        review, say, lexicon, mistakes, speaking, listening, mock, plan, menu,
     )
     for module in mods:
         assert isinstance(module.router, Router), module.__name__
@@ -43,7 +44,7 @@ def test_main_entrypoint_intact():
     assert len(COMMANDS) >= 7  # усі команди на місці
     cmds = {c.command for c in COMMANDS}
     assert {"prywatnosc", "moidane", "zapomnij"} <= cmds  # GDPR-команди на місці
-    assert {"cel", "anuluj", "misje", "quest", "slownik", "zaraz"} <= cmds  # + словник + коуч
+    assert {"cel", "anuluj", "misje", "quest", "slownik", "zaraz", "pomylki"} <= cmds
 
 
 def test_privacy_notice_present():

@@ -22,6 +22,7 @@ from app.handlers import (
     lexicon,
     listening,
     menu,
+    mistakes,
     mock,
     onboarding,
     placement,
@@ -53,6 +54,7 @@ COMMANDS = [
     BotCommand(command="opis", description="Опис фотографії (Zadanie 1)"),
     BotCommand(command="sluchanie", description="Аудіювання (запис + питання)"),
     BotCommand(command="mok", description="Офіційний МОК (читання/граматика)"),
+    BotCommand(command="pomylki", description="Робота над помилками"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
     BotCommand(command="slownik", description="Вільний словник за темами"),
@@ -100,7 +102,7 @@ async def main() -> None:
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)
     learning = Router()
     for r in (
-        placement, lesson, writing, drills, review, say, lexicon,
+        placement, lesson, writing, drills, review, say, lexicon, mistakes,
         speaking, listening, mock, plan, menu,
     ):
         learning.include_router(r.router)
