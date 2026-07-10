@@ -37,6 +37,13 @@ router = Router()
 async def _menu_header(user_id: int) -> str:
     """Жива шапка меню: рівень/XP/серія + ціль дня + похід + місія дня — для мотивації."""
     st = await user_state.load(user_id)
+    if st.role == "teacher":
+        return (
+            "👩‍🏫 <b>Меню викладача</b>\n\n"
+            "👥 Прогрес твого класу — <b>/uczniowie</b>\n"
+            "<i>Вправи нижче можеш проходити як превʼю — вони не зараховуються.</i>\n\n"
+            "Обери дію 👇"
+        )
     g = await goals.status(user_id)
     days = _user_days_left(await access.info(user_id))
     qp = quest.overall_pct(st.readiness or {})
@@ -231,6 +238,13 @@ def _readiness_scene(inf, status: str, mods: list) -> tuple[str | None, object |
 
 
 async def _send_progress(msg: Message, user_id: int) -> None:
+    if (await user_state.load(user_id)).role == "teacher":
+        await msg.answer(
+            "📊 Ти <b>викладач</b> — особистий «прогрес до B1» не ведеться (твої вправи — превʼю).\n"
+            "Дивись прогрес своїх учнів: <b>/uczniowie</b> 👥",
+            reply_markup=to_menu_kb(),
+        )
+        return
     stats = await progress.compute(user_id)  # свіжо (з урахуванням спаду)
     r = progress.pcts(stats)
     st = await user_state.load(user_id)

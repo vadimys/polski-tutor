@@ -23,6 +23,7 @@ def _to_state(u: User) -> UserState:
         last_lesson=u.last_lesson,
         placement_done=u.placement_done,
         lesson_hour=u.lesson_hour,
+        role=u.role,
         readiness=dict(u.readiness or {}),
     )
 
@@ -93,6 +94,8 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
     """
     async with session_factory()() as s:
         u = await s.get(User, user_id)
+        if u is not None and u.role == "teacher":
+            return  # превʼю-режим: практика викладача НЕ рухає готовність/XP/місії/серію
         if u is None:
             u = User(id=user_id, lesson_hour=settings.lesson_hour)
             s.add(u)

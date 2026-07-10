@@ -15,14 +15,15 @@ class _FakeBot:
 
 @pytest.fixture
 def wired(monkeypatch):
-    """Троє учнів із різними годинами; усі схвалені; нейтральний текст нагадування."""
-    hours = {1: 8, 2: 8, 3: 20}
+    """Учні (student) з різними годинами + викладач (teacher, id 4, 08:00, нудж НЕ шлемо)."""
+    hours = {1: 8, 2: 8, 3: 20, 4: 8}
+    roles = {1: "student", 2: "student", 3: "student", 4: "teacher"}
 
     async def fake_ids():
         return list(hours)
 
     async def fake_load(uid):
-        return type("S", (), {"lesson_hour": hours[uid]})()
+        return type("S", (), {"lesson_hour": hours[uid], "role": roles[uid]})()
 
     async def fake_allowed(uid, admin_id):
         return True
@@ -52,7 +53,8 @@ def wired(monkeypatch):
 async def test_nudge_only_matching_hour(wired):
     bot = _FakeBot()
     n = await scheduler._nudge_due(bot, hour=8, today="2026-07-10")
-    assert n == 2 and sorted(bot.sent) == [1, 2]  # лише ті, у кого 08:00
+    # лише учні о 08:00 (1,2); викладач (4, teacher) — пропущено
+    assert n == 2 and sorted(bot.sent) == [1, 2]
     # о 20:00 — третій
     bot2 = _FakeBot()
     await scheduler._nudge_due(bot2, hour=20, today="2026-07-10")

@@ -42,6 +42,19 @@ def _date_kb():
 
 
 async def _approved_welcome(message: Message, user_id: int) -> None:
+    inf = await access.info(user_id)
+    if inf.role == "teacher":
+        me = await message.bot.get_me()
+        link = f"https://t.me/{me.username}?start=t{user_id}"
+        await message.answer(
+            "👩‍🏫 <b>Вітаю, викладачу!</b> Доступ активний.\n\n"
+            "🔗 Твоє посилання для учнів:\n"
+            f"<code>{link}</code>\n\n"
+            "👥 Прогрес класу — <b>/uczniowie</b>\n"
+            "<i>Вправи можеш проходити сам як превʼю — вони не зараховуються як підготовка.</i>",
+            reply_markup=to_menu_kb(),
+        )
+        return
     await vocab.seed_if_empty(user_id, clock.today_local())
     await message.answer(
         f"Cześć! 👋 Доступ активний. До іспиту <b>{clock.days_to_exam()}</b> днів.\n"

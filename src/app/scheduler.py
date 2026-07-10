@@ -83,6 +83,8 @@ async def _nudge_due(bot: Bot, hour: int, today: str) -> int:
         if not await access.is_allowed(uid, settings.admin_id):
             continue  # не турбуємо не-схвалених
         st = await state.load(uid)
+        if st.role == "teacher":
+            continue  # викладач не готується до власного іспиту — особистий нудж не шлемо
         if st.lesson_hour != hour or await _already_nudged(uid, today):
             continue
         try:
