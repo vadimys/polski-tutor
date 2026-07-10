@@ -1403,6 +1403,147 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит лютий-2022 ══════════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: b,b,c,a,c,b,c,b,a,b,c,a,c,a.
+    Exercise(
+        "s2202_1", "Іспит 2022-02 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Szef zwolnił mnie z pracy.",
+                    [LQ("Ta wypowiedź oznacza, że ona:", ["pracuje za wolno", "straciła pracę", "szuka pracy"], 1,
+                        "«zwolnił z pracy» → втратила роботу.")]),
+            Segment("W życiu się tak nie nudziłem w kinie!",
+                    [LQ("Ta wypowiedź oznacza:", ["zainteresowanie", "niezadowolenie", "radość"], 1, "нудьга → невдоволення.")]),
+            Segment("Miejsce przy oknie jest moje. Proszę się przesiąść.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w restauracji", "w sklepie", "w pociągu"], 2, "місце біля вікна → потяг.")]),
+            Segment("Tę książkę może pan wypożyczyć na trzy tygodnie.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w bibliotece", "w księgarni", "w kiosku"], 0, "«wypożyczyć» → бібліотека.")]),
+            Segment("Ta piosenka mnie denerwuje.",
+                    [LQ("Ta wypowiedź oznacza:", ["uspokojenie", "zainteresowanie", "irytację"], 2, "«denerwuje» → роздратування.")]),
+            Segment("Kupiłem w tym sklepie szafę, chciałbym złożyć reklamację.",
+                    [LQ("Ta wypowiedź oznacza, że klient:", ["poleca innym ten zakup", "nie jest zadowolony z zakupu", "musi się zastanowić"], 1,
+                        "рекламація → незадоволений.")]),
+            Segment("Rowery można przewozić w ostatnim wagonie.",
+                    [LQ("Ta wypowiedź jest typowa:", ["na przystanku autobusowym", "na ścieżce rowerowej", "na dworcu kolejowym"], 2,
+                        "«wagon» → залізниця.")]),
+            Segment("Nie mam już siły więcej pracować.",
+                    [LQ("Ta wypowiedź oznacza, że on:", ["jest silny", "jest zmęczony", "jest biedny"], 1, "«nie mam siły» → втомлений.")]),
+            Segment("Ten syrop należy pić codziennie po jedzeniu.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w przychodni", "w barze", "w cukierni"], 0, "сироп (ліки) → поліклініка.")]),
+            Segment("Jak mogłaś powiedzieć coś takiego?",
+                    [LQ("Ta wypowiedź oznacza:", ["ciekawość", "krytykę", "niepewność"], 1, "докір → критика.")]),
+            Segment("Wreszcie umeblowałem swój dom!",
+                    [LQ("Ta wypowiedź oznacza, że on:", ["sprzedał wszystkie meble", "kupił dom z meblami", "ma w domu nowe meble"], 2,
+                        "«umeblowałem» → нові меблі вдома.")]),
+            Segment("Nikt nie zrobiłby tego lepiej!",
+                    [LQ("Ta wypowiedź to:", ["pochwała", "krytyka", "zakaz"], 0, "«nikt nie zrobiłby lepiej» → похвала.")]),
+            Segment("Przed wylotem na wakacje chciałbym ubezpieczyć bagaż.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w pociągu", "w samolocie", "w biurze podróży"], 2,
+                        "застрахувати багаж перед вильотом → турбюро.")]),
+            Segment("Opłaty za mieszkanie wzrosły o siedemdziesiąt złotych.",
+                    [LQ("Ta wypowiedź oznacza, że ona:", ["płaci teraz wyższy czynsz", "zmieniła mieszkanie", "będzie płacić 70 zł"], 0,
+                        "оплати зросли → вищий чинш.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: a,c,a,c,b,b,a,c.
+    Exercise(
+        "s2202_2", "Іспит 2022-02 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Czy ma pan skierowanie na badania? – Tak, na kiedy mogę się umówić?",
+                    [LQ("Z dialogu wynika, że mężczyzna:", ["umawia się na wizytę w poradni", "organizuje spotkanie biznesowe", "pyta o koszt badań"], 0,
+                        "скерування на обстеження → запис у поліклініку.")]),
+            Segment("– Popatrz, autobus przyjedzie dopiero za osiem minut. – Niepotrzebnie tak się spieszyłyśmy.",
+                    [LQ("Z dialogu wynika, że kobiety:", ["spóźniły się na autobus", "jadą autobusem", "czekają na autobus"], 2,
+                        "автобус за 8 хв → чекають.")]),
+            Segment("– Pije pani herbatę z cukrem czy bez? – Dziękuję, cytryna wystarczy.",
+                    [LQ("Z dialogu wynika, że kobieta:", ["woli gorzką herbatę", "prosi o cukier", "nie chce herbaty"], 0,
+                        "лимон без цукру → гіркий чай.")]),
+            Segment("– Smakowała ci kolacja u Ani? – Ania musi się jeszcze wiele nauczyć.",
+                    [LQ("Z dialogu wynika, że:", ["potrawy były smaczne", "dania były drogie", "ona nie jest zadowolona z kolacji"], 2,
+                        "«musi się nauczyć» → незадоволена.")]),
+            Segment("– Wychodzę z kolegami na rower. – Weź coś na wypadek deszczu.",
+                    [LQ("Z dialogu wynika, że:", ["zaczął padać deszcz", "może zacząć padać deszcz", "podczas deszczu łatwo o wypadek"], 1,
+                        "«na wypadek deszczu» → може піти дощ.")]),
+            Segment("– Jutro dostarczymy paczkę na pana adres domowy. – Będę cały dzień w pracy. Podaję nowy adres dostawy.",
+                    [LQ("Z dialogu wynika, że mężczyzna:", ["odbierze paczkę w domu", "odbierze paczkę w innym miejscu", "zwraca paczkę"], 1,
+                        "новий адрес доставки → інше місце.")]),
+            Segment("– Och, zobacz, nasza nawigacja w samochodzie nie działa. – Nie martw się, poradzimy sobie bez niej.",
+                    [LQ("Z dialogu wynika, że oni:", ["sami znajdą drogę", "zmienią plany", "nie dojadą na miejsce"], 0,
+                        "«poradzimy sobie bez niej» → знайдуть дорогу самі.")]),
+            Segment("– Czy problem jest poważny? – To hamulce. Musi pani zostawić samochód w warsztacie.",
+                    [LQ("Z dialogu wynika, że samochód:", ["jest sprawny", "należy sprzedać", "trzeba naprawić"], 2,
+                        "гальма, лишити в майстерні → ремонт.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю з найкращим роботодавцем. Ключ: b,c,a,b,c.
+    Exercise(
+        "s2202_3", "Іспит 2022-02 — Zad III (найкращий роботодавець)",
+        "Прослухай інтерв'ю з найкращим роботодавцем Польщі. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Zdobył pan tytuł Najlepszego Pracodawcy w Polsce, pokonując stu kandydatów. Jak "
+                "powinien postępować szef, by pracownicy byli zadowoleni? Traktuję wszystkich tak, "
+                "jak sam chciałbym być traktowany. Nie chciałbym, żeby praca mnie ograniczała, "
+                "dlatego mój zespół może sam wybrać miejsce i czas pracy. Jak stworzyć dobrą "
+                "atmosferę? Chcę, żeby pracownicy dobrze znali firmę – niczego nie ukrywam i daję "
+                "im dostęp do wielu informacji. Czy wiedzą, ile kto zarabia? Nie – tych informacji "
+                "o wynagrodzeniu nie przekazuję innym. Na co jeszcze mogą liczyć? Chcę, by cały "
+                "czas się rozwijali: organizuję warsztaty i seminaria; wybieram projekty "
+                "wymagające kreatywności. Czy relacje między pracownikami są ważne? Bardzo – dwa "
+                "razy w roku organizuję wyjazdy integracyjne, żebyśmy poznali się w mniej "
+                "formalnych sytuacjach.",
+                [
+                    LQ("Według pracodawcy jego pracownicy:",
+                       ["za bardzo go kontrolują", "decydują, gdzie chcą pracować", "mają za dużo czasu"], 1,
+                       "самі обирають місце й час праці."),
+                    LQ("Dane o wysokości pensji kolegów:",
+                       ["są dostępne dla wszystkich", "są omawiane na zebraniach", "nie są znane pracownikom"], 2,
+                       "інформацію про зарплати не передає."),
+                    LQ("Pracownicy firmy:",
+                       ["mogą brać udział w szkoleniach", "sami płacą za różne szkolenia", "prowadzą kursy dla innych"], 0,
+                       "організовує майстерні й семінари."),
+                    LQ("Pracodawca szuka projektów, które:",
+                       ["będą łatwe dla pracowników", "będą interesujące dla pracowników", "pozwolą mu więcej zarobić"], 1,
+                       "які вимагають креативності."),
+                    LQ("Pracownicy co jakiś czas:",
+                       ["organizują konferencje", "odwiedzają szefa w domu", "wspólnie wyjeżdżają"], 2,
+                       "виїзди для інтеграції двічі на рік."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: рутина королеви Єлизавети II, TAK/NIE (5). Ключ: T,N,N,N,T.
+    Exercise(
+        "s2202_4", "Іспит 2022-02 — Zad IV (день королеви)",
+        "Прослухай розмову про розпорядок дня королеви Єлизавети II. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Wczoraj oglądałam program o królowej Elżbiecie. Zamiast budzika używa dźwięku "
+                "tradycyjnego drewnianego instrumentu, który lubi. Zaczyna dzień o wpół do ósmej. "
+                "Na śniadanie wybiera płatki, owsiankę, tost z dżemem pomarańczowym lub jajecznicę "
+                "– zwykle rano nie je mięsa. Po śniadaniu zaczyna pracę: w biurze czyta listy, "
+                "odpowiada na korespondencję i podpisuje dokumenty; nie korzysta z pomocy "
+                "sekretarek, wszystko robi sama. Ważnym elementem dnia są spotkania – jest bardzo "
+                "zorganizowana, każde trwa około dwudziestu minut, a ona wie, kiedy czas minął, bez "
+                "patrzenia na zegarek. Wieczorami czyta raporty z dyskusji parlamentarnych, a w "
+                "każdą środę spotyka się z premierem Wielkiej Brytanii. Po pracy uwielbia spacery "
+                "z psami i jazdę konną.",
+                [
+                    LQ("Królowa zwykle je bezmięsne śniadanie.", _TAKNIE, 0,
+                       "ТАК — зазвичай уранці не їсть м'яса."),
+                    LQ("Sekretarki pomagają królowej w biurowych obowiązkach.", _TAKNIE, 1,
+                       "НІ — не користується допомогою секретарок."),
+                    LQ("Królowa podczas spotkań co 20 min kontroluje czas.", _TAKNIE, 1,
+                       "НІ — знає, коли час минув, БЕЗ погляду на годинник."),
+                    LQ("Wieczorami Elżbieta II czyta literaturę kryminalną.", _TAKNIE, 1,
+                       "НІ — читає звіти з парламентських дискусій."),
+                    LQ("Królowa regularnie spotyka się z premierem Wielkiej Brytanii.", _TAKNIE, 0,
+                       "ТАК — щосереди."),
+                ],
+            )
+        ],
+    ),
 ]
 
 

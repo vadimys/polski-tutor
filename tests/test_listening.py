@@ -110,6 +110,15 @@ def test_2023_11_listening_present():
     assert z1 == [1, 2, 0, 2, 1, 2, 0, 1, 2, 2, 1, 0, 1, 2]
 
 
+def test_2022_02_listening_present():
+    assert listening.total_questions(listening.by_id("s2202_1")) == 14
+    assert listening.total_questions(listening.by_id("s2202_2")) == 8
+    assert listening.total_questions(listening.by_id("s2202_3")) == 5
+    assert listening.total_questions(listening.by_id("s2202_4")) == 5
+    z1 = [s.questions[0].correct for s in listening.by_id("s2202_1").segments]
+    assert z1 == [1, 1, 2, 0, 2, 1, 2, 1, 0, 1, 2, 0, 2, 0]
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5

@@ -10,6 +10,7 @@ from __future__ import annotations
 from app.content import (
     b1_2019,
     b1_2020,
+    b1_2022_02,
     b1_2023_02,
     b1_2023_04,
     b1_2023_06,
@@ -24,6 +25,7 @@ from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem, OpenTask
 EXAMS: list[Exam] = [
     b1_2019.EXAM,
     b1_2020.EXAM,
+    b1_2022_02.EXAM,
     b1_2023_02.EXAM,
     b1_2023_04.EXAM,
     b1_2023_06.EXAM,
