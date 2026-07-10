@@ -28,8 +28,16 @@ def _extended_until(current_until: str, today: date, days: int) -> str:
 
 
 async def apply_subscription(user_id: int, days: int, stars: int, charge_id: str) -> str:
-    """Продовжити доступ на days і залогувати оплату. Повертає новий until (ISO)."""
+    """Продовжити доступ на days і залогувати оплату. Повертає новий until (ISO).
+
+    Ідемпотентно за charge_id: повторна доставка того самого платежу (ретрай Telegram)
+    НЕ подовжує доступ удруге — повертає поточний until."""
     async with session_factory()() as s:
+        if charge_id:  # дедуп: цей платіж уже оброблено?
+            dup = await s.execute(select(Payment.id).where(Payment.charge_id == charge_id))
+            if dup.first() is not None:
+                u = await s.get(User, user_id)
+                return u.access_until if u else ""
         u = await s.get(User, user_id)
         if u is None:
             u = User(id=user_id)

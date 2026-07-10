@@ -197,8 +197,18 @@ async def week_goal_days(user_id: int) -> int:
     return n
 
 
+async def _is_teacher(user_id: int) -> bool:
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        return bool(u and u.role == "teacher")
+
+
 async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> dict:
-    """Зарахувати активність (хвилини + XP + тип). Оновлює durable-стан і денні лічильники."""
+    """Зарахувати активність (хвилини + XP + тип). Оновлює durable-стан і денні лічильники.
+
+    Викладач — превʼю-режим: НЕ нараховуємо XP/серію/місії (як update_readiness)."""
+    if await _is_teacher(user_id):
+        return await _get(user_id)
     r = _r()
     if kind:
         ak = f"polski:act:{user_id}:{_today()}:{kind}"

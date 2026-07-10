@@ -37,3 +37,22 @@ def test_level_start_xp_curve():
     # level_of — обернене до level_start_xp
     for lvl in range(1, 12):
         assert goals.level_of(goals.level_start_xp(lvl)) == lvl
+
+
+async def test_add_teacher_is_noop(monkeypatch):
+    """Викладач у превʼю-режимі: goals.add НЕ чіпає Redis і нічого не нараховує."""
+
+    async def fake_teacher(uid):
+        return True
+
+    async def fake_get(uid):
+        return {"xp": 0, "goal": 15, "freeze": 2, "streak": 0, "last": ""}
+
+    def boom():  # якщо торкнеться Redis — тест впаде
+        raise AssertionError("goals.add торкнувся Redis для викладача")
+
+    monkeypatch.setattr(goals, "_is_teacher", fake_teacher)
+    monkeypatch.setattr(goals, "_get", fake_get)
+    monkeypatch.setattr(goals, "_r", boom)
+    res = await goals.add(1, goals.REVIEW_MIN, goals.XP_REVIEW, kind="review")
+    assert res["xp"] == 0  # нічого не нараховано

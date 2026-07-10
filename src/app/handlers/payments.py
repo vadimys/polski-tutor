@@ -9,6 +9,7 @@ successful_payment → продовжуємо доступ (billing.apply_subscr
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -72,7 +73,24 @@ async def on_paid(message: Message) -> None:
     sp = message.successful_payment
     uid = message.from_user.id
     stars = sp.total_amount  # у Stars = кількість ⭐
-    until = await billing.apply_subscription(uid, settings.sub_days, stars, sp.telegram_payment_charge_id)
+    charge = sp.telegram_payment_charge_id
+    try:
+        until = await billing.apply_subscription(uid, settings.sub_days, stars, charge)
+    except Exception:
+        # оплату отримано, але доступ не продовжився — НЕ брешемо про успіх, кличемо адміна
+        logger.exception("payment grant FAILED uid=%s stars=%s charge=%s", uid, stars, charge)
+        await message.answer(
+            "✅ Оплату отримано, але сталася технічна затримка з активацією. "
+            "Уже розбираюсь — доступ відкрию найближчим часом 🙏"
+        )
+        if settings.admin_id:
+            with suppress(Exception):
+                await message.bot.send_message(
+                    settings.admin_id,
+                    f"🆘 <b>ОПЛАТА БЕЗ АКТИВАЦІЇ</b> uid <code>{uid}</code> · {stars}⭐ · "
+                    f"charge <code>{charge}</code> — активувати вручну!",
+                )
+        return
     await message.answer(
         f"✅ <b>Дякуємо! Підписку активовано</b> до <b>{until}</b>.\n"
         "Повний доступ відкрито — продовжуймо підготовку 👇",

@@ -159,19 +159,21 @@ async def grant_trial(
         if u is None:
             u = User(id=user_id)
             s.add(u)
-        until = (clock.today_local() + timedelta(days=days)).isoformat()
+        trial_until = (clock.today_local() + timedelta(days=days)).isoformat()
         u.username = username or ""
-        u.role = "student"
-        u.referred_by = referred_by
+        if u.role != "teacher":  # не перетворюємо викладача назад на учня
+            u.role = "student"
+        if referred_by and not u.referred_by:  # не перезатираємо наявну атрибуцію
+            u.referred_by = referred_by
         if exam_date:
             u.exam_date = exam_date
             u.exam_date_confirmed = confirmed
         u.access_status = "approved"
-        u.access_until = until
+        u.access_until = max(u.access_until, trial_until)  # НЕ вкорочуємо наявний доступ
         u.requested_at = clock.now_local().isoformat(timespec="minutes")
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
-        return until
+        return u.access_until
 
 
 async def students_of(teacher_id: int) -> list[int]:
