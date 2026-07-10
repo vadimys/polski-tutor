@@ -63,6 +63,17 @@ def test_2024_04_listening_present():
     assert z1 == [1, 2, 2, 0, 2, 0, 1, 1, 2, 0, 1, 2, 0, 1]
 
 
+def test_2024_06_listening_present():
+    assert listening.total_questions(listening.by_id("s2406_1")) == 14
+    assert listening.total_questions(listening.by_id("s2406_2")) == 6
+    assert listening.total_questions(listening.by_id("s2406_3")) == 5
+    assert listening.total_questions(listening.by_id("s2406_4")) == 6
+    z1 = [s.questions[0].correct for s in listening.by_id("s2406_1").segments]
+    assert z1 == [0, 2, 1, 2, 0, 1, 2, 1, 0, 2, 1, 2, 1, 0]  # klucz a,c,b,c,a,b,c,b,a,c,b,c,b,a
+    for q in listening.by_id("s2406_4").segments[0].questions:
+        assert q.options == ["TAK", "NIE"]
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5

@@ -640,6 +640,168 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит червень-2024 ════════════════════════════════════════
+    # Zad I: 14 висловлювань (a/b/c). Ключ: a,c,b,c,a,b,c,b,a,c,b,c,b,a.
+    Exercise(
+        "s2406_1", "Іспит 2024-06 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Wypożyczone książki należy oddać w ciągu miesiąca.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w bibliotece", "w księgarni", "w biurze"], 0,
+                        "«wypożyczone książki oddać» → бібліотека.")]),
+            Segment("Bardzo się cieszę na wspólny wyjazd nad jezioro.",
+                    [LQ("Ta wypowiedź oznacza:", ["smutek", "zdenerwowanie", "radość"], 2, "«cieszę się» → радість.")]),
+            Segment("CV i list motywacyjny prosimy wysłać na podany adres.",
+                    [LQ("Ta wypowiedź to fragment rozmowy:", ["o wakacjach", "o pracy", "o spotkaniu"], 1,
+                        "CV, лист мотиваційний → про роботу.")]),
+            Segment("Coś przerwało, możesz to powiedzieć jeszcze raz?",
+                    [LQ("Ta wypowiedź oznacza, że ona:",
+                        ["kończy rozmowę", "wszystko usłyszała", "prosi o powtórzenie"], 2, "«jeszcze raz» → просить повторити.")]),
+            Segment("Okulista przyjmuje we wtorki i piątki od czternastej do siedemnastej.",
+                    [LQ("Ta wypowiedź oznacza, że lekarz przyjmuje:",
+                        ["po południu", "codziennie", "raz w tygodniu"], 0, "14:00–17:00 → пополудні.")]),
+            Segment("Mam trzydzieści dziewięć stopni i dreszcze.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["czuje się dobrze", "ma gorączkę", "narzeka na pogodę"], 1, "39° + дрож → гарячка.")]),
+            Segment("Od jutra koniec ze słodyczami i tłustym jedzeniem.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["będzie sama gotować", "nie planuje zmian", "planuje zacząć dietę"], 2, "кінець солодкому → дієта.")]),
+            Segment("Cena wycieczki nie obejmuje wejść do muzeów.",
+                    [LQ("Ta wypowiedź oznacza, że:",
+                        ["bilety wstępu są wliczone w cenę", "za muzea płaci się dodatkowo",
+                         "bilety do muzeów są bardzo tanie"], 1, "«nie obejmuje» → музеї окремо.")]),
+            Segment("Mamy złoto! Nasi siatkarze mistrzami świata!",
+                    [LQ("Ta wypowiedź oznacza, że siatkarze:",
+                        ["wygrali zawody", "przegrali mecz", "mają drugie miejsce"], 0, "золото/чемпіони → виграли.")]),
+            Segment("Stopy razem, ręce na biodrach, plecy prosto i skaczemy!",
+                    [LQ("Ta wypowiedź jest typowa:",
+                        ["u ortopedy", "w salonie urody", "na sali gimnastycznej"], 2, "команди для вправ → спортзал.")]),
+            Segment("W naszym biurze jest świetny klimat, wszyscy się lubimy.",
+                    [LQ("Ta wypowiedź oznacza, że w biurze:",
+                        ["działa klimatyzacja", "jest dobra atmosfera", "jest świeże powietrze"], 1,
+                        "«świetny klimat, lubimy się» → хороша атмосфера.")]),
+            Segment("Dzień dobry państwu, proszę bilety do kontroli.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["policjanta", "taksówkarza", "konduktora"], 2,
+                        "«bilety do kontroli» → кондуктор.")]),
+            Segment("Do twarzy ci w zielonym, ładnie wyglądasz.",
+                    [LQ("Ta wypowiedź to:", ["krytyka", "komplement", "rada"], 1, "«ładnie wyglądasz» → комплімент.")]),
+            Segment("Pani córka często się spóźnia i nie uważa na lekcjach.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["nauczyciela", "rodzica", "pielęgniarki"], 0,
+                        "про поведінку на уроках → вчитель.")]),
+        ],
+    ),
+    # Zad II: 6 діалогів (a/b/c). Ключ: c,b,b,c,b,a.
+    Exercise(
+        "s2406_2", "Іспит 2024-06 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Przepraszam za spóźnienie. Były duże korki w centrum. – To już kolejny raz.",
+                    [LQ("Z dialogu wynika, że mężczyzna:",
+                        ["spóźnił się pierwszy raz", "szedł pieszo do pracy", "czasami się spóźnia"], 2,
+                        "«kolejny raz» → інколи спізнюється.")]),
+            Segment("– Podoba mi się ten obraz, czy jest na sprzedaż? – Niestety, nie.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["obraz jest bardzo drogi", "mężczyzna chciałby kupić obraz", "można kupić ten obraz"], 1,
+                        "хоче купити, але не продається.")]),
+            Segment("– O której godzinie kończy się seans? – Nie pamiętam dobrze.",
+                    [LQ("Z dialogu wynika, że on:",
+                        ["wie, o której będzie koniec filmu", "nie jest pewny, o której kończy się film",
+                         "nie pamięta tytułu filmu"], 1, "«nie pamiętam» → не певний часу.")]),
+            Segment("– Jak najszybciej dojechać do ogrodu zoologicznego? – Nie polecam autobusu, "
+                    "lepiej będzie taksówką.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["kobieta nie chce jechać taksówką do ZOO", "autobus jedzie najszybciej",
+                         "mężczyzna poleca taksówkę"], 2, "«lepiej taksówką» → радить таксі.")]),
+            Segment("– Nie powinnaś przyjmować tej oferty pracy. – Masz rację, proponują niezbyt "
+                    "dobre warunki finansowe.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["on zachęca ją do pracy", "ona się z nim zgadza", "ona jest zadowolona z oferty"], 1,
+                        "«masz rację» → погоджується.")]),
+            Segment("– Może przeprowadzimy się do większego mieszkania? – Muszę o tym pomyśleć. "
+                    "To poważna decyzja.",
+                    [LQ("Z dialogu wynika, że ona:",
+                        ["jeszcze nie zdecydowała", "uważa, że to dobry pomysł", "nie chce się przeprowadzać"], 0,
+                        "«muszę pomyśleć» → ще не вирішила.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю «Dom za 1 euro» (a/b/c). Ключ: b,c,a,b,c.
+    Exercise(
+        "s2406_3", "Іспит 2024-06 — Zad III (Dom za 1 euro)",
+        "Прослухай інтерв'ю про програму «Dom za 1 euro» в Італії. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Czym jest program „Dom za 1 euro”? To nietypowy sposób, w jaki włoskie miasteczka "
+                "starają się znaleźć nowych mieszkańców. Co jakiś czas wystawiają na sprzedaż "
+                "nieruchomości i oferują je za cenę włoskiej kawy. "
+                "Jakie warunki trzeba spełnić, żeby kupić dom? Warunki różnią się w zależności od "
+                "miasteczka lub gminy. Najważniejszy jest remont, który trzeba zrobić w ciągu "
+                "trzech lat od akceptacji planu napraw przez gminę. Dopiero po skończeniu renowacji "
+                "można kupić nieruchomość. "
+                "Gdzie można znaleźć te domy? Przede wszystkim w regionach o niewielkim "
+                "zainteresowaniu turystycznym, w miasteczkach, gdzie żyje coraz mniej mieszkańców "
+                "– młodzi wyjeżdżają do większych miast, a starsi umierają. "
+                "Czy dużo osób korzysta z programu? Program jest skierowany do wszystkich i "
+                "popularny w wielu krajach. Bardzo dużo ludzi z Europy kupuje te domy, ale nikt "
+                "z Polski nie był zainteresowany. Wiele osób woli tradycyjny zakup z wolnego rynku, "
+                "który może być łatwiejszy i tańszy, zwłaszcza na południu Włoch.",
+                [
+                    LQ("Warunki programu „Dom za 1 euro”:",
+                       ["są takie same dla całego kraju", "są inne dla każdej miejscowości",
+                        "zmieniają się co rok"], 1, "«różnią się w zależności od gminy»."),
+                    LQ("Remont domu:",
+                       ["nie jest obowiązkowy", "muszą zaakceptować mieszkańcy miasta",
+                        "trzeba skończyć w określonym czasie"], 2, "у межах трьох років."),
+                    LQ("„Domy za 1 euro” znajdują się w miastach:",
+                       ["w których mieszka mało ludzi", "które są popularne wśród turystów",
+                        "w których mieszka dużo studentów"], 0, "де щораз менше мешканців."),
+                    LQ("Program „Dom za 1 euro” jest:",
+                       ["dostępny tylko dla Europejczyków", "znany na całym świecie",
+                        "najbardziej popularny wśród Włochów"], 1, "популярний у багатьох країнах."),
+                    LQ("Tradycyjny zakup nieruchomości:",
+                       ["jest popularny wśród Polaków", "jest skomplikowany na południu Włoch",
+                        "ma więcej zalet niż program „Dom za 1 euro”"], 2,
+                       "легший і дешевший (особливо на півдні) → більше переваг."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: розмова з тренером, TAK/NIE (6). Ключ: N,T,N,T,T,N.
+    Exercise(
+        "s2406_4", "Іспит 2024-06 — Zad IV (розмова з тренером)",
+        "Прослухай розмову з тренером про весняну активність. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Jak wrócić do formy po zimie? Jestem zwolennikiem biegania, ale nie wszyscy mogą "
+                "biegać. Każdy ruch na świeżym powietrzu jest ważny. Jak poprawić kondycję? Dla "
+                "początkujących spacery z kijkami, a osoby aktywne namawiam do intensywnego "
+                "biegania. Mam dużo lat, ale ciągle regularnie biegam, łącznie z półmaratonami "
+                "i maratonami – w każdym wieku jest to możliwe. Można też skorzystać z roweru. "
+                "W naszym mieście jest wiele siłowni zewnętrznych – zachęcam do ćwiczenia na nich. "
+                "A przygotowanie do treningu? Rozgrzanie mięśni przed i po treningu jest ważne, "
+                "żeby uniknąć kontuzji; istotne też, kiedy wybieramy marsz. Czy dziesięciominutowe "
+                "treningi mają sens? To za mało – żeby był efekt, potrzebujemy trzydziestu, "
+                "czterdziestu minut. Wiosną warto stosować suplementy? Można zażywać minerały, ale "
+                "wraz ze słońcem mamy więcej naturalnej witaminy D. Nie potrzebujemy chemii – "
+                "wystarczy prawidłowe, zróżnicowane jedzenie. Codziennie należy ćwiczyć? To zależy "
+                "od organizmu; żeby pozostać w dobrej kondycji, trenujmy trzy razy w tygodniu. "
+                "Codzienne treningi są dobre dla zawodowców.",
+                [
+                    LQ("Mężczyzna nie startuje w zawodach z powodu wieku.", _TAKNIE, 1,
+                       "НІ — біжить півмаратони й маратони, «в кожному віці можливо»."),
+                    LQ("W mieście jest dużo siłowni na świeżym powietrzu.", _TAKNIE, 0,
+                       "ТАК — «wiele siłowni zewnętrznych»."),
+                    LQ("Przed marszem można zrezygnować z dodatkowych ćwiczeń mięśni.", _TAKNIE, 1,
+                       "НІ — розігрів важливий і при марші."),
+                    LQ("Krótkie treningi nie dają dobrych rezultatów.", _TAKNIE, 0,
+                       "ТАК — 10 хв замало, треба 30–40."),
+                    LQ("Mężczyzna poleca dobre jedzenie zamiast suplementów.", _TAKNIE, 0,
+                       "ТАК — «nie potrzebujemy chemii, wystarczy prawidłowe jedzenie»."),
+                    LQ("Według trenera powinno się ćwiczyć każdego dnia.", _TAKNIE, 1,
+                       "НІ — 3 рази на тиждень; щодня — для профі."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
