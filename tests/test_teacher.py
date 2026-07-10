@@ -36,3 +36,8 @@ def test_row_expired_marker_and_no_streak():
     r = _row(_d(expired=True, streak=0))
     assert "⚠️ trial завершився" in r
     assert "🔥" not in r  # серії немає — не показуємо
+
+
+def test_row_paid_badge_overrides_warning():
+    r = _row(_d(expired=True), paid=True)
+    assert "💎" in r and "trial завершився" not in r  # платний → значок, не попередження

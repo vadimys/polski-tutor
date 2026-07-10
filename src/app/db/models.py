@@ -53,3 +53,18 @@ class Session(Base):
     module: Mapped[str] = mapped_column(String(16))
     score: Mapped[int] = mapped_column(Integer)  # результат саме цієї вправи, 0..100
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Payment(Base):
+    """Лог оплат Telegram Stars (підписка учня) — для обліку й атрибуції викладачу."""
+
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    stars: Mapped[int] = mapped_column(Integer)  # сума у Stars (XTR)
+    days: Mapped[int] = mapped_column(Integer)  # на скільки днів продовжено
+    charge_id: Mapped[str] = mapped_column(String(128), default="")  # telegram_payment_charge_id
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

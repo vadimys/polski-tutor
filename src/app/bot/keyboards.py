@@ -72,9 +72,9 @@ def contact_admin_kb() -> InlineKeyboardMarkup:
 
 
 def extend_request_kb() -> InlineKeyboardMarkup:
-    """Після завершення trial: попросити продовження доступу + написати адміну."""
+    """Після завершення trial: підписка (Stars) — головний CTA + написати адміну."""
     kb = InlineKeyboardBuilder()
-    kb.button(text="🔓 Попросити продовження", callback_data="onb:extend")
+    kb.button(text="💎 Оформити підписку", callback_data="pay:start")
     kb.button(text="✍️ Написати адміну", callback_data="onb:contact")
     kb.adjust(1)
     return kb.as_markup()

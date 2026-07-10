@@ -98,8 +98,8 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
     elif access.is_expired(inf, clock.today_local()):
         await message.answer(
             "⏳ <b>Твій безкоштовний період завершився.</b>\n"
-            "Сподіваюсь, бот був корисний! Щоб продовжити підготовку — попроси продовження "
-            "доступу (скоро зʼявиться підписка).",
+            f"Сподіваюсь, бот був корисний! Щоб продовжити підготовку — оформи підписку "
+            f"(<b>{settings.sub_stars} ⭐ / {settings.sub_days} днів</b>) через Telegram Stars.",
             reply_markup=extend_request_kb(),
         )
     elif inf.status == "approved":

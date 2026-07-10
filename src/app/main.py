@@ -30,6 +30,7 @@ from app.handlers import (
     mistakes,
     mock,
     onboarding,
+    payments,
     placement,
     plan,
     privacy,
@@ -79,6 +80,7 @@ COMMANDS = [
     BotCommand(command="plan", description="Мій план підготовки"),
     BotCommand(command="test", description="Стартовий тест"),
     BotCommand(command="uczniowie", description="Мій клас (для викладачів)"),
+    BotCommand(command="subskrypcja", description="Підписка (Telegram Stars)"),
     BotCommand(command="reset", description="Почати навчання заново"),
     BotCommand(command="anuluj", description="Скасувати поточне завдання"),
     BotCommand(command="prywatnosc", description="Приватність (GDPR)"),
@@ -113,6 +115,7 @@ async def main() -> None:
     dp.include_router(onboarding.router)
     dp.include_router(admin.router)
     dp.include_router(privacy.router)  # GDPR — поза гейтом (доступно будь-кому)
+    dp.include_router(payments.router)  # підписка Stars — платити може й той, у кого trial минув
     dp.include_router(quizpoll.router)  # poll_answer нативних quiz-poll (стан у Redis)
     dp.include_router(start.router)
 

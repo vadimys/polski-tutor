@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     trial_days: int = 30
     organic_trial_days: int = 14
 
+    # Підписка через Telegram Stars (XTR). Ціна орієнтовна — легко змінити в .env.
+    sub_stars: int = 150  # вартість підписки у Stars
+    sub_days: int = 30  # на скільки днів продовжує доступ
+
     # Mini App (WebApp-панель): публічний HTTPS-URL через cloudflared-тунель.
     # Порожній → кнопку «Панель» не показуємо (бот повністю працює й без тунеля).
     webapp_url: str = ""

@@ -16,7 +16,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, clock, progress, quest
+from app.services import access, billing, clock, progress, quest
 from app.services import state as user_state
 
 router = Router()
@@ -30,10 +30,10 @@ def _activity(days_since: int) -> str:
     return ""
 
 
-def _row(d: dict) -> str:
+def _row(d: dict, paid: bool = False) -> str:
     """Один рядок класу (чиста функція — тестована)."""
-    warn = " ⚠️ trial завершився" if d["expired"] else ""
-    head = f"👤 <b>{html.escape(d['name'])}</b> — 🏁 {d['overall']}% · {d['passed']}/5 ≥50%{warn}"
+    badge = " 💎" if paid else (" ⚠️ trial завершився" if d["expired"] else "")
+    head = f"👤 <b>{html.escape(d['name'])}</b> — 🏁 {d['overall']}% · {d['passed']}/5 ≥50%{badge}"
     if not d["started"]:
         return head + "\n   <i>ще не проходив вправ</i>"
     streak = f" · 🔥 {d['streak']}" if d["streak"] else ""
@@ -74,10 +74,12 @@ async def _send_class(message: Message, teacher_id: int, bot_username: str) -> N
             reply_markup=to_menu_kb(),
         )
         return
-    rows = [_row(await _gather(sid)) for sid in students]
+    paying = await billing.paying_student_ids(teacher_id)
+    rows = [_row(await _gather(sid), sid in paying) for sid in students]
+    paid_line = f" · 💰 платних: <b>{len(paying)}</b>" if paying else ""
     await message.answer(
-        f"👩‍🏫 <b>Твій клас — {len(students)} учнів</b>\n"
-        "<i>🏁 — готовність до B1; N/5 — модулів ≥50%; 📉 — найслабше.</i>\n\n"
+        f"👩‍🏫 <b>Твій клас — {len(students)} учнів</b>{paid_line}\n"
+        "<i>🏁 — готовність до B1; N/5 — модулів ≥50%; 📉 — найслабше; 💎 — платна підписка.</i>\n\n"
         + "\n\n".join(rows)
         + f"\n\n🔗 Запросити ще: <code>{link}</code>",
         reply_markup=to_menu_kb(),

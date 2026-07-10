@@ -83,6 +83,6 @@ def test_extend_keyboards_callbacks():
     from app.bot.keyboards import admin_extend_kb, extend_request_kb
 
     ext = [b.callback_data for row in extend_request_kb().inline_keyboard for b in row]
-    assert ext == ["onb:extend", "onb:contact"]
+    assert ext == ["pay:start", "onb:contact"]  # підписка Stars — головний CTA після trial
     adm = [b.callback_data for row in admin_extend_kb(7).inline_keyboard for b in row]
     assert adm == ["adm:extend:7", "adm:no:7"]
