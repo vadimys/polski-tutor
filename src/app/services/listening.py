@@ -1106,6 +1106,164 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит червень-2023 ════════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: a,c,a,b,a,c,b,a,c,b,b,c,a,b.
+    Exercise(
+        "s2306_1", "Іспит 2023-06 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Tomku, dostajesz jedynkę, znowu się nie nauczyłeś.",
+                    [LQ("To wypowiedź:", ["nauczyciela", "ucznia", "rodzica"], 0, "виставляє оцінку → вчитель.")]),
+            Segment("Przepraszam, chciałbym kupić przewodnik po Austrii.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w biurze podróży", "na dworcu PKP", "w księgarni"], 2,
+                        "купити путівник → книгарня.")]),
+            Segment("Jutro można spodziewać się silnego wiatru i opadów deszczu.",
+                    [LQ("Ta wypowiedź to fragment:", ["prognozy pogody", "porady lekarskiej", "audycji kulinarnej"], 0,
+                        "вітер, дощ → прогноз погоди.")]),
+            Segment("Tankowałem paliwo przy czwórce. Poproszę jeszcze małą kawę.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w restauracji", "na stacji benzynowej", "w sklepie motoryzacyjnym"], 1,
+                        "заправлявся паливом → АЗС.")]),
+            Segment("Po wielu miesiącach wreszcie znalazłam wymarzoną kawalerkę.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["długo szukała mieszkania", "wynajęła mieszkanie kawalerowi", "kupiła trzypokojowy apartament"], 0,
+                        "«po wielu miesiącach» → довго шукала.")]),
+            Segment("Dostałem awans i podwyżkę. Nie spodziewałem się tego.",
+                    [LQ("Ta wypowiedź oznacza:", ["zdenerwowanie", "rozczarowanie", "zaskoczenie"], 2, "«nie spodziewałem się» → здивування.")]),
+            Segment("Czy mają państwo w karcie coś dla wegetarian?",
+                    [LQ("Ta wypowiedź oznacza, że osoba pyta o dania:",
+                        ["dla alergików", "bez mięsa", "niskokaloryczne"], 1, "для вегетаріанців → без м'яса.")]),
+            Segment("Dzień dobry, poproszę dwa ulgowe i jeden normalny.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w kasie biletowej", "na poczcie", "w przychodni"], 0,
+                        "пільгові/звичайні квитки → каса.")]),
+            Segment("Mam trzydzieści dziewięć stopni i dreszcze.",
+                    [LQ("Ta wypowiedź oznacza, że:", ["jest upalny dzień", "ona czuje się dobrze", "ona ma gorączkę"], 2,
+                        "39° + дрож → гарячка.")]),
+            Segment("Ile mniej więcej będzie kosztował kurs na dworzec?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w autobusie", "w taksówce", "w pociągu"], 1, "«kurs na dworzec» → таксі.")]),
+            Segment("Przed wejściem do sali proszę zostawić kurtki w szatni.",
+                    [LQ("Ta wypowiedź oznacza, że ciepłe ubrania:",
+                        ["należy włożyć na siebie", "trzeba zostawić poza salą", "trzeba mieć przy sobie"], 1,
+                        "«zostawić w szatni» → поза залою.")]),
+            Segment("Czy możesz się pospieszyć? Za pół godziny musimy wyjść.",
+                    [LQ("Ta wypowiedź oznacza, że osoby:",
+                        ["niedawno wróciły do domu", "za kilka minut wychodzą", "do wyjścia mają 30 minut"], 2,
+                        "«za pół godziny» → 30 хв до виходу.")]),
+            Segment("Będziemy mieli dzisiaj gości, posprzątałbyś w domu?",
+                    [LQ("Ta wypowiedź to:", ["prośba", "rada", "odmowa"], 0, "«posprzątałbyś?» → прохання.")]),
+            Segment("Nasi siatkarze zagrali dobry mecz, ale złoty medal mają rywale.",
+                    [LQ("To wypowiedź:", ["kibica piłki nożnej", "fana przegranej drużyny", "fana wygranej drużyny"], 1,
+                        "медаль у суперників → фан програлої команди.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: a,b,c,c,a,c,a,b.
+    Exercise(
+        "s2306_2", "Іспит 2023-06 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Wiesz, że pani Ela nie jest już naszą sąsiadką? Zamieszkała na Ochocie. "
+                    "– Nie wiedziałem, jesteś pierwszą osobą, która mi to mówi.",
+                    [LQ("Ta wypowiedź oznacza, że kobieta:",
+                        ["przeprowadziła się", "zrobiła w domu remont", "wzięła kredyt na mieszkanie"], 0,
+                        "Ela переїхала на Ochotę.")]),
+            Segment("– Niestety, nie może pan zapłacić kartą, nasz terminal jest zepsuty. – Ale ja nie mam gotówki!",
+                    [LQ("Z dialogu dowiadujemy się, że klient:",
+                        ["ma pieniądze w portfelu", "ma pieniądze na koncie", "negocjuje cenę produktu"], 1,
+                        "нема готівки, але має картку → гроші на рахунку.")]),
+            Segment("– Kochanie, tym razem zapiekanka nie wyszła ci zbyt dobrze. – Masz rację, dodałam za dużo soli.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["mężczyzna chwali potrawę", "kobieta zrobiła pyszne danie", "kobieta zgadza się z mężczyzną"], 2,
+                        "«masz rację» → погоджується.")]),
+            Segment("– Czy posiłki są wliczone w cenę pokoju? – W tej ofercie jest tylko śniadanie.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["za śniadanie trzeba dodatkowo zapłacić", "wszystkie posiłki są gratis", "cena zawiera jeden posiłek"], 2,
+                        "лише сніданок включено → один посилок.")]),
+            Segment("– Mamo, Kamil dostał na urodziny chomika, ja też chcę! – No nie wiem, muszę porozmawiać o tym z ojcem.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["syn marzy o własnym zwierzątku", "kolega kupił sobie zwierzątko", "mama nie zgadza się na zwierzątko"], 0,
+                        "«ja też chcę» → мріє про тваринку.")]),
+            Segment("– Znowu boli mnie ząb. – Mogę ci polecić mojego dentystę, to bardzo dobry specjalista.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["kobieta umawia znajomego na wizytę", "mężczyzna nie chce iść do dentysty", "mężczyzna kolejny raz czuje ból"], 2,
+                        "«znowu boli» → вкотре болить.")]),
+            Segment("– Przepraszam, jak dojść do muzeum narodowego? – To nie ten kierunek, radzę wziąć taksówkę.",
+                    [LQ("Z dialogu dowiadujemy się, że mężczyzna:",
+                        ["szedł w złą stronę", "jedzie taksówką do muzeum", "pyta taksówkarza o drogę"], 0,
+                        "«to nie ten kierunek» → йшов не туди.")]),
+            Segment("– Proszę zająć miejsce, spektakl rozpocznie się za kilka minut. – Całe szczęście, że się nie spóźniłem.",
+                    [LQ("Z dialogu dowiadujemy się, że mężczyzna:",
+                        ["nie zdążył na spektakl", "przyszedł na czas", "przyszedł za wcześnie"], 1,
+                        "«nie spóźniłem się» → вчасно.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю з Лєвандовським про батьків. Ключ: c,b,a,b,c.
+    Exercise(
+        "s2306_3", "Іспит 2023-06 — Zad III (Lewandowski про батьків)",
+        "Прослухай інтерв'ю з Robertem Lewandowskim про його батьків. На іспиті лунає двічі.",
+        [
+            Segment(
+                "O swoim dzieciństwie opowie znany piłkarz Robert Lewandowski. Robercie, jak "
+                "pamiętasz swoich rodziców? Rodzice całe życie byli związani ze sportem. Podczas "
+                "studiów na Akademii Wychowania Fizycznego w Warszawie ojciec trenował judo, tam "
+                "poznał moją mamę – siatkarkę. Potem przeprowadzili się do Leszna i oboje uczyli "
+                "WF-u w tej samej szkole podstawowej; tata był też dyrektorem lokalnego ośrodka "
+                "sportu. Jaką rolę odegrał ojciec? Był moim pierwszym trenerem i to dzięki niemu "
+                "wybrałem piłkę nożną. Mama widziała we mnie siatkarza. Co zawdzięczasz rodzicom? "
+                "Pokazali mi, jaki powinien być sportowiec: uczciwy, lojalny, taki, który dzieli "
+                "się swoim sukcesem z innymi. Twój tata zachorował, gdy byłeś nastolatkiem? Tak, "
+                "miał problemy z sercem i zdiagnozowano u niego nowotwór. Odszedł, kiedy miałem 16 "
+                "lat. Zawsze będę żałował, że nigdy nie widział moich meczów w reprezentacji.",
+                [
+                    LQ("Rodzice Roberta Lewandowskiego:",
+                       ["uprawiali ten sam sport", "pracowali na uniwersytecie", "razem studiowali i pracowali"], 2,
+                       "разом на AWF, потім оба вчили WF у тій самій школі."),
+                    LQ("Ojciec Roberta był:",
+                       ["instruktorem judo", "kierownikiem instytucji sportowej", "kierownikiem szkoły"], 1,
+                       "директор місцевого осередку спорту."),
+                    LQ("Ojciec Roberta:",
+                       ["pomógł synowi zdecydować o przyszłości", "odradzał synowi karierę sportową",
+                        "trenował syna na siatkarza"], 0, "завдяки йому обрав футбол."),
+                    LQ("Rodzice uczyli Roberta:",
+                       ["jak szybko wygrywać", "jak zachowywać się po zwycięstwie", "gdzie inwestować pieniądze"], 1,
+                       "ділитися успіхом з іншими."),
+                    LQ("Ojciec Roberta zmarł:",
+                       ["nagle po intensywnym treningu", "przed ważnym meczem syna", "w wyniku poważnej choroby"], 2,
+                       "серце + пухлина → тяжка хвороба."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: розмова з гідом у Fromborku, TAK/NIE (5). Ключ: N,N,T,N,T.
+    Exercise(
+        "s2306_4", "Іспит 2023-06 — Zad IV (Frombork)",
+        "Прослухай розмову туриста з гідом по Fromborku. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Frombork to niezwykłe miasto, a wieża wodna jest bardzo interesująca. Naprzeciwko "
+                "wieży jest pomnik Mikołaja Kopernika, stoimy przy głównej ulicy, w sercu miasta. "
+                "Potem pójdziemy w stronę katedry. Aby do niej dojść, można przejść przez drewniany "
+                "most lub wybrać inną drogę – przez bramę od strony zachodniej. Czy Kopernik "
+                "mieszkał w pobliżu? Miał dwa domy: jednym była wieża katedralna, gdzie bywał od "
+                "czasu do czasu i trzymał sprzęty astronomiczne, ale na co dzień mieszkał daleko od "
+                "katedry – ten budynek dziś już nie istnieje. Jak powstał Frombork? Przez prawie "
+                "700 lat katedrę z budynkami nazywaliśmy miastem, a pobliskie domy były we wsi "
+                "obok; te osobne części stały się jednym miastem na początku dwudziestego wieku. "
+                "Dlaczego katedrę zbudowano daleko? Kościół jest na górze, na wysokości 20 metrów – "
+                "to naturalna obrona tego miejsca.",
+                [
+                    LQ("Do katedry można dojść tylko jedną trasą.", _TAKNIE, 1,
+                       "НІ — можна через міст або через браму."),
+                    LQ("Kopernik częściej mieszkał w pracowni niż w swoim domu.", _TAKNIE, 1,
+                       "НІ — у вежі бував час від часу; на щодень жив далеко."),
+                    LQ("We Fromborku już nie ma domu Mikołaja Kopernika.", _TAKNIE, 0,
+                       "ТАК — той будинок уже не існує."),
+                    LQ("Frombork powstał z połączenia dwóch różnych miast.", _TAKNIE, 1,
+                       "НІ — з міста (собор) і села поряд."),
+                    LQ("Na lokalizację katedry wybrano szczególnie bezpieczne miejsce.", _TAKNIE, 0,
+                       "ТАК — на горі, природний захист."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
