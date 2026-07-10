@@ -13,8 +13,8 @@ def test_registry_nonempty_and_latest_is_complete():
 def test_all_items_aggregates_across_exams():
     r = content.all_items("czytanie")
     g = content.all_items("gramatyka")
-    # 2019 + 2020 + 2024-02 + 2024-04 (читання) → пул росте
-    assert len(r) >= 73 and len(g) >= 93
+    # 2019 + 2020 + 2024-02 + 2024-04 (читання+граматика) → пул росте
+    assert len(r) >= 73 and len(g) >= 128
     assert len(content.all_items_flat()) == len(r) + len(g)
 
 
