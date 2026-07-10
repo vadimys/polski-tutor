@@ -74,6 +74,19 @@ def test_grade_closed_fill():
     assert not exam._grade_closed("2020", step, "")  # пропуск
 
 
+def test_budget_and_elapsed():
+    from datetime import timedelta
+
+    from app.services import clock
+
+    seq = exam._build_seq("2020")  # має аудіо+читання+граматику
+    assert exam._budget_min(seq) == 30 + 45 + 60
+    assert exam._elapsed_min(None) is None
+    assert exam._elapsed_min("не-дата") is None
+    started = (clock.now_local() - timedelta(minutes=12)).isoformat()
+    assert exam._elapsed_min(started) == 12
+
+
 def test_grade_closed_open_is_not_closed():
     # open не оцінюється синхронно (лише через AI-батч) → _grade_closed завжди False
     step = {"t": "open", "sec": "gramatyka", "ti": 0, "gi": 0}

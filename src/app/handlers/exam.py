@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import html
 from contextlib import suppress
+from datetime import datetime
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -28,6 +29,7 @@ from app import content
 from app.bot.keyboards import exam_kb, exam_match_kb, exam_text_kb, menu_kb, to_menu_kb
 from app.integrations import ai, tts
 from app.services import (
+    clock,
     exam_scale,
     freefill,
     goals,
@@ -43,6 +45,22 @@ router = Router()
 
 _LABEL = {"sluchanie": "🎧 Аудіювання", "czytanie": "📖 Читання", "gramatyka": "🔤 Граматика"}
 _TEXT_STEPS = ("fill", "open")  # кроки з текстовим вводом
+# орієнтовний час на секцію (хв) — за офіц. регламентом B1 (для відчуття темпу)
+_TIME_BUDGET = {"sluchanie": 30, "czytanie": 45, "gramatyka": 60}
+
+
+def _budget_min(seq: list[dict]) -> int:
+    return sum(_TIME_BUDGET.get(s, 0) for s in _seq_sections(seq))
+
+
+def _elapsed_min(started: str | None) -> int | None:
+    """Скільки хвилин пройшло з початку моку (за ISO-міткою старту)."""
+    if not started:
+        return None
+    try:
+        return max(1, round((clock.now_local() - datetime.fromisoformat(started)).total_seconds() / 60))
+    except ValueError:
+        return None
 
 
 class Exam(StatesGroup):
@@ -114,7 +132,8 @@ async def _intro(message: Message) -> None:
         f"Секції: {labels} — <b>{len(seq)}</b> завдань (усі типи: 🎧 аудіо-записи, вибір, "
         "зіставлення, форми, трансформації).\n"
         "⏱ Режим іспиту: <b>без підказок і вердиктів</b>, результат у балах — у кінці. "
-        "Виділи ~90–120 хв і не відволікайся.\n"
+        f"Орієнтовний час за регламентом — <b>~{_budget_min(seq)} хв</b>; я заміряю, "
+        "скільки насправді пішло.\n"
         "<i>Письмо й мовлення оцінюються окремо (/pisanie, /mowienie).</i>",
         reply_markup=b.as_markup(),
     )
@@ -146,7 +165,9 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.answer("Цей тест тимчасово недоступний.", reply_markup=to_menu_kb())
         return
     await state.set_state(Exam.active)
-    await state.update_data(exam_id=exam_id, seq=seq, pos=0, answers={})
+    await state.update_data(
+        exam_id=exam_id, seq=seq, pos=0, answers={}, started=clock.now_local().isoformat()
+    )
     await _send_step(cb.message, exam_id, seq, 0)
 
 
@@ -296,6 +317,7 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
     data = await state.get_data()
     await state.clear()
     exam_id, seq, answers = data["exam_id"], data["seq"], data["answers"]
+    elapsed = _elapsed_min(data.get("started"))
 
     correct: dict[str, int] = {}
     total: dict[str, int] = {}
@@ -342,6 +364,10 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
         if all_pass
         else "💪 Є секції нижче 50% — попрацюй над ними (див. 🧯 помилки) і повтори мок."
     )
+    if elapsed is not None:
+        budget = _budget_min(seq)
+        pace = "🟢 у темпі" if elapsed <= budget else "🟡 повільніше за регламент — тренуй швидкість"
+        lines.append(f"\n⏱ Час: <b>~{elapsed} хв</b> (регламент ~{budget} хв) · {pace}")
     lines.append(f"\n{verdict}")
     if open_note:
         lines.append("<i>ℹ️ Трансформації (open) не оцінено — AI недоступний. Порівняй зі зразком у /transformacje.</i>")
