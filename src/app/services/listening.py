@@ -1544,6 +1544,138 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит березень-2022 ═══════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: c,b,a,a,b,c,b,c,a,c,c,b,a,b.
+    Exercise(
+        "s2203_1", "Іспит 2022-03 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Czy może pani spakować wszystkie owoce i warzywa razem?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w barze", "w kwiaciarni", "na targu"], 2, "овочі й фрукти → базар.")]),
+            Segment("Czy podczas spektaklu dla dzieci będą przerwy?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w muzeum", "w teatrze", "w kinie"], 1, "спектакль → театр.")]),
+            Segment("Znowu wszystkie miejsca parkingowe są zajęte!",
+                    [LQ("Ta wypowiedź oznacza:", ["zdenerwowanie", "radość", "strach"], 0, "«znowu zajęte» → роздратування.")]),
+            Segment("Te buty są trochę za małe. Poproszę większy rozmiar.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w sklepie obuwniczym", "w księgarni", "w restauracji"], 0, "взуття → взуттєвий.")]),
+            Segment("Poproszę krople do oczu i coś na ból głowy.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u optyka", "w aptece", "u okulisty"], 1, "краплі + ліки → аптека.")]),
+            Segment("Poproszę prawo jazdy i dowód osobisty.",
+                    [LQ("Ta wypowiedź jest typowa podczas:", ["kontroli biletów", "odprawy na lotnisku", "kontroli drogowej"], 2,
+                        "права + посвідчення → дорожній контроль.")]),
+            Segment("Proszę zrobić miejsce dla tej starszej pani!",
+                    [LQ("Ta wypowiedź oznacza:", ["krytykę", "polecenie", "sympatię"], 1, "прохання-вказівка → polecenie.")]),
+            Segment("Ten obraz jest z osiemnastego wieku.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w galerii handlowej", "w księgarni", "w muzeum"], 2, "картина XVIII ст. → музей.")]),
+            Segment("Polecam ci ten sklep ze zdrową żywnością.",
+                    [LQ("Ta wypowiedź oznacza:", ["rekomendację", "prośbę", "rezygnację"], 0, "«polecam» → рекомендація.")]),
+            Segment("Czy może pan zapłacić gotówką? Terminal nie działa.",
+                    [LQ("Ta wypowiedź oznacza problemy:", ["z wydaniem reszty", "z płatnością gotówką", "z płatnością kartą"], 2,
+                        "термінал не діє → карткою не можна.")]),
+            Segment("Co tak późno? Wszyscy na ciebie czekamy!",
+                    [LQ("Ta wypowiedź oznacza, że osoba jest:", ["przed czasem", "na czas", "po czasie"], 2, "«tak późno» → запізнилася.")]),
+            Segment("Zgubiłam nowy zegarek, który dostałam od dziadka.",
+                    [LQ("Ta osoba jest:", ["zadowolona", "smutna", "zmęczona"], 1, "загубила подарунок → сумна.")]),
+            Segment("Wyobraź sobie, że wreszcie dostałem awans.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["pracownika", "studenta", "bezrobotnego"], 0, "підвищення → працівник.")]),
+            Segment("Chciałabym zamówić na jutro tort czekoladowy.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w sklepie mięsnym", "w cukierni", "w barze"], 1, "торт → кондитерська.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: c,b,c,a,b,b,a,b.
+    Exercise(
+        "s2203_2", "Іспит 2022-03 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Czy oglądał pan już projekt mieszkania? Co pan o tym myśli? – Salon w "
+                    "porządku, ale aranżacja sypialni jest chyba zbyt awangardowa.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["klient jest zadowolony z projektu", "projekt sypialni jest za drogi", "projekt sypialni nie odpowiada klientowi"], 2,
+                        "спальня надто авангардна → не влаштовує.")]),
+            Segment("– To co? Widzimy się w weekend u Michała? – Tym razem nie dam rady. Jedźcie sami.",
+                    [LQ("Z dialogu dowiadujemy się, że ona:", ["planuje spotkanie z przyjaciółmi", "jest w sobotę i niedzielę zajęta", "jeszcze nie wie, czy może się spotkać"], 1,
+                        "«nie dam rady» → зайнята на вихідних.")]),
+            Segment("– Co się stało? Rozmawiałeś dziś z szefem? – Tak, niestety, od dziś jestem bezrobotny.",
+                    [LQ("Z dialogu dowiadujemy się, że mężczyzna:", ["dostał urlop", "dostał podwyżkę", "nie ma już pracy"], 2, "«bezrobotny» → без роботи.")]),
+            Segment("– Przepraszam za spóźnienie. Straszne dziś korki. – To już kolejny raz. Następnym razem zaczniemy bez pana!",
+                    [LQ("Z dialogu dowiadujemy się, że mężczyzna:", ["nie jest punktualny", "zwykle jest punktualny", "obiecuje poprawę"], 0, "«kolejny raz» → непунктуальний.")]),
+            Segment("– Mamo, kupisz mi psa? – Hmm… zastanowię się. A kto będzie się nim opiekował?",
+                    [LQ("Z dialogu dowiadujemy się, że matka:", ["uważa, że syn ma dobry pomysł", "jeszcze nie zdecydowała, co zrobi", "chce zajmować się psem"], 1,
+                        "«zastanowię się» → ще не вирішила.")]),
+            Segment("– Pomożesz mi? Nie mogę wydrukować tego dokumentu. – Oj, wydaje mi się, że musisz kupić nową drukarkę.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["mężczyzna sprzedaje drukarki", "drukarka nie działa", "kobieta pomaga mężczyźnie"], 1, "не друкує → принтер не працює.")]),
+            Segment("– Gdzie znajdę ładowarki do smartfonów? – Są na piątym regale po prawej stronie.",
+                    [LQ("Z dialogu dowiadujemy się, że on:", ["szuka produktu", "szuka swojej ładowarki", "reklamuje produkt"], 0, "шукає зарядки → шукає товар.")]),
+            Segment("– Wszystkiego najlepszego z okazji imienin. – Ale moje imieniny będą dopiero w przyszłym tygodniu.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["kobieta już miała imieniny", "mężczyzna się pomylił", "kobieta ma urodziny"], 1, "іменини лише наступного тижня → помилився.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю про 4-денний тиждень. Ключ: b,c,a,b,c.
+    Exercise(
+        "s2203_3", "Іспит 2022-03 — Zad III (чотириденний тиждень)",
+        "Прослухай інтерв'ю про коротший робочий тиждень. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Praca tylko cztery dni w tygodniu – czy to dobry pomysł? Tak. Najlepszym "
+                "przykładem jest nasza firma, która wprowadziła taką organizację pracy dwa lata "
+                "temu. Zainspirowały nas firmy z Islandii, które pierwsze wprowadziły to "
+                "rozwiązanie w 2015 roku – niektórzy mieszkańcy pracowali tylko cztery dni w "
+                "tygodniu, można było zobaczyć, jak krótszy tydzień wpłynie na pracowników. "
+                "Mówimy o około trzystu firmach prywatnych i państwowych – reklama, handel, "
+                "produkcja, edukacja. Jakie były efekty? Pracownicy byli mniej zestresowani, "
+                "bardziej szczęśliwi i mieli więcej czasu dla rodziny. Czy jakość pracy była taka "
+                "sama? Osoby, które przepracowały mniej godzin, miały podobne, a nawet lepsze "
+                "wyniki. Pensja była taka sama i nikt nie zostawał po godzinach.",
+                [
+                    LQ("W Islandii można było zaobserwować:",
+                       ["jak zaoszczędzić pieniądze", "jakie są minusy i plusy pracy przez 4 dni w tygodniu",
+                        "jak pracownicy będą odpoczywać w tygodniu"], 1, "як коротший тиждень вплине."),
+                    LQ("Pracodawcy obserwowali zachowanie:",
+                       ["dyrektorów instytucji państwowych", "studentów prywatnych uczelni", "przedstawicieli różnych zawodów"], 2,
+                       "реклама, торгівля, виробництво, освіта."),
+                    LQ("Pracownicy:", ["czuli się lepiej", "czuli się zmęczeni", "zarobili więcej"], 0,
+                       "менш стресовані, щасливіші."),
+                    LQ("Osoby, które pracowały krócej:",
+                       ["nie miały ochoty pracować", "miały lepsze rezultaty niż wcześniej", "miały problem z organizacją czasu"], 1,
+                       "подібні, а навіть кращі результати."),
+                    LQ("Podczas krótszego tygodnia pracy:",
+                       ["wynagrodzenie było niższe", "przerwy na obiad były dłuższe", "warunki finansowe nie zmieniły się"], 2,
+                       "зарплата така сама."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: історія телефону, TAK/NIE (5). Ключ: N,N,T,N,T.
+    Exercise(
+        "s2203_4", "Іспит 2022-03 — Zad IV (історія телефону)",
+        "Прослухай розмову про історію телефону. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Wszyscy mówią, że Aleksander Bell jest wynalazcą telefonu, bo pod koniec "
+                "dziewiętnastego wieku jako pierwszy zarejestrował swój wynalazek w Kanadzie. "
+                "Jednak ostatnio słuchałem audycji radiowej i dowiedziałem się, że było dwóch "
+                "inżynierów pracujących nad telefonem: Elisha Gray w USA i Aleksander Bell w "
+                "Kanadzie. Amerykanin zarejestrował telefon dwie godziny później niż Bell, dlatego "
+                "wszyscy uważają, że to Bell. Ale tak naprawdę ani jeden, ani drugi nie jest "
+                "prawdziwym ojcem telefonu. Pierwsze urządzenie skonstruował około 20 lat "
+                "wcześniej Włoch Antonio Meucci – opracował aparat, żeby rozmawiać z chorą żoną, "
+                "gdy pracował w warsztacie. Połączył pierwsze piętro domu, gdzie była sypialnia "
+                "żony, z piwnicą, gdzie był warsztat. Opublikował nawet artykuł w gazecie, ale ze "
+                "względu na brak pieniędzy nie mógł zarejestrować projektu – kosztowało to 250 dolarów.",
+                [
+                    LQ("Mężczyzna przeczytał artykuł w gazecie na temat historii telefonu.", _TAKNIE, 1,
+                       "НІ — слухав РАДІОпередачу, не читав статтю."),
+                    LQ("Pierwszym nieoficjalnym twórcą telefonu był Amerykanin.", _TAKNIE, 1,
+                       "НІ — італієць Antonio Meucci (на 20 років раніше)."),
+                    LQ("Włoch skonstruował swoje urządzenie, żeby komunikować się z bliską osobą.", _TAKNIE, 0,
+                       "ТАК — щоб розмовляти з хворою дружиною."),
+                    LQ("Pierwszy telefon łączył ze sobą kilka domów.", _TAKNIE, 1,
+                       "НІ — з'єднував поверхи ОДНОГО дому (спальню з майстернею)."),
+                    LQ("Rejestracja urządzenia była dla Włocha za droga.", _TAKNIE, 0,
+                       "ТАК — бракувало грошей (250 доларів)."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
