@@ -136,6 +136,9 @@ async def cb_skip(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(Fill.active, F.text)
 async def on_answer(message: Message, state: FSMContext) -> None:
+    if len((message.text or "").strip()) > 200:  # форма — це слово/коротка фраза
+        await message.answer("Форма — це слово чи коротка фраза. Напиши коротше ✍️")
+        return
     data = await state.get_data()
     pos, accepted, explains = data["pos"], data["accepted"], data["explains"]
     ok = freefill.is_correct(message.text or "", accepted[pos])

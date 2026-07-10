@@ -52,6 +52,7 @@ router = Router()
 
 _LABEL = {"sluchanie": "🎧 Аудіювання", "czytanie": "📖 Читання", "gramatyka": "🔤 Граматика"}
 _TEXT_STEPS = ("fill", "open")  # кроки з текстовим вводом
+_MAX_ANSWER = 500  # межа довжини текстової відповіді (форма — слово, трансформація — речення)
 # орієнтовний час на секцію (хв) — за офіц. регламентом B1 (для відчуття темпу)
 _TIME_BUDGET = {"sluchanie": 30, "czytanie": 45, "gramatyka": 60}
 
@@ -377,8 +378,12 @@ async def on_text(message: Message, state: FSMContext) -> None:
     if seq[pos]["t"] not in _TEXT_STEPS:  # тут очікуємо вибір кнопкою
         await message.answer("На це питання обери варіант кнопкою вище 👆")
         return
+    txt = (message.text or "").strip()
+    if len(txt) > _MAX_ANSWER:
+        await message.answer(f"Відповідь задовга (>{_MAX_ANSWER} символів). Спробуй коротше ✍️")
+        return
     answers = data["answers"]
-    answers[str(pos)] = (message.text or "").strip()
+    answers[str(pos)] = txt
     await state.update_data(answers=answers)
     await _advance(message, message.from_user.id, state)
 

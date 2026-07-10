@@ -127,7 +127,11 @@ async def cb_skip(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.message(Open.active, F.text)
 async def on_answer(message: Message, state: FSMContext) -> None:
-    await _record(message, message.from_user.id, state, (message.text or "").strip())
+    txt = (message.text or "").strip()
+    if len(txt) > 500:  # трансформація — одне речення
+        await message.answer("Це має бути одне речення. Напиши коротше ✍️")
+        return
+    await _record(message, message.from_user.id, state, txt)
 
 
 async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:

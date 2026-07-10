@@ -50,6 +50,21 @@ async def export_data(user_id: int) -> str:
     return "\n".join(lines)
 
 
+async def _delete_redis(user_id: int) -> None:
+    """Прибрати Redis-сліди користувача (словник/лічильники/FSM-чернетки)."""
+    from redis.asyncio import Redis
+
+    r = Redis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        await r.delete(f"polski:vocab:{user_id}")
+        await r.srem("polski:users", user_id)
+        for pattern in (f"polski:ai:{user_id}:*", f"polski:nudge:{user_id}:*", f"fsm:*:{user_id}:*"):
+            async for key in r.scan_iter(pattern):
+                await r.delete(key)
+    finally:
+        await r.aclose()
+
+
 async def delete_data(user_id: int) -> None:
     """Повне видалення даних користувача (право на забуття, ст. 17)."""
     async with session_factory()() as s:
@@ -58,25 +73,15 @@ async def delete_data(user_id: int) -> None:
         if u is not None:
             await s.delete(u)
         await s.commit()
-
-    from redis.asyncio import Redis
-
-    r = Redis.from_url(settings.redis_url, decode_responses=True)
-    try:
-        await r.delete(f"polski:vocab:{user_id}")
-        await r.srem("polski:users", user_id)
-        async for key in r.scan_iter(f"polski:ai:{user_id}:*"):
-            await r.delete(key)
-        # FSM-стан aiogram: fsm:<bot_id>:<chat_id>:<user_id>:<part> — може містити чернетки текстів
-        async for key in r.scan_iter(f"fsm:*:{user_id}:*"):
-            await r.delete(key)
-    finally:
-        await r.aclose()
+    await _delete_redis(user_id)
 
 
 async def purge_stale(today: date, denied_days: int = 30) -> int:
     """Storage limitation (ст. 5 GDPR): видаляє denied-користувачів, рішення по яких
-    старше denied_days. Повертає к-сть видалених. Викликається щодня зі scheduler."""
+    старше denied_days. Повертає к-сть видалених. Викликається щодня зі scheduler.
+
+    PG-видалення — ОДНИМ bulk-запитом (не N раундтрипів → не блокує цикл надовго),
+    Redis-прибирання — по кожному (denied-юзери майже не мають Redis-слідів)."""
     cutoff = (today - timedelta(days=denied_days)).isoformat()
     async with session_factory()() as s:
         ids = (
@@ -88,6 +93,10 @@ async def purge_stale(today: date, denied_days: int = 30) -> int:
                 )
             )
         ).scalars().all()
+        if ids:
+            await s.execute(delete(Session).where(Session.user_id.in_(ids)))
+            await s.execute(delete(User).where(User.id.in_(ids)))
+            await s.commit()
     for uid in ids:
-        await delete_data(uid)  # повне видалення (PG + Redis + FSM)
+        await _delete_redis(uid)
     return len(ids)
