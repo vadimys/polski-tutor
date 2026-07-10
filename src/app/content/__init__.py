@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from app.content import b1_2019, b1_2020, b1_2024_02
+from app.content import b1_2019, b1_2020, b1_2024_02, b1_2024_04
 from app.content.schema import Exam, FreeFillTask, MatchTask, MCQItem, OpenTask
 
 # порядок: найстаріший → найновіший. Реальні іспити додаються в кінець.
@@ -15,6 +15,7 @@ EXAMS: list[Exam] = [
     b1_2019.EXAM,
     b1_2020.EXAM,
     b1_2024_02.EXAM,
+    b1_2024_04.EXAM,
 ]
 
 _COMPLETE_MIN_SECTIONS = 2  # «повний» тест = має ≥2 секції (щоб не стати дефолтом частковим)
