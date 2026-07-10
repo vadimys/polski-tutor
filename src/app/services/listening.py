@@ -1264,6 +1264,145 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит листопад-2023 ═══════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: b,c,a,c,b,c,a,b,c,c,b,a,b,c.
+    Exercise(
+        "s2311_1", "Іспит 2023-11 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Pyszna zupa, dawno nie jadłem lepszej.",
+                    [LQ("Ta wypowiedź to:", ["rada", "komplement", "krytyka"], 1, "«pyszna» → комплімент.")]),
+            Segment("Panie doktorze, mam zawroty głowy i dreszcze.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u ortopedy", "u dentysty", "u internisty"], 2, "загальні симптоми → терапевт.")]),
+            Segment("Jutro zmiana pogody, wrócą upały.",
+                    [LQ("Ta wypowiedź oznacza, że jutro:", ["będzie gorąco", "będzie chłodno", "pogoda będzie taka sama"], 0,
+                        "«upały» → спека.")]),
+            Segment("Bardzo mi przykro, że tak się stało.",
+                    [LQ("Ta wypowiedź oznacza:", ["zadowolenie", "złość", "smutek"], 2, "«przykro» → смуток.")]),
+            Segment("W wakacje biuro jest czynne codziennie od trzynastej do szesnastej.",
+                    [LQ("Ta wypowiedź oznacza, że biuro jest otwarte:", ["w wybrane dni", "po południu", "tylko rano"], 1,
+                        "13:00–16:00 → пополудні.")]),
+            Segment("Czy jest większy rozmiar tych sandałów?",
+                    [LQ("Ta wypowiedź jest typowa w sklepie:", ["meblowym", "ogrodniczym", "obuwniczym"], 2, "сандалі → взуття.")]),
+            Segment("Gratuluję, dostała pani awans i podwyżkę.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["dyrektora", "pracownika", "urzędnika"], 0, "хто дає підвищення → директор.")]),
+            Segment("Rower jest w dobrym stanie, cena do negocjacji.",
+                    [LQ("Ta wypowiedź oznacza, że:", ["cena roweru jest wysoka", "o cenie można rozmawiać", "rower wymaga naprawy"], 1,
+                        "«cena do negocjacji» → можна торгуватися.")]),
+            Segment("Chciałbym zgłosić kradzież telefonu.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w serwisie", "w sklepie", "na policji"], 2, "заявити про крадіжку → поліція.")]),
+            Segment("Mój syn jest o głowę wyższy niż ja.",
+                    [LQ("Ta wypowiedź dotyczy:", ["rozmiaru", "wagi", "wzrostu"], 2, "«wyższy» → зріст.")]),
+            Segment("Niesamowity film! Musisz go obejrzeć.",
+                    [LQ("Ta wypowiedź to:", ["prośba o radę", "pozytywna opinia", "negatywna opinia"], 1, "«niesamowity» → позитивна.")]),
+            Segment("A teraz czas na poranny przegląd prasy.",
+                    [LQ("Ta wypowiedź to fragment:", ["audycji radiowej", "prognozy pogody", "porady lekarskiej"], 0,
+                        "«przegląd prasy» → радіопередача.")]),
+            Segment("Poproszę plaster i syrop na kaszel.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w kiosku", "w aptece", "u lekarza"], 1, "пластир, сироп → аптека.")]),
+            Segment("Papier wrzuć do niebieskiego pojemnika.",
+                    [LQ("Ta wypowiedź dotyczy:", ["kolorowego papieru", "zakupów w sklepie", "segregacji śmieci"], 2,
+                        "«do pojemnika» → сортування сміття.")]),
+        ],
+    ),
+    # Zad II: 6 діалогів. Ключ: a,b,c,b,c,b.
+    Exercise(
+        "s2311_2", "Іспит 2023-11 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Basiu, wszystkiego najlepszego z okazji urodzin. – Moje urodziny były w zeszłym tygodniu.",
+                    [LQ("Z dialogu wynika, że Basia:", ["już miała urodziny", "nie świętuje swoich urodzin", "zapomniała o urodzinach"], 0,
+                        "«były w zeszłym tygodniu» → вже минули.")]),
+            Segment("– Prosiłam, żebyście nie grali pod oknami. Połamaliście kwiaty. – Ale tutaj jest "
+                    "najlepsza trawa do gry, a tam kałuże i błoto.",
+                    [LQ("Z dialogu dowiadujemy się, że dzieci:", ["nie lubią grać na trawie", "nie słuchały próśb mamy", "wybiły okno"], 1,
+                        "просила не гратися, а вони поламали квіти → не слухали.")]),
+            Segment("– Ile kosztuje bilet na wystawę kwiatów egzotycznych? – W sezonie letnim wstęp jest bezpłatny.",
+                    [LQ("Z dialogu dowiadujemy się, że:",
+                        ["cały rok można oglądać wystawę za darmo", "latem wystawa jest nieczynna", "oglądanie wystawy latem nic nie kosztuje"], 2,
+                        "влітку вхід безкоштовний.")]),
+            Segment("– Co pani myśli o tym projekcie mieszkania? – Nie do końca podoba mi się ta garderoba.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["kobieta jest bardzo zadowolona z projektu", "to nie jest projekt, jaki chciała klientka", "projekt garderoby jest bardzo ładny"], 1,
+                        "«nie do końca podoba się» → не той, що хотіла.")]),
+            Segment("– Aniu, pamiętasz o ślubie Marka? – Tak, już zamówiłam prezent. Jutro będzie kurier, możesz odebrać?",
+                    [LQ("Z dialogu dowiadujemy się, że kobieta:", ["zapomniała o ślubie", "jeszcze nie wybrała prezentu", "prosi o odbiór paczki"], 2,
+                        "«możesz odebrać?» → просить забрати посилку.")]),
+            Segment("– Oglądałeś finał piłki nożnej? – Nie, ale słyszałem, że nasza drużyna wygrała.",
+                    [LQ("Z dialogu wynika, że:", ["mężczyzna obejrzał finał", "ulubiony zespół zajął pierwsze miejsce", "mężczyzna słuchał meczu w radiu"], 1,
+                        "«nasza drużyna wygrała» → перше місце.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю про e-sport. Ключ: c,b,a,b,c.
+    Exercise(
+        "s2311_3", "Іспит 2023-11 — Zad III (e-sport)",
+        "Прослухай інтерв'ю про кіберспорт. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Rozmawiamy z zawodnikiem e-sportowym. Kamilu, czym charakteryzuje się e-sport? "
+                "To forma sportu, w której zawodnicy rywalizują w wirtualnym świecie – w grach "
+                "komputerowych i wideo; gracze kontrolują postacie za pomocą klawiatury i myszy. "
+                "Czy to nowa forma rywalizacji? E-sport kojarzy się z dwudziestym pierwszym wiekiem, "
+                "ale początki sięgają lat siedemdziesiątych dwudziestego wieku, kiedy na "
+                "Uniwersytecie Stanforda zorganizowano pierwsze zawody w grze wideo – brali w nich "
+                "udział studenci i pracownicy naukowi. Jak rozwijała się ta dyscyplina? Kiedy "
+                "pojawił się internet, można było rywalizować z graczami na całym świecie. Firmy "
+                "organizują coraz więcej turniejów; turnieje na skalę światową odbywają się dwa "
+                "razy do roku i przyciągają miliony fanów do hal sportowych i przed monitory w "
+                "domu. Jakie umiejętności są potrzebne? Kluczem do sukcesu jest szybkie myślenie, "
+                "dokładna analiza sytuacji i podejmowanie decyzji w krótkim czasie.",
+                [
+                    LQ("Zawody e-sportowe miały początek:",
+                       ["w dwudziestym pierwszym wieku", "ponad siedemdziesiąt lat temu", "w latach siedemdziesiątych"], 2,
+                       "у 70-х роках XX ст."),
+                    LQ("W pierwszych zawodach gier wideo uczestniczyli:",
+                       ["profesjonalni gracze", "ludzie związani z uniwersytetem", "studenci informatyki"], 1,
+                       "студенти й наукові працівники Стенфорда."),
+                    LQ("Międzynarodowe zawody są organizowane:", ["dwa razy w roku", "co roku", "co dwa lata"], 0,
+                       "двічі на рік."),
+                    LQ("Turnieje e-sportowe można oglądać:", ["jedynie online", "na żywo oraz online", "na specjalnych ekranach"], 1,
+                       "у залах і перед моніторами вдома."),
+                    LQ("Najważniejsze umiejętności w e-sporcie to:",
+                       ["lata praktyki w grach komputerowych", "znajomość wszystkich gier na rynku", "szybkość i myślenie analityczne"], 2,
+                       "швидке мислення й аналіз."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: гід по театру Шекспіра, TAK/NIE (6). Ключ: N,T,N,N,T,T.
+    Exercise(
+        "s2311_4", "Іспит 2023-11 — Zad IV (театр Шекспіра)",
+        "Прослухай гіда по Gdańskim Teatrze Szekspirowskim. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Żeby dojść do Gdańskiego Teatru Szekspirowskiego, trzeba iść w kierunku ulicy "
+                "Długiej, zatrzymać się przed Złotą Bramą i skręcić w prawo. Zobaczymy ciemny "
+                "budynek w kolorze węgla. Niełatwo znaleźć wejście, bo architekt zaprojektował "
+                "wokół teatru mur z kilkoma mało widocznymi przerwami – jedna to główne wejście. "
+                "W środku zaskoczenie: wnętrza są jasne, pełne światła, inaczej niż mury. Dlaczego "
+                "patronem jest Szekspir? Niestety Szekspir nigdy nie był w Gdańsku, natomiast "
+                "przyjechali tu jego kompani teatralni. Współczesny teatr to rekonstrukcja teatru "
+                "elżbietańskiego, którego budowę zamówiły władze miasta w 1635 roku. Początkowo "
+                "aktorzy grali po angielsku, ale nie nawiązali relacji z publicznością mówiącą po "
+                "niemiecku. Największa atrakcja to otwierany dach. Na trzecim poziomie jest wyjście "
+                "na ścieżkę spacerową po murze – dopiero stąd widać, że mur to osobna konstrukcja.",
+                [
+                    LQ("Główne drzwi do teatru są duże i widać je z daleka.", _TAKNIE, 1,
+                       "НІ — вхід малопомітний, у мурі."),
+                    LQ("Kolory wnętrza budynku kontrastują z zewnętrznymi.", _TAKNIE, 0,
+                       "ТАК — всередині ясно, мури темні."),
+                    LQ("Szekspir w Gdańsku napisał jedną ze swoich sztuk.", _TAKNIE, 1,
+                       "НІ — Шекспір ніколи не був у Гданську."),
+                    LQ("Budowę dawnego teatru sfinansował prywatny inwestor.", _TAKNIE, 1,
+                       "НІ — будову замовила влада міста."),
+                    LQ("Pierwsze spektakle odbywały się w języku angielskim.", _TAKNIE, 0,
+                       "ТАК — спершу грали англійською."),
+                    LQ("Wokół teatru na wysokości 3. piętra jest trasa spacerowa.", _TAKNIE, 0,
+                       "ТАК — на третьому рівні стежка по муру."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
