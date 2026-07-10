@@ -18,6 +18,7 @@ from app.config import settings
 from app.db.migrate_legacy import migrate_from_redis
 from app.handlers import (
     admin,
+    audiomatch,
     dopasowanie,
     drills,
     errors,
@@ -64,6 +65,7 @@ COMMANDS = [
     BotCommand(command="egzamin", description="Повний мок іспиту (усі секції)"),
     BotCommand(command="trening", description="Тренування (граматика/читання)"),
     BotCommand(command="dopasowanie", description="Зіставлення (фрагменти/заголовки)"),
+    BotCommand(command="przyporzadkowanie", description="Аудіо-зіставлення (мовці↔описи)"),
     BotCommand(command="formy", description="Впиши форму (граматика)"),
     BotCommand(command="transformacje", description="Трансформація речень (граматика)"),
     BotCommand(command="powtorki", description="Повторення слів (SRS)"),
@@ -116,7 +118,8 @@ async def main() -> None:
     learning = Router()
     for r in (
         placement, lesson, writing, drills, review, say, lexicon, mistakes,
-        speaking, listening, mock, exam, dopasowanie, uzupelnianie, transformacja, plan, menu,
+        speaking, listening, mock, exam, dopasowanie, uzupelnianie, transformacja,
+        audiomatch, plan, menu,
     ):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())

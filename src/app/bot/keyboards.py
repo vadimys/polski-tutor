@@ -112,6 +112,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎧 Аудіювання", "listening:start"),
         ("🎯 Тренування", "drill:start"),
         ("🧩 Зіставлення", "match:open"),
+        ("🔗 Аудіо-зіставлення", "amatch:open"),
         ("✏️ Впиши форму", "fill:open"),
         ("🔄 Трансформації", "open:open"),
         ("📋 Офіційний МОК", "mock:open"),
@@ -177,6 +178,26 @@ def open_kb(pos: int) -> InlineKeyboardMarkup:
     kb.button(text="⏭ Пропустити", callback_data=f"op:skip:{pos}")
     kb.button(text="⏹ Завершити", callback_data="op:stop")
     kb.adjust(2)
+    return kb.as_markup()
+
+
+def audiomatch_kb(n_speakers: int, selected: set[int], pos: int) -> InlineKeyboardMarkup:
+    """Аудіо-зіставлення (multi-select): перемикачі осіб 1..N (✅ = обрано) + «Готово».
+
+    Callback: 'am:tog:<pos>:<i>' (перемкнути особу i), 'am:done:<pos>', 'am:stop'.
+    """
+    kb = InlineKeyboardBuilder()
+    btns = [
+        InlineKeyboardButton(
+            text=("✅ " if i in selected else "") + str(i + 1),
+            callback_data=f"am:tog:{pos}:{i}",
+        )
+        for i in range(n_speakers)
+    ]
+    for j in range(0, len(btns), 4):
+        kb.row(*btns[j : j + 4])
+    kb.row(InlineKeyboardButton(text="✔️ Готово", callback_data=f"am:done:{pos}"))
+    kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="am:stop"))
     return kb.as_markup()
 
 

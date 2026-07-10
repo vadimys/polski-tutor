@@ -34,6 +34,25 @@ class Exercise:
     segments: list[Segment]
 
 
+@dataclass
+class MatchAudio:
+    """Аудіо-зіставлення (Słuch «przyporządkowanie») — офіц. тип, який НЕ лягає в
+    single-choice: чуємо N мовців, кожен опис (A–E) стосується МНОЖИНИ мовців
+    (одна особа може мати кілька описів). Тому multi-select + звірка множин.
+
+    `speakers[i]` — транскрипт мовця i (для TTS, verbatim). `prompts[j]` — опис j.
+    `key[j]` — множина 0-based індексів мовців, яких стосується опис j.
+    """
+
+    id: str
+    title: str
+    intro: str
+    speakers: list[str]  # транскрипти мовців 1..N (verbatim, для озвучення)
+    prompts: list[str]  # описи A–E (те, що зіставляємо з мовцями)
+    key: list[list[int]]  # key[j] = 0-based індекси мовців для опису j (порядок довільний)
+    explain: list[str]
+
+
 SOURCE = "офіційний зразок Держкомісії (B1)"
 
 _TAKNIE = ["TAK", "NIE"]
@@ -1973,3 +1992,52 @@ def pick() -> Exercise:
 
 def total_questions(ex: Exercise) -> int:
     return sum(len(s.questions) for s in ex.segments)
+
+
+# ══ Аудіо-зіставлення (multi-select). Транскрипти+ключ звірено з офіц. klucz. ══
+MATCH_AUDIO: list[MatchAudio] = [
+    MatchAudio(
+        id="am2020_4",
+        title="Іспит 2020 — Zad IV (życie w wielkich miastach)",
+        intro=(
+            "Прослухай <b>4 мовців</b> про життя у великих містах і зістав кожен опис "
+            "A–E з тим, кого він стосується. <b>Один опис може стосуватися кількох осіб</b> "
+            "(тисни всі номери, тоді «Готово»). На іспиті лунає двічі."
+        ),
+        speakers=[
+            "Dla mnie miasto to koszmar – wszędzie korki, dużo ludzi, szaro. Tylu ludzi "
+            "dookoła, a nie ma czasu, żeby się z kimś zaprzyjaźnić. Jest więcej możliwości – "
+            "praca, siłownie, kina, teatry, ale to nie znaczy, że życie jest lepsze.",
+            "Dzieciństwo spędziłam w małym mieście, ale nie chcę tam wrócić. Denerwuje mnie, "
+            "gdy ludzie za bardzo interesują się sprawami innych, a to niestety jest typowe "
+            "dla takich miejsc. Wszyscy komentują życie sąsiadów. Zdecydowanie wolę duże "
+            "miasta, chociaż ceny są tam wyższe niż w mniejszych miejscowościach.",
+            "Przeprowadzka do bloku była moim błędem. Staram się żyć w zgodzie z sąsiadami, "
+            "ale inni niekoniecznie – sąsiadka nocami ogląda seriale i cały blok też je słyszy, "
+            "studenci z góry słuchają muzyki techno na cały regulator.",
+            "Plusem życia w miastach jest łatwy dostęp do rozrywki – kina, kluby, kawiarnie "
+            "i bliskość różnych luksusowych centrów handlowych. Jednak towary w markowych "
+            "sklepach i przyjemności dużo kosztują, a ja jestem osobą oszczędną. Nie "
+            "chciałabym mieszkać w dużym mieście – nie lubię hałasu, brudnych ulic i spalin.",
+        ],
+        prompts=[
+            "A. narzeka na hałaśliwych sąsiadów.",
+            "B. wymienia miejsca, gdzie można spędzić wolny czas.",
+            "C. mówi, że życie w mieście jest drogie.",
+            "D. zwraca uwagę na zanieczyszczenie.",
+            "E. nie lubi osób za bardzo ciekawych tego, jak żyją inni.",
+        ],
+        key=[[2], [0, 3], [1, 3], [3], [1]],  # офіц.: A=3, B=1&4, C=2&4, D=4, E=2
+        explain=[
+            "Особа 3: гучні сусіди — серіали вночі, техно на повну → A.",
+            "Особи 1 і 4 перелічують місця дозвілля (праця/кіно/театри · кіно/клуби/кав'ярні) → B.",
+            "Особи 2 і 4: ціни вищі · речі й розваги дорого коштують → C.",
+            "Особа 4: не любить брудних вулиць і вихлопів (spaliny) → D.",
+            "Особа 2: дратують ті, хто надто цікавиться життям інших → E.",
+        ],
+    ),
+]
+
+
+def match_audio_by_id(mid: str) -> MatchAudio | None:
+    return next((m for m in MATCH_AUDIO if m.id == mid), None)
