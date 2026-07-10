@@ -31,7 +31,26 @@ async def cb_decision(cb: CallbackQuery) -> None:
         await cb.answer()
         return
 
-    if action == "ok":
+    if action == "teacher":
+        until = await access.approve_teacher(uid)
+        me = await cb.bot.get_me()
+        link = f"https://t.me/{me.username}?start=t{uid}"
+        await cb.message.edit_text(f"{cb.message.html_text}\n\n👩‍🏫 Схвалено як викладача (до {until}).")
+        try:
+            await cb.bot.send_message(
+                uid,
+                "👩‍🏫 <b>Вітаємо — ти партнер-викладач!</b>\n"
+                f"Безкоштовний доступ активний до <b>{until}</b>.\n\n"
+                "🔗 <b>Твоє реферальне посилання для учнів:</b>\n"
+                f"<code>{link}</code>\n\n"
+                "Учень, який зайде за ним, одразу отримає безкоштовний доступ на "
+                f"<b>{settings.trial_days} днів</b>, а ти зможеш стежити за його прогресом. "
+                "Ділись посиланням зі своїм класом! 🚀",
+                reply_markup=approved_kb(),
+            )
+        except Exception:  # noqa: BLE001
+            pass
+    elif action == "ok":
         until = await access.approve(uid)
         await cb.message.edit_text(f"{cb.message.html_text}\n\n✅ Схвалено (доступ до {until}).")
         try:

@@ -1,6 +1,11 @@
 from datetime import date, timedelta
 
-from app.services.access import SIX_MONTHS_DAYS, compute_access_until, extend_until
+from app.services.access import (
+    SIX_MONTHS_DAYS,
+    compute_access_until,
+    extend_until,
+    parse_referral,
+)
 
 TODAY = date(2026, 7, 1)
 SIX = TODAY + timedelta(days=SIX_MONTHS_DAYS)
@@ -39,3 +44,21 @@ def test_extend_until_keeps_window_if_exam_earlier():
 
 def test_extend_until_no_exam_keeps_current():
     assert extend_until("2026-12-30", "") == "2026-12-30"
+
+
+def test_parse_referral():
+    assert parse_referral("t367724841") == 367724841
+    assert parse_referral(" t42 ") == 42
+    assert parse_referral("") is None
+    assert parse_referral("abc") is None
+    assert parse_referral("t") is None  # без цифр
+    assert parse_referral("t12x") is None
+
+
+def test_referral_keyboards_callbacks():
+    from app.bot.keyboards import admin_teacher_kb, role_choice_kb
+
+    role_cbs = [b.callback_data for row in role_choice_kb().inline_keyboard for b in row]
+    assert role_cbs == ["onb:role:student", "onb:role:teacher"]
+    adm_cbs = [b.callback_data for row in admin_teacher_kb(99).inline_keyboard for b in row]
+    assert adm_cbs == ["adm:teacher:99", "adm:no:99"]

@@ -26,6 +26,10 @@ class User(Base):
     # прогресія (durable): {xp, goal, freeze, streak, last} — щоб не втратити при flushdb Redis
     gamify: Mapped[dict] = mapped_column(JSON, default=dict)
 
+    # ролі та реферали (B2B2C: учні платять, викладачі — безкоштовний канал залучення)
+    role: Mapped[str] = mapped_column(String(16), default="student")  # student/teacher/admin
+    referred_by: Mapped[int] = mapped_column(BigInteger, default=0)  # id викладача-реферера (0=немає)
+
     # контроль доступу (для грандіозного плану; наразі дефолти)
     exam_date: Mapped[str] = mapped_column(String(16), default="")
     exam_date_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)

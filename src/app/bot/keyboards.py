@@ -46,6 +46,24 @@ def send_request_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def role_choice_kb() -> InlineKeyboardMarkup:
+    """Перший екран онбордингу: учень (платна підписка) чи викладач (безкоштовно)."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🎓 Я учень — готуюсь до іспиту", callback_data="onb:role:student")
+    kb.button(text="👩‍🏫 Я викладач — навчаю учнів", callback_data="onb:role:teacher")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def admin_teacher_kb(user_id: int) -> InlineKeyboardMarkup:
+    """Рішення адміна щодо заявки викладача."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👩‍🏫 Схвалити як викладача", callback_data=f"adm:teacher:{user_id}")
+    kb.button(text="❌ Відмовити", callback_data=f"adm:no:{user_id}")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def contact_admin_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="✍️ Написати адміну", callback_data="onb:contact")

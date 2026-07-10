@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     lesson_hour: int = 8
     exam_date: str = "2026-12-05"
 
+    # Реферали: учень за посиланням викладача отримує безкоштовний trial на стільки днів
+    trial_days: int = 30
+
     # Mini App (WebApp-панель): публічний HTTPS-URL через cloudflared-тунель.
     # Порожній → кнопку «Панель» не показуємо (бот повністю працює й без тунеля).
     webapp_url: str = ""

@@ -11,11 +11,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from sqlalchemy import select
+
+from app.config import settings
 from app.db.base import session_factory
 from app.db.models import User
 from app.services import clock
 
 SIX_MONTHS_DAYS = 182
+TEACHER_ACCESS_DAYS = 365  # викладачу — довгий доступ (поновлюваний; MVP — рік)
 
 
 def compute_access_until(exam_date: str, confirmed: bool, today: date) -> date:
@@ -50,6 +54,8 @@ class AccessInfo:
     exam_date: str
     confirmed: bool
     username: str
+    role: str = "student"  # student / teacher / admin
+    referred_by: int = 0
 
 
 async def info(user_id: int) -> AccessInfo:
@@ -57,7 +63,25 @@ async def info(user_id: int) -> AccessInfo:
         u = await s.get(User, user_id)
         if u is None:
             return AccessInfo("new", "", "", False, "")
-        return AccessInfo(u.access_status, u.access_until, u.exam_date, u.exam_date_confirmed, u.username)
+        return AccessInfo(
+            u.access_status, u.access_until, u.exam_date, u.exam_date_confirmed,
+            u.username, u.role, u.referred_by,
+        )
+
+
+def parse_referral(payload: str) -> int | None:
+    """Розібрати deep-link payload 't<teacher_id>' → id викладача (або None)."""
+    p = (payload or "").strip()
+    if p.startswith("t") and p[1:].isdigit():
+        return int(p[1:])
+    return None
+
+
+async def is_teacher(user_id: int) -> bool:
+    """Чи це схвалений викладач (для валідації реферального посилання)."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        return bool(u and u.role == "teacher" and u.access_status == "approved")
 
 
 async def is_allowed(user_id: int, admin_id: int) -> bool:
@@ -85,6 +109,62 @@ async def request_access(user_id: int, username: str, exam_date: str, confirmed:
         u.access_status = "pending"
         u.requested_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
+
+
+async def request_teacher(user_id: int, username: str) -> None:
+    """Заявка на роль викладача — у чергу до адміна (role лишається student до схвалення)."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            u = User(id=user_id)
+            s.add(u)
+        u.username = username or ""
+        u.access_status = "pending"
+        u.requested_at = clock.now_local().isoformat(timespec="minutes")
+        await s.commit()
+
+
+async def approve_teacher(user_id: int) -> str:
+    """Схвалити як ВИКЛАДАЧА: role=teacher + довгий доступ. Повертає until (ISO)."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            return ""
+        until = (clock.today_local() + timedelta(days=TEACHER_ACCESS_DAYS)).isoformat()
+        u.role = "teacher"
+        u.access_status = "approved"
+        u.access_until = until
+        u.decided_at = clock.now_local().isoformat(timespec="minutes")
+        await s.commit()
+        return until
+
+
+async def grant_trial(user_id: int, username: str, referred_by: int) -> str:
+    """Учень за посиланням викладача → авто-доступ на trial_days (без черги до адміна).
+
+    Атрибутуємо викладача (referred_by). Повертає until (ISO)."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            u = User(id=user_id)
+            s.add(u)
+        until = (clock.today_local() + timedelta(days=settings.trial_days)).isoformat()
+        u.username = username or ""
+        u.role = "student"
+        u.referred_by = referred_by
+        u.access_status = "approved"
+        u.access_until = until
+        u.requested_at = clock.now_local().isoformat(timespec="minutes")
+        u.decided_at = clock.now_local().isoformat(timespec="minutes")
+        await s.commit()
+        return until
+
+
+async def students_of(teacher_id: int) -> list[int]:
+    """Id учнів, приведених цим викладачем (для майбутнього дашборду)."""
+    async with session_factory()() as s:
+        rows = await s.execute(select(User.id).where(User.referred_by == teacher_id))
+        return [r[0] for r in rows.all()]
 
 
 async def approve(user_id: int) -> str:
