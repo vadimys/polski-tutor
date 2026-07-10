@@ -152,6 +152,27 @@ def test_2022_06_listening_present():
     assert len(listening.by_id("s2206_4").segments[0].questions[0].options) == 3
 
 
+def test_2022_zad5_single_choice_present():
+    # single-choice matching Zad V (кол.I↔II) для 2022-02/03/06, ключі звірено з klucz
+    expected = {
+        "s2202_5": [5, 4, 2, 0, 3],  # parki: F,E,C,A,D
+        "s2203_5": [0, 2, 3, 5, 4],  # studenci: A,C,D,F,E
+        "s2206_5": [3, 2, 1, 5, 0],  # mleka: D,C,B,F,A
+    }
+    for eid, key in expected.items():
+        ex = listening.by_id(eid)
+        assert ex is not None and listening.total_questions(ex) == 5
+        seg = ex.segments[0]
+        assert [q.correct for q in seg.questions] == key
+        for q in seg.questions:
+            assert len(q.options) == 6  # спільні описи A–F
+    # усі три тепер у моку відповідних іспитів
+    from app import content
+
+    for exam_id in ("2022-02", "2022-03", "2022-06"):
+        assert content.exam_listening_ids(exam_id)[-1].endswith("_5")
+
+
 def test_match_audio_helpers():
     # toggle: додає/прибирає особу, тримає відсортовано
     assert listening.toggle_selection([], 2) == [2]

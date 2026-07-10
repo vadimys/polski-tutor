@@ -67,6 +67,32 @@ _ZAD5_OPTS = [
     "dyscyplina związana z modą sportową",  # F
 ]
 
+# спільні описи-опції (кол. II) для single-choice matching Zad V іспитів 2022 (порядок A–F)
+_P2202 = [  # парки: przykład Białowieski→B
+    "jest dopiero planowany.",  # A
+    "jest jednym z pierwszych parków narodowych w Polsce.",  # B (przykład)
+    "oferuje turystom różne zabytki.",  # C
+    "to miejsce, w którym są nietypowe kształty skał.",  # D
+    "ma dobrą ofertę dla osób aktywnych fizycznie.",  # E
+    "to miejsce, w którym woda zajmuje największy teren.",  # F
+]
+_P2203 = [  # студенти: przykład Ania→B
+    "mieszka w akademiku.",  # A
+    "mieszka z rodzicami.",  # B (przykład)
+    "ma własne mieszkanie.",  # C
+    "wynajmuje mieszkanie z kolegą.",  # D
+    "mieszka z bliskimi.",  # E
+    "samodzielnie wynajmuje mieszkanie.",  # F
+]
+_P2206 = [  # молоко: przykład krowie→E
+    "nie jest dobre dla osób na diecie.",  # A
+    "jest odpowiednie dla alergików.",  # B
+    "dobrze pasuje do różnych rodzajów kaw.",  # C
+    "jest chętnie kupowane przez Polaków.",  # D
+    "może powodować alergię.",  # E (przykład)
+    "można zrobić samodzielnie.",  # F
+]
+
 EXERCISES: list[Exercise] = [
     # Zadanie I — короткі висловлювання: «до чого належить фраза» (офіц. ключ I)
     Exercise(
@@ -1975,6 +2001,107 @@ EXERCISES: list[Exercise] = [
                        "НІ — не такий популярний, як мінімалістичний."),
                     LQ("Domy w tym stylu buduje się najczęściej w dużych miastach.", _TAKNIE, 1,
                        "НІ — на селі, серед природи, подалі від великих міст."),
+                ],
+            )
+        ],
+    ),
+    # ── single-choice matching Zad V (кол. I↔II) реальних іспитів 2022 ──
+    Exercise(
+        "s2202_5", "Іспит 2022-02 — Zad V (parki narodowe)",
+        "Прослухай розмову про національні парки й добери характеристику до кожного. "
+        "На іспиті лунає двічі.",
+        [
+            Segment(
+                "Witam w programie „Polska na weekend”. Dziś moimi gośćmi są podróżnicy "
+                "i blogerzy, z którymi porozmawiam o parkach narodowych. W Polsce mamy 23 parki "
+                "narodowe, a my byliśmy w sześciu z nich. Białowieski Park Narodowy położony jest "
+                "tuż przy granicy z Białorusią. Jest drugim najstarszym parkiem narodowym "
+                "w Polsce, a jego symbolem jest żubr. W Parku Narodowym Bory Tucholskie znajduje "
+                "się 21 jezior oraz kilka rzek, które tworzą unikatowe środowisko, a lasy i łąki "
+                "zajmują niewielki obszar, bo tylko 2% całego parku. Kampinoski Park Narodowy "
+                "jest bardzo blisko Warszawy. Są tam liczne szlaki piesze o długości około "
+                "360 km oraz trasa rowerowa o długości 145 km. Ojcowski Park Narodowy warto "
+                "zobaczyć przede wszystkim ze względu na wyjątkowy kolor skał. Na jego terenie "
+                "znajdują się też ruiny zamku oraz pałac, które można zwiedzać przez cały rok. "
+                "Kiedy byliśmy na Śląsku, naszą uwagę zwrócił piękny teren, na którym "
+                "prawdopodobnie będzie Jurajski Park Narodowy. Jeśli powstanie, to będzie jednym "
+                "z najmniejszych parków w kraju. W Parku Narodowym Gór Stołowych są fantazyjne "
+                "formy skalne, oryginalne struktury kamieni oraz naturalny labirynt.",
+                [
+                    LQ("«Park Narodowy Bory Tucholskie»:", _P2202, 5,
+                       "21 озер і кілька річок → вода займає найбільшу територію (F)."),
+                    LQ("«Kampinoski Park Narodowy»:", _P2202, 4,
+                       "піші стежки 360 км + велотраса 145 км → для активних (E)."),
+                    LQ("«Ojcowski Park Narodowy»:", _P2202, 2,
+                       "руїни замку і палац → пропонує туристам пам'ятки (C)."),
+                    LQ("«Jurajski Park Narodowy»:", _P2202, 0,
+                       "«prawdopodobnie będzie», ще не існує → лише планується (A)."),
+                    LQ("«Park Narodowy Gór Stołowych»:", _P2202, 3,
+                       "фантазійні скельні форми → нетипові форми скель (D)."),
+                ],
+            )
+        ],
+    ),
+    Exercise(
+        "s2203_5", "Іспит 2022-03 — Zad V (gdzie mieszkają studenci)",
+        "Прослухай висловлювання студентів про житло й добери характеристику до кожного. "
+        "На іспиті лунає двічі.",
+        [
+            Segment(
+                "Zapytaliśmy studentów, gdzie mieszkają podczas roku akademickiego. Ania: Nie "
+                "musiałam szukać nowego mieszkania. Mogłam zostać w domu z mamą i tatą "
+                "i zaoszczędzić pieniądze. Minusem jest to, że na uniwersytet jadę 40 minut, ale "
+                "mam swój pokój. Piotr: Mieszkam na terenie kampusu uniwersyteckiego razem "
+                "z innymi studentami. Czasami jest bardzo głośno i trudno przygotować się do "
+                "egzaminów. Magda: Moi rodzice kupili mi kawalerkę, która jest dosyć mała, ale "
+                "dla jednej osoby miejsca wystarczy. Sama o wszystkim decyduję, sama też płacę "
+                "rachunki. Damian: Chociaż mogłem dostać pokój w akademiku, zrezygnowałem. Wolę "
+                "mieszkać ze współlokatorem w mieszkaniu dwupokojowym, bo wszystkie opłaty "
+                "dzielimy na pół. Ula: Już nie mieszkam ani z rodzicami, ani ze współlokatorami. "
+                "Mam większą prywatność, miesięczny czynsz nie jest zbyt wysoki, a właścicielka "
+                "jest bardzo miła. Kamil: Zdecydowałem się studiować w innym mieście ze względu "
+                "na dziadków. Mieszkam z nimi, nie muszę płacić za wynajem, ale pomagam im "
+                "w pracach domowych.",
+                [
+                    LQ("«Piotr»:", _P2203, 0, "kampus razem z innymi studentami → гуртожиток (A)."),
+                    LQ("«Magda»:", _P2203, 2,
+                       "kawalerka, sama decyduję i płacę → власне житло (C)."),
+                    LQ("«Damian»:", _P2203, 3, "ze współlokatorem, opłaty na pół → з колегою (D)."),
+                    LQ("«Ula»:", _P2203, 5,
+                       "sama, czynsz, właścicielka → самостійно винаймає (F)."),
+                    LQ("«Kamil»:", _P2203, 4, "mieszka z dziadkami → з близькими (E)."),
+                ],
+            )
+        ],
+    ),
+    Exercise(
+        "s2206_5", "Іспит 2022-06 — Zad V (rodzaje mleka)",
+        "Прослухай розповідь про різні види молока й добери характеристику до кожного. "
+        "На іспиті лунає двічі.",
+        [
+            Segment(
+                "Cześć, to ja - Ania Witamina. Dzisiaj opowiem wam o różnych rodzajach mlek. "
+                "Zawsze kupowałam mleko krowie, dopóki nie okazało się, że mam na nie uczulenie "
+                "i znalazłam się w grupie alergików. Wiedziałam, że istnieje na przykład "
+                "popularne w polskich domach mleko kozie, jednak ono nigdy mi nie smakowało. "
+                "Uwielbiam białą kawę, więc zaczęłam szukać alternatywy. Specjaliści od robienia "
+                "dobrej kawy nawet bardziej polecają odmiany roślinne do cappuccino lub latte. "
+                "Wszędzie można kupić mleko ryżowe. Jest ono idealne dla wegetarian i dla osób, "
+                "które nie mogą jeść wszystkich pokarmów, bo ich nie tolerują, czyli dla mnie! "
+                "Domowymi sposobami łatwo można przygotować mleko migdałowe. Wystarczą: woda, "
+                "migdały, blender i trochę czasu. Przeczytałam, że z kolei mleko kokosowe jest "
+                "bardzo tłuste i kaloryczne. Powinnam więc go unikać, bo się odchudzam.",
+                [
+                    LQ("«Mleko kozie»:", _P2206, 3,
+                       "popularne w polskich domach → охоче купують поляки (D)."),
+                    LQ("«Mleko roślinne»:", _P2206, 2,
+                       "polecane do cappuccino/latte → пасує до кав (C)."),
+                    LQ("«Mleko ryżowe»:", _P2206, 1,
+                       "idealne dla osób, które nie tolerują → для алергіків (B)."),
+                    LQ("«Mleko migdałowe»:", _P2206, 5,
+                       "domowymi sposobami łatwo przygotować → можна зробити самому (F)."),
+                    LQ("«Mleko kokosowe»:", _P2206, 0,
+                       "tłuste i kaloryczne, unikać → не для тих, хто на дієті (A)."),
                 ],
             )
         ],
