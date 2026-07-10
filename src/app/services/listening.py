@@ -2036,6 +2036,126 @@ MATCH_AUDIO: list[MatchAudio] = [
             "Особа 2: дратують ті, хто надто цікавиться життям інших → E.",
         ],
     ),
+    MatchAudio(
+        id="am2402_5",
+        title="Реальний іспит лютий-2024 — Zad V (wydarzenia kulturalne)",
+        intro=(
+            "Прослухай <b>5 мовців</b> про участь у культурних подіях і зістав кожен опис "
+            "A–D з тим, кого він стосується. <b>Один опис може стосуватися кількох осіб</b>. "
+            "На іспиті лунає двічі."
+        ),
+        speakers=[
+            "Raz w tygodniu w konkretny dzień mogę odwiedzić wybrane muzeum lub galerię i nie "
+            "płacić za bilet. A raz w roku podczas nocy muzeów niemal wszystkie instytucje "
+            "kultury w Polsce otwierają swoje drzwi dla zwiedzających. Wtedy razem z moją "
+            "rodziną oglądam ciekawe wystawy.",
+            "Lubię oglądać filmy, ale nie w multipleksach. Wolę małe sale kinowe, dlatego "
+            "wybieram kameralne festiwale, podczas których prezentowane są filmy z określonego "
+            "gatunku lub z określonego kraju. Jeżdżę też na festiwale filmowe za granicę, "
+            "między innymi do Cannes i do Berlina, skąd przywożę niezapomniane wrażenia!",
+            "Uwielbiam kino. Jestem na bieżąco z każdym nowym tytułem, ponieważ często chodzę "
+            "na pokazy premierowe. Jeśli dowiem się, że coś nowego wchodzi na ekrany, to od "
+            "razu kupuję bilety dla siebie i przyjaciółki.",
+            "Lubię muzykę klasyczną i często jej słucham. Chciałabym chodzić do filharmonii "
+            "lub opery, ale ceny biletów są za wysokie. Na szczęście w parku, gdzie spaceruję, "
+            "mogę latem bezpłatnie słuchać muzyki Chopina na żywo.",
+            "Często uczestniczę w spotkaniach autorskich, które są organizowane przez "
+            "biblioteki lub domy kultury w moim mieście. Ponadto szukam imprez dla fanów "
+            "literatury. Targi książki w dużych miastach w Polsce przyciągają wielu "
+            "miłośników książek, którzy mogą spotkać tam ulubionych autorów.",
+        ],
+        prompts=[
+            "A. korzysta z darmowych ofert.",
+            "B. chodzi na spotkania z pisarzami.",
+            "C. dzieli swoją pasję z bliskimi.",
+            "D. uczestniczy w zagranicznych wydarzeniach kulturalnych.",
+        ],
+        key=[[0, 3], [4], [0, 2], [1]],  # офіц.: A=1&4, B=5, C=1&3, D=2
+        explain=[
+            "Особи 1 і 4: безкоштовний музей/ніч музеїв · безкоштовний Шопен у парку → A.",
+            "Особа 5: spotkania autorskie, targi książki → B.",
+            "Особи 1 і 3: з родиною · для себе й подруги → C (ділиться пристрастю з близькими).",
+            "Особа 2: фестивалі за кордоном (Cannes, Berlin) → D.",
+        ],
+    ),
+    MatchAudio(
+        id="am2404_5",
+        title="Реальний іспит квітень-2024 — Zad V (śniadania)",
+        intro=(
+            "Прослухай <b>4 мовців</b> про сніданкові звички і зістав кожен опис A–E з тим, "
+            "кого він стосується. <b>Один опис може стосуватися кількох осіб</b>. "
+            "На іспиті лунає двічі."
+        ),
+        speakers=[
+            "Śniadanie to dla mnie najważniejszy posiłek. Jem je każdego dnia bez wyjątku. "
+            "Staram się komponować zdrowe, pełne witamin dania. Na moim stole często pojawiają "
+            "się warzywa, musli, a czasem jajecznica z boczkiem. Jeśli mam ochotę, to "
+            "przygotowuję śniadania kontynentalne, np. rogaliki z dżemem i owocami.",
+            "Całkowicie zrezygnowałem ze śniadań, nie mam na to czasu. Lubię dłużej pospać, "
+            "a potem szybko szykuję się do wyjścia. Pierwszy posiłek jem w pracy koło "
+            "południa. Idę wtedy na lunch z kolegami albo kupuję coś w pobliskim sklepie.",
+            "Nie bardzo lubię gotować, a rano przygotowuję jedzenie w prosty i szybki sposób, "
+            "tak, żeby nie zajęło mi to więcej niż 10 minut. Zwykle są to kanapki lub tosty, "
+            "bo nie wyobrażam sobie śniadań bez chleba lub bułek.",
+            "Jestem na diecie i zrezygnowałam całkowicie z mięsa. Zamówiłam catering, który "
+            "przywozi mi gotowe posiłki do pracy i w związku z tym nie przygotowuję śniadań "
+            "w domu. To jest bardzo wygodne, bo nie muszę się martwić zakupami i gotowaniem.",
+        ],
+        prompts=[
+            "A. nie je śniadań w domu.",
+            "B. bardzo lubi jeść na śniadanie pieczywo.",
+            "C. ma różnorodne menu.",
+            "D. je wegetariańskie śniadania.",
+            "E. zwykle śniadanie robi w kilka minut.",
+        ],
+        key=[[1, 3], [2], [0], [3], [2]],  # офіц.: A=2&4, B=3, C=1, D=4, E=3
+        explain=[
+            "Особи 2 і 4: не снідає / відмовився · catering у роботу, вдома не готує → A.",
+            "Особа 3: канапки/тости, без хліба не уявляє сніданку → B.",
+            "Особа 1: овочі, музлі, яєчня, рогалики — різноманітне меню → C.",
+            "Особа 4: на дієті, відмовилася від м'яса → D.",
+            "Особа 3: не більше 10 хвилин → E.",
+        ],
+    ),
+    MatchAudio(
+        id="am2406_5",
+        title="Реальний іспит червень-2024 — Zad V (zakupy)",
+        intro=(
+            "Прослухай <b>5 мовців</b> про підхід до покупок і зістав кожен опис A–D з тим, "
+            "кого він стосується. <b>Один опис може стосуватися кількох осіб</b>. "
+            "На іспиті лунає двічі."
+        ),
+        speakers=[
+            "Uwielbiam kupować ubrania z nowych kolekcji. Szukam zawsze czegoś nietypowego, "
+            "co będzie inne, niż mają wszyscy. Zakupy robię nie tylko dlatego, że muszę. "
+            "To, co kupuję, daje mi możliwość pokazania tego, kim jestem.",
+            "Dla mnie liczy się przede wszystkim to, co praktyczne. Najczęściej wybieram "
+            "stacjonarne sklepy, gdzie mogę dokładnie obejrzeć produkt, sprawdzić, ile "
+            "kosztuje i kupić tańszy.",
+            "Elektronika i nowoczesne rozwiązania to moja pasja i nie wyobrażam sobie życia "
+            "bez gadżetów. Dla mnie zakupy online to nie tylko wygoda, ale również szansa na "
+            "kupienie sprzętów, które niedawno pojawiły się na rynku.",
+            "Szukanie dobrych okazji to dla mnie prawdziwa przyjemność! Najpierw porównuję "
+            "ceny produktów w różnych sklepach i staram się znaleźć najlepsze oferty. Bardzo "
+            "cieszy mnie, że oszczędzam, a jednocześnie kupuję rzeczy wysokiej jakości.",
+            "Zdrowy styl życia jest dla mnie najważniejszy. Regularnie korzystam z dostawy "
+            "do domu świeżych owoców i warzyw od rolnika. Wybieram produkty ekologiczne, "
+            "które są przyjazne dla środowiska. Dla mnie to ważny aspekt każdego zakupu.",
+        ],
+        prompts=[
+            "A. kupuje naturalne produkty.",
+            "B. zwraca uwagę na ceny produktów.",
+            "C. zwykle wybiera najnowsze modele.",
+            "D. poszukuje oryginalnych i wyjątkowych rzeczy.",
+        ],
+        key=[[4], [1, 3], [0, 2], [0]],  # офіц.: A=5, B=2&4, C=1&3, D=1
+        explain=[
+            "Особа 5: екопродукти, овочі/фрукти від фермера → A.",
+            "Особи 2 і 4: практичність/дешевше · порівнює ціни, шукає нагоди → B.",
+            "Особи 1 і 3: нові колекції · щойно випущені ґаджети → C (найновіші моделі).",
+            "Особа 1: щось нетипове, інше ніж у всіх → D (оригінальні речі).",
+        ],
+    ),
 ]
 
 

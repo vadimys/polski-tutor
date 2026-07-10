@@ -166,11 +166,18 @@ def test_match_audio_wellformed():
     assert listening.match_audio_by_id("nope") is None
 
 
-def test_match_audio_2020_key():
-    # офіц. klucz: A=3, B=1&4, C=2&4, D=4, E=2 → 0-based
-    m = listening.match_audio_by_id("am2020_4")
-    assert m.key == [[2], [0, 3], [1, 3], [3], [1]]
-    assert len(m.speakers) == 4 and len(m.prompts) == 5
+def test_match_audio_keys_official():
+    # ключі звірено з офіц. klucz (0-based індекси мовців)
+    expected = {
+        "am2020_4": [[2], [0, 3], [1, 3], [3], [1]],  # A=3,B=1&4,C=2&4,D=4,E=2
+        "am2402_5": [[0, 3], [4], [0, 2], [1]],  # A=1&4,B=5,C=1&3,D=2
+        "am2404_5": [[1, 3], [2], [0], [3], [2]],  # A=2&4,B=3,C=1,D=4,E=3
+        "am2406_5": [[4], [1, 3], [0, 2], [0]],  # A=5,B=2&4,C=1&3,D=1
+    }
+    for mid, key in expected.items():
+        m = listening.match_audio_by_id(mid)
+        assert m is not None and m.key == key
+        assert len(m.prompts) == len(m.key) == len(m.explain)
 
 
 def test_content_listening_ids_all_resolve():
