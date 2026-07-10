@@ -26,7 +26,13 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
-from app.bot.keyboards import exam_kb, exam_match_kb, exam_text_kb, to_menu_kb
+from app.bot.keyboards import (
+    exam_audiomatch_kb,
+    exam_kb,
+    exam_match_kb,
+    exam_text_kb,
+    to_menu_kb,
+)
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
 from app.services import (
@@ -80,6 +86,13 @@ def _build_seq(exam_id: str) -> list[dict]:
         for si, seg in enumerate(ex.segments):
             for qi in range(len(seg.questions)):
                 seq.append({"t": "listen", "sec": "sluchanie", "ex": ex_id, "si": si, "qi": qi})
+    # multi-select аудіо-зіставлення (Słuch Zad IV/V) — теж у секції аудіювання
+    mid = content.exam_match_audio_id(exam_id)
+    if mid:
+        m = listening.match_audio_by_id(mid)
+        if m:
+            for gi in range(len(m.prompts)):
+                seq.append({"t": "lmatch", "sec": "sluchanie", "mid": mid, "gi": gi})
     for sec in content.exam_sections(exam_id):
         for i in range(len(content.exam_items(exam_id, sec))):
             seq.append({"t": "mcq", "sec": sec, "i": i})
@@ -167,24 +180,24 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
         return
     await state.set_state(Exam.active)
     await state.update_data(
-        exam_id=exam_id, seq=seq, pos=0, answers={}, started=clock.now_local().isoformat()
+        exam_id=exam_id, seq=seq, pos=0, answers={}, sel=[],
+        started=clock.now_local().isoformat(),
     )
     await _send_step(cb.message, exam_id, seq, 0)
 
 
 # ── аудіо-запис сегмента (piper TTS) ─────────────────────────────────────────
-async def _play_audio(message: Message, text: str) -> None:
+async def _play_audio(message: Message, text: str, label: str | None = None) -> None:
     """Озвучує запис сегмента; якщо TTS недоступний — показує транскрипт (деградація)."""
     from aiogram.types import BufferedInputFile
 
+    caption = f"🔊 {label}" if label else "🎧 Прослухай запис, тоді відповідай на питання нижче."
     data = await tts.synthesize(text)
     if data:
-        await message.answer_voice(
-            BufferedInputFile(data, filename="egzamin.ogg"),
-            caption="🎧 Прослухай запис, тоді відповідай на питання нижче.",
-        )
+        await message.answer_voice(BufferedInputFile(data, filename="egzamin.ogg"), caption=caption)
     else:
-        await message.answer(f"🔇 <i>(аудіо недоступне — прочитай транскрипт)</i>\n\n{html.escape(text)}")
+        pre = f"🔇 <b>{label}</b> " if label else "🔇 "
+        await message.answer(f"{pre}<i>(аудіо недоступне — прочитай транскрипт)</i>\n\n{html.escape(text)}")
 
 
 # ── показ кроку ────────────────────────────────────────────────────────────
@@ -200,6 +213,14 @@ async def _send_step(message: Message, exam_id: str, seq: list[dict], pos: int) 
         if ex and step["qi"] == 0:
             await _play_audio(message, ex.segments[step["si"]].audio)
 
+    # преамбула multi-select аудіо-зіставлення: назва + озвучення всіх мовців (раз)
+    if step["t"] == "lmatch" and step["gi"] == 0:
+        m = listening.match_audio_by_id(step["mid"])
+        if m:
+            await message.answer(f"🔗 <b>{html.escape(m.title)}</b>\n\n{m.intro}")
+            for i, spk in enumerate(m.speakers):
+                await _play_audio(message, spk, label=f"Особа {i + 1}")
+
     # преамбула на початку структурованого таска (показуємо опору один раз)
     if step["t"] == "match" and step["gi"] == 0:
         t = content.exam_match_tasks(exam_id)[step["ti"]]
@@ -211,7 +232,15 @@ async def _send_step(message: Message, exam_id: str, seq: list[dict], pos: int) 
         icon = "✏️" if step["t"] == "fill" else "🔄"
         await message.answer(f"{icon} <b>{html.escape(t.title)}</b>\n\n{t.intro}")
 
-    if step["t"] == "listen":
+    if step["t"] == "lmatch":
+        m = listening.match_audio_by_id(step["mid"])
+        n = len(m.speakers) if m else 0
+        prompt = m.prompts[step["gi"]] if m else ""
+        await message.answer(
+            f"{head}\n\n🔗 {html.escape(prompt)}\n\n<i>Кого це стосується? Познач усіх, тоді «Далі».</i>",
+            reply_markup=exam_audiomatch_kb(n, set(), pos),
+        )
+    elif step["t"] == "listen":
         q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
         await message.answer(f"{head}\n\n🎧 {html.escape(q.text)}", reply_markup=exam_kb(q.options, pos))
     elif step["t"] == "mcq":
@@ -282,6 +311,39 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     with suppress(Exception):
         await cb.message.edit_reply_markup(reply_markup=None)
+    await _advance(cb.message, cb.from_user.id, state)
+
+
+@router.callback_query(Exam.active, F.data.startswith("ex:mtog:"))
+async def cb_mtoggle(cb: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    pos, seq = data["pos"], data["seq"]
+    parts = (cb.data or "").split(":")
+    if len(parts) != 4 or int(parts[2]) != pos or seq[pos]["t"] != "lmatch":
+        await cb.answer("Це вже пройдено 🙂")
+        return
+    m = listening.match_audio_by_id(seq[pos]["mid"])
+    n = len(m.speakers) if m else 0
+    sel = listening.toggle_selection(data.get("sel", []), int(parts[3]))
+    await state.update_data(sel=sel)
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=exam_audiomatch_kb(n, set(sel), pos))
+
+
+@router.callback_query(Exam.active, F.data.startswith("ex:mdone:"))
+async def cb_mdone(cb: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    pos, seq = data["pos"], data["seq"]
+    if int((cb.data or "ex:mdone:0").split(":")[2]) != pos or seq[pos]["t"] != "lmatch":
+        await cb.answer("Це вже пройдено 🙂")
+        return
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    answers = data["answers"]
+    answers[str(pos)] = list(data.get("sel", []))  # обрані особи (0-based) для цього опису
+    await state.update_data(answers=answers, sel=[])
     await _advance(cb.message, cb.from_user.id, state)
 
 
@@ -422,7 +484,10 @@ async def _full_exam_block(user_id: int) -> tuple[str, object]:
 
 
 def _grade_closed(exam_id: str, step: dict, ans) -> bool:
-    """Оцінка закритого кроку (listen/mcq/match/fill)."""
+    """Оцінка закритого кроку (listen/lmatch/mcq/match/fill)."""
+    if step["t"] == "lmatch":
+        m = listening.match_audio_by_id(step["mid"])
+        return bool(m) and listening.match_audio_correct(ans or [], m.key[step["gi"]])
     if step["t"] == "listen":
         q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
         return ans == q.correct

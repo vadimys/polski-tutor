@@ -2358,3 +2358,15 @@ MATCH_AUDIO: list[MatchAudio] = [
 
 def match_audio_by_id(mid: str) -> MatchAudio | None:
     return next((m for m in MATCH_AUDIO if m.id == mid), None)
+
+
+def toggle_selection(selected: list[int], i: int) -> list[int]:
+    """Перемкнути особу i у виборі (для multi-select). Повертає відсортований список."""
+    s = set(selected)
+    s ^= {i}
+    return sorted(s)
+
+
+def match_audio_correct(selected: list[int] | set[int], key_row: list[int]) -> bool:
+    """Опис зараховано ⇔ обрана множина осіб точно дорівнює ключу (порядок не важить)."""
+    return set(selected) == set(key_row)

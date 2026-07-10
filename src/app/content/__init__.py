@@ -61,6 +61,20 @@ _LISTENING: dict[str, list[str]] = {
 for _e in EXAMS:
     _e.listening_ids = _LISTENING.get(_e.id, [])
 
+# multi-select аудіо-зіставлення (Słuch Zad IV/V) цього тесту — id у services.listening.
+# Окремо від _LISTENING, бо це інший тип кроку в моку (toggle-вибір множини осіб).
+_LISTENING_MATCH: dict[str, str] = {
+    "2020": "am2020_4",
+    "2022-11": "am2211_5",
+    "2023-02": "am2302_5",
+    "2023-04": "am2304_5",
+    "2023-06": "am2306_5",
+    "2023-11": "am2311_5",
+    "2024-02": "am2402_5",
+    "2024-04": "am2404_5",
+    "2024-06": "am2406_5",
+}
+
 _COMPLETE_MIN_SECTIONS = 2  # «повний» тест = має ≥2 секції (щоб не стати дефолтом частковим)
 
 
@@ -134,3 +148,8 @@ def exam_listening_ids(exam_id: str) -> list[str]:
     """Ids вправ аудіювання цього тесту (для повного моку). Порожньо, якщо аудіо нема."""
     e = by_id(exam_id)
     return list(e.listening_ids) if e else []
+
+
+def exam_match_audio_id(exam_id: str) -> str | None:
+    """Id multi-select аудіо-зіставлення цього тесту (Słuch Zad IV/V) або None."""
+    return _LISTENING_MATCH.get(exam_id)

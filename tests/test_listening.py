@@ -152,6 +152,29 @@ def test_2022_06_listening_present():
     assert len(listening.by_id("s2206_4").segments[0].questions[0].options) == 3
 
 
+def test_match_audio_helpers():
+    # toggle: додає/прибирає особу, тримає відсортовано
+    assert listening.toggle_selection([], 2) == [2]
+    assert listening.toggle_selection([0, 2], 2) == [0]
+    assert listening.toggle_selection([2, 0], 3) == [0, 2, 3]
+    # звірка множин: порядок не важить, повний збіг
+    assert listening.match_audio_correct([0, 3], [3, 0]) is True
+    assert listening.match_audio_correct([0], [0, 3]) is False
+    assert listening.match_audio_correct(set(), [1]) is False
+    assert listening.match_audio_correct([2], [2]) is True
+
+
+def test_exam_audiomatch_kb_callbacks():
+    from app.bot.keyboards import exam_audiomatch_kb
+
+    kb = exam_audiomatch_kb(4, {0, 3}, 5)
+    cbs = [b.callback_data for row in kb.inline_keyboard for b in row]
+    assert cbs[:4] == [f"ex:mtog:5:{i}" for i in range(4)]
+    assert "ex:mdone:5" in cbs and "ex:stop" in cbs
+    texts = [b.text for row in kb.inline_keyboard for b in row]
+    assert "✅ 1" in texts and "✅ 4" in texts  # обрані (0,3) позначено
+
+
 def test_match_audio_wellformed():
     assert listening.MATCH_AUDIO, "має бути хоча б одне аудіо-зіставлення"
     for m in listening.MATCH_AUDIO:

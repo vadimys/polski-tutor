@@ -214,6 +214,26 @@ def exam_match_kb(n_options: int, qidx: int) -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def exam_audiomatch_kb(n_speakers: int, selected: set[int], pos: int) -> InlineKeyboardMarkup:
+    """Multi-select аудіо-зіставлення в РЕЖИМІ ІСПИТУ — toggle осіб + «Далі» (без вердикту).
+
+    Callback: 'ex:mtog:<pos>:<i>' (перемкнути особу i), 'ex:mdone:<pos>', 'ex:stop'.
+    """
+    kb = InlineKeyboardBuilder()
+    btns = [
+        InlineKeyboardButton(
+            text=("✅ " if i in selected else "") + str(i + 1),
+            callback_data=f"ex:mtog:{pos}:{i}",
+        )
+        for i in range(n_speakers)
+    ]
+    for j in range(0, len(btns), 4):
+        kb.row(*btns[j : j + 4])
+    kb.row(InlineKeyboardButton(text="➡️ Далі", callback_data=f"ex:mdone:{pos}"))
+    kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="ex:stop"))
+    return kb.as_markup()
+
+
 def exam_text_kb(pos: int) -> InlineKeyboardMarkup:
     """Текстовий крок моку (free-fill/open) — відповідь ТЕКСТОМ; пропустити / вихід."""
     kb = InlineKeyboardBuilder()

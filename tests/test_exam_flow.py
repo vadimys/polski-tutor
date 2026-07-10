@@ -8,18 +8,19 @@ def test_build_seq_includes_all_types_for_2020():
     from app.services import listening
 
     seq = exam._build_seq("2020")
-    assert {s["t"] for s in seq} == {"listen", "mcq", "match", "fill", "open"}
-    # кількість кроків = аудіо-питання + MCQ + усі під-пункти тасків
+    assert {s["t"] for s in seq} == {"listen", "lmatch", "mcq", "match", "fill", "open"}
+    # кількість кроків = аудіо-питання + multi-select + MCQ + усі під-пункти тасків
     n_listen = sum(
         len(seg.questions)
         for lid in content.exam_listening_ids("2020")
         for seg in listening.by_id(lid).segments
     )
+    n_lmatch = len(listening.match_audio_by_id(content.exam_match_audio_id("2020")).prompts)
     n_mcq = len(content.by_id("2020").items)
     n_match = sum(len(t.prompts) for t in content.exam_match_tasks("2020"))
     n_fill = sum(len(t.prompts) for t in content.exam_fill_tasks("2020"))
     n_open = sum(len(t.prompts) for t in content.exam_open_tasks("2020"))
-    assert len(seq) == n_listen + n_mcq + n_match + n_fill + n_open
+    assert len(seq) == n_listen + n_lmatch + n_mcq + n_match + n_fill + n_open
 
 
 def test_2019_seq_mcq_only():
@@ -36,6 +37,33 @@ def test_all_exams_buildable_for_picker():
 def test_seq_sections_stable_order():
     # аудіювання першим (модуль 1 реального іспиту), тоді читання, граматика
     assert exam._seq_sections(exam._build_seq("2020")) == ["sluchanie", "czytanie", "gramatyka"]
+
+
+def test_build_seq_includes_lmatch():
+    from app.services import listening
+
+    # найновіший тест має multi-select аудіо-зіставлення (am2406_5)
+    eid = content.latest().id
+    seq = exam._build_seq(eid)
+    lm = [s for s in seq if s["t"] == "lmatch"]
+    assert lm, "мок має містити multi-select аудіо-зіставлення"
+    assert all(s["sec"] == "sluchanie" for s in lm)
+    mid = content.exam_match_audio_id(eid)
+    assert len(lm) == len(listening.match_audio_by_id(mid).prompts)
+    # уся секція аудіювання (listen + lmatch) — на початку, до читання
+    first_read = next(i for i, s in enumerate(seq) if s["sec"] == "czytanie")
+    assert all(s["sec"] == "sluchanie" for s in seq[:first_read])
+
+
+def test_grade_closed_lmatch():
+    from app.services import listening
+
+    eid = content.latest().id
+    mid = content.exam_match_audio_id(eid)
+    m = listening.match_audio_by_id(mid)
+    step = {"t": "lmatch", "sec": "sluchanie", "mid": mid, "gi": 0}
+    assert exam._grade_closed(eid, step, list(m.key[0]))  # правильна множина
+    assert not exam._grade_closed(eid, step, [])  # порожньо — хибно
 
 
 def test_grade_closed_listen():

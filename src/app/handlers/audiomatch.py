@@ -115,13 +115,12 @@ async def cb_toggle(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.answer("Це вже пройдено 🙂")
         return
     i = int(parts[3])
-    selected = set(data["selected"])
-    selected.symmetric_difference_update({i})  # перемкнути
-    await state.update_data(selected=sorted(selected))
+    selected = listening.toggle_selection(data["selected"], i)
+    await state.update_data(selected=selected)
     await cb.answer()
     with suppress(Exception):
         await cb.message.edit_reply_markup(
-            reply_markup=audiomatch_kb(data["n_spk"], selected, data["pos"])
+            reply_markup=audiomatch_kb(data["n_spk"], set(selected), data["pos"])
         )
 
 
@@ -136,9 +135,8 @@ async def cb_done(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
 
     pos, prompts, key, explains = data["pos"], data["prompts"], data["key"], data["explains"]
-    chosen = set(data["selected"])
     want = set(key[pos])
-    ok = chosen == want
+    ok = listening.match_audio_correct(data["selected"], key[pos])
     correct = data["correct"] + (1 if ok else 0)
     names = ", ".join(str(x + 1) for x in sorted(want)) or "—"
     head = "✅ <b>Правильно!</b>" if ok else f"❌ <b>Правильно: особа(и) {names}</b>"
