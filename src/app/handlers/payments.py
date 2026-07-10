@@ -19,6 +19,7 @@ from aiogram.types import (
     Message,
     PreCheckoutQuery,
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb
 from app.config import settings
@@ -27,39 +28,62 @@ from app.services import billing
 router = Router()
 logger = logging.getLogger(__name__)
 
-_PAYLOAD = "sub"  # ідентифікатор інвойсу підписки
+
+async def _is_referred(user_id: int) -> bool:
+    return (await billing.referrer_of(user_id)) > 0
 
 
-async def _send_invoice(message: Message) -> None:
+async def _offer(message: Message, user_id: int) -> None:
+    referred = await _is_referred(user_id)
+    m_stars = billing.discounted(settings.sub_stars, referred)
+    y_stars = billing.discounted(settings.sub_year_stars, referred)
+    kb = InlineKeyboardBuilder()
+    kb.button(text=f"📅 Місяць — {m_stars} ⭐", callback_data="pay:m")
+    kb.button(text=f"🗓 Рік — {y_stars} ⭐ (вигідніше)", callback_data="pay:y")
+    kb.adjust(1)
+    gift = (
+        f"\n🎁 Знижка від викладача <b>−{settings.referral_discount_pct}%</b> вже врахована!"
+        if referred else ""
+    )
+    await message.answer(
+        "💎 <b>Підписка Polski B1 Coach</b> — повний доступ до всіх 5 модулів "
+        "(аудіо, читання, граматика, письмо й мовлення з фідбеком).\n\n"
+        f"📅 Місяць — <b>{m_stars} ⭐</b>\n"
+        f"🗓 Рік — <b>{y_stars} ⭐</b> (майже вдвічі дешевше за 12 місяців)"
+        f"{gift}\n\nОплата через Telegram Stars (⭐):",
+        reply_markup=kb.as_markup(),
+    )
+
+
+async def _send_invoice(message: Message, user_id: int, kind: str) -> None:
+    base_stars, days = billing.plan_base(kind)
+    stars = billing.discounted(base_stars, await _is_referred(user_id))
+    label = "рік доступу" if kind == "y" else "місяць доступу"
     await message.answer_invoice(
         title="Підписка Polski B1 Coach",
-        description=(
-            f"Повний доступ до всіх 5 модулів на {settings.sub_days} днів: "
-            "аудіо, читання, граматика, письмо й мовлення з фідбеком."
-        ),
-        payload=_PAYLOAD,
+        description=f"Повний доступ до всіх 5 модулів на {days} днів: аудіо, читання, "
+        "граматика, письмо й мовлення з фідбеком.",
+        payload=f"sub:{kind}",
         currency="XTR",  # Telegram Stars
-        prices=[LabeledPrice(label=f"{settings.sub_days} днів доступу", amount=settings.sub_stars)],
+        prices=[LabeledPrice(label=label, amount=stars)],
     )
-
-
-async def _offer(message: Message) -> None:
-    await message.answer(
-        f"💎 <b>Підписка</b> — {settings.sub_stars} ⭐ за {settings.sub_days} днів повного доступу.\n"
-        "Оплата через Telegram Stars (⭐). Тисни кнопку оплати нижче 👇"
-    )
-    await _send_invoice(message)
 
 
 @router.message(Command("subskrypcja"))
 async def cmd_subscribe(message: Message) -> None:
-    await _offer(message)
+    await _offer(message, message.from_user.id)
 
 
 @router.callback_query(F.data == "pay:start")
 async def cb_subscribe(cb: CallbackQuery) -> None:
     await cb.answer()
-    await _offer(cb.message)
+    await _offer(cb.message, cb.from_user.id)
+
+
+@router.callback_query(F.data.in_({"pay:m", "pay:y"}))
+async def cb_plan(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await _send_invoice(cb.message, cb.from_user.id, cb.data.split(":")[1])
 
 
 @router.pre_checkout_query()
@@ -72,10 +96,12 @@ async def on_pre_checkout(pcq: PreCheckoutQuery) -> None:
 async def on_paid(message: Message) -> None:
     sp = message.successful_payment
     uid = message.from_user.id
-    stars = sp.total_amount  # у Stars = кількість ⭐
+    stars = sp.total_amount  # у Stars = скільки реально сплачено (уже зі знижкою)
     charge = sp.telegram_payment_charge_id
+    kind = (sp.invoice_payload or "sub:m").split(":")[-1]  # 'm' | 'y'
+    _, days = billing.plan_base(kind)
     try:
-        until = await billing.apply_subscription(uid, settings.sub_days, stars, charge)
+        until = await billing.apply_subscription(uid, days, stars, charge)
     except Exception:
         # оплату отримано, але доступ не продовжився — НЕ брешемо про успіх, кличемо адміна
         logger.exception("payment grant FAILED uid=%s stars=%s charge=%s", uid, stars, charge)

@@ -47,8 +47,11 @@ class Settings(BaseSettings):
 
     # Підписка через Telegram Stars (XTR). 300⭐ ≈ ~25 zł/міс — нижче ринку self-study
     # (Duolingo 63 zł, Babbel 59 zł, Busuu 39 zł); нижче середнього. Змінюється в .env.
-    sub_stars: int = 300  # вартість підписки у Stars
-    sub_days: int = 30  # на скільки днів продовжує доступ
+    sub_stars: int = 300  # місячна підписка у Stars
+    sub_days: int = 30  # на скільки днів продовжує місячна
+    sub_year_stars: int = 2000  # річна (~44% дешевше за 12×міс — стандартний річний дисконт)
+    sub_year_days: int = 365
+    referral_discount_pct: int = 20  # знижка для учнів, приведених викладачем
 
     # Mini App (WebApp-панель): публічний HTTPS-URL через cloudflared-тунель.
     # Порожній → кнопку «Панель» не показуємо (бот повністю працює й без тунеля).

@@ -10,9 +10,24 @@ from datetime import date, timedelta
 
 from sqlalchemy import func, select
 
+from app.config import settings
 from app.db.base import session_factory
 from app.db.models import Payment, User
 from app.services import clock
+
+
+def plan_base(kind: str) -> tuple[int, int]:
+    """Базова ціна плану (stars, days) до знижки. 'y' — річний, інакше місячний."""
+    if kind == "y":
+        return settings.sub_year_stars, settings.sub_year_days
+    return settings.sub_stars, settings.sub_days
+
+
+def discounted(stars: int, referred: bool) -> int:
+    """Ціна з реферальною знижкою, якщо учня привів викладач (referred=True)."""
+    if not referred:
+        return stars
+    return max(1, round(stars * (100 - settings.referral_discount_pct) / 100))
 
 
 def _extended_until(current_until: str, today: date, days: int) -> str:
