@@ -50,6 +50,19 @@ async def save(state: UserState) -> None:
         await s.commit()
 
 
+async def set_lesson_hour(user_id: int, hour: int) -> None:
+    """Персональна година щоденного нагадування (0–23, локальний пояс)."""
+    hour = max(0, min(23, hour))
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            u = User(id=user_id, lesson_hour=hour)
+            s.add(u)
+        else:
+            u.lesson_hour = hour
+        await s.commit()
+
+
 async def all_user_ids() -> list[int]:
     async with session_factory()() as s:
         rows = await s.execute(select(User.id))

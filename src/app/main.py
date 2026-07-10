@@ -70,6 +70,7 @@ COMMANDS = [
     BotCommand(command="slownik", description="Вільний словник за темами"),
     BotCommand(command="postep", description="Мій прогрес"),
     BotCommand(command="cel", description="Денна ціль (хвилини)"),
+    BotCommand(command="przypomnienie", description="Час щоденного нагадування"),
     BotCommand(command="misje", description="Місії (щоденні виклики)"),
     BotCommand(command="quest", description="Похід до B1 (мапа прогресу)"),
     BotCommand(command="plan", description="Мій план підготовки"),
@@ -129,7 +130,7 @@ async def main() -> None:
     await start_health_server()
     await bot.set_my_commands(COMMANDS)
     logger.info(
-        "Polski B1 Coach запущено. Нагадування о %02d:00 %s",
+        "Polski B1 Coach запущено. Нагадування — персональна година (дефолт %02d:00 %s)",
         settings.lesson_hour,
         settings.timezone,
     )

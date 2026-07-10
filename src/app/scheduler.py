@@ -1,6 +1,9 @@
-"""Щоденне нагадування о LESSON_HOUR (локальний пояс) — простий in-process цикл.
+"""Щоденне нагадування у ПЕРСОНАЛЬНУ годину кожного учня — простий in-process цикл.
 
-Для одного-кількох користувачів цього досить; окремий воркер/cron не потрібен.
+Цикл прокидається на початку кожної години й нагадує тим, у кого `lesson_hour`
+збігається з поточною годиною (локальний пояс). Дефолт години — `settings.lesson_hour`
+(08:00); кожен може змінити свою через /przypomnienie. Ретеншн-очищення denied —
+раз на добу. Для одного-кількох користувачів цього досить; воркер/cron не потрібен.
 """
 
 from __future__ import annotations
@@ -18,12 +21,12 @@ from app.services import access, clock, gdpr, goals, state
 
 logger = logging.getLogger(__name__)
 
+_PURGE_HOUR = 3  # ретеншн-очищення denied-користувачів — раз на добу вночі
 
-async def _seconds_until_next() -> float:
+
+async def _seconds_until_next_hour() -> float:
     now = clock.now_local()
-    target = now.replace(hour=settings.lesson_hour, minute=0, second=0, microsecond=0)
-    if target <= now:
-        target += timedelta(days=1)
+    target = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     return (target - now).total_seconds()
 
 
@@ -53,27 +56,43 @@ async def _personal_nudge(user_id: int) -> str:
     )
 
 
+async def _nudge_due(bot: Bot, hour: int, today: str, sent_on: dict[int, str]) -> int:
+    """Нагадати всім, у кого персональна година = поточній (раз на добу, з дедуплікацією)."""
+    sent = 0
+    for uid in await state.all_user_ids():
+        if not await access.is_allowed(uid, settings.admin_id):
+            continue  # не турбуємо не-схвалених
+        st = await state.load(uid)
+        if st.lesson_hour != hour or sent_on.get(uid) == today:
+            continue
+        try:
+            await bot.send_message(uid, await _personal_nudge(uid), reply_markup=coach_kb())
+            sent_on[uid] = today
+            sent += 1
+        except Exception:
+            logger.exception("nudge failed uid=%s", uid)
+    return sent
+
+
 async def daily_nudge_loop(bot: Bot) -> None:
+    sent_on: dict[int, str] = {}  # uid → дата останнього нагадування (дедуплікація в межах доби)
+    purged_on: str | None = None
     while True:
         try:
-            await asyncio.sleep(await _seconds_until_next())
-            user_ids = await state.all_user_ids()
-            sent = 0
-            for uid in user_ids:
-                if not await access.is_allowed(uid, settings.admin_id):
-                    continue  # не турбуємо не-схвалених
+            await asyncio.sleep(await _seconds_until_next_hour())
+            now = clock.now_local()
+            today = clock.today_local().isoformat()
+            sent = await _nudge_due(bot, now.hour, today, sent_on)
+            if sent:
+                logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
+            if now.hour == _PURGE_HOUR and purged_on != today:  # ретеншн — раз на добу
+                purged_on = today
                 try:
-                    await bot.send_message(uid, await _personal_nudge(uid), reply_markup=coach_kb())
-                    sent += 1
+                    purged = await gdpr.purge_stale(clock.today_local())
+                    if purged:
+                        logger.info("Retention: видалено %d denied-користувачів", purged)
                 except Exception:
-                    logger.exception("nudge failed uid=%s", uid)
-            logger.info("Daily nudge → %d users", sent)
-            try:
-                purged = await gdpr.purge_stale(clock.today_local())
-                if purged:
-                    logger.info("Retention: видалено %d denied-користувачів", purged)
-            except Exception:
-                logger.exception("retention purge failed")
+                    logger.exception("retention purge failed")
         except asyncio.CancelledError:
             raise
         except Exception:

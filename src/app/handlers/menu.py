@@ -10,7 +10,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import BufferedInputFile, CallbackQuery, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardButton, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
@@ -284,6 +284,7 @@ def _goal_kb(current: int) -> object:
         kb.button(text=mark + labels.get(m, f"{m} хв"), callback_data=f"goal:set:{m}")
     star = "✅ " if current not in goals.GOAL_CHOICES else ""
     kb.button(text=f"{star}✏️ Своя кількість", callback_data="goal:custom")
+    kb.button(text="⏰ Час нагадувань", callback_data="reminder:show")
     kb.button(text="⬅️ Меню", callback_data="menu:home")
     kb.adjust(1)
     return kb.as_markup()
@@ -326,6 +327,87 @@ async def on_goal_input(message: Message, state: FSMContext) -> None:
     g = await goals.status(message.from_user.id)
     await message.answer(
         f"🎯 Ціль встановлено: <b>{int(txt)}</b> хв/день. Погнали!", reply_markup=_goal_kb(g["goal"])
+    )
+
+
+# --- Час щоденного нагадування (персональна година) ---
+
+_HOUR_CHOICES = (6, 7, 8, 9, 12, 18, 19, 20, 21, 22)
+
+
+def _reminder_text(hour: int) -> str:
+    return (
+        "⏰ <b>Час щоденного нагадування</b>\n\n"
+        f"Зараз нагадую щодня о <b>{hour:02d}:00</b> (твій пояс).\n\n"
+        "Обери зручну годину — щодня в цей час надішлю поштовх до заняття "
+        "(фокус на найслабшому модулі + серія). Регулярність — головне 🙂"
+    )
+
+
+class HourInput(StatesGroup):
+    waiting = State()  # очікуємо власну годину (0–23)
+
+
+def _reminder_kb(current: int) -> object:
+    kb = InlineKeyboardBuilder()
+    btns = []
+    for h in _HOUR_CHOICES:
+        mark = "✅ " if h == current else ""
+        btns.append(InlineKeyboardButton(text=f"{mark}{h:02d}:00", callback_data=f"reminder:set:{h}"))
+    for i in range(0, len(btns), 3):  # по 3 у рядок
+        kb.row(*btns[i : i + 3])
+    star = "✅ " if current not in _HOUR_CHOICES else ""
+    kb.row(InlineKeyboardButton(text=f"{star}✏️ Інша година", callback_data="reminder:custom"))
+    kb.row(InlineKeyboardButton(text="⬅️ Меню", callback_data="menu:home"))
+    return kb.as_markup()
+
+
+async def _send_reminder(msg: Message, user_id: int) -> None:
+    st = await user_state.load(user_id)
+    await msg.answer(_reminder_text(st.lesson_hour), reply_markup=_reminder_kb(st.lesson_hour))
+
+
+@router.message(Command("przypomnienie"))
+async def cmd_reminder(message: Message) -> None:
+    await _send_reminder(message, message.from_user.id)
+
+
+@router.callback_query(F.data == "reminder:show")
+async def cb_reminder(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await _send_reminder(cb.message, cb.from_user.id)
+
+
+@router.callback_query(F.data.startswith("reminder:set:"))
+async def cb_reminder_set(cb: CallbackQuery) -> None:
+    hour = int(cb.data.split(":")[2])
+    await user_state.set_lesson_hour(cb.from_user.id, hour)
+    await cb.answer(f"Нагадуватиму о {hour:02d}:00 ⏰")
+    with suppress(Exception):
+        await cb.message.edit_text(_reminder_text(hour), reply_markup=_reminder_kb(hour))
+
+
+@router.callback_query(F.data == "reminder:custom")
+async def cb_reminder_custom(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.set_state(HourInput.waiting)
+    await cb.answer()
+    await cb.message.answer(
+        "✏️ О котрій годині нагадувати? Надішли <b>число</b> 0–23 (напр. <code>7</code> — це 07:00).",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(HourInput.waiting, F.text, ~F.text.startswith("/"))
+async def on_hour_input(message: Message, state: FSMContext) -> None:
+    txt = (message.text or "").strip()
+    if not txt.isdigit() or not (0 <= int(txt) <= 23):
+        await message.answer("Введи, будь ласка, число від 0 до 23 🙂", reply_markup=cancel_kb())
+        return
+    hour = int(txt)
+    await user_state.set_lesson_hour(message.from_user.id, hour)
+    await state.clear()
+    await message.answer(
+        f"⏰ Готово: нагадуватиму щодня о <b>{hour:02d}:00</b>.", reply_markup=_reminder_kb(hour)
     )
 
 
