@@ -478,6 +478,168 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит квітень-2024 ════════════════════════════════════════
+    # Zad I: 14 висловлювань (a/b/c). Ключ: b,c,c,a,c,a,b,b,c,a,b,c,a,b.
+    Exercise(
+        "s2404_1", "Іспит 2024-04 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Czy mają państwo chleb bezglutenowy?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w kwiaciarni", "w piekarni", "w sklepie mięsnym"],
+                        1, "хліб → пекарня.")]),
+            Segment("Boję się jechać sama autostopem.",
+                    [LQ("Ta wypowiedź oznacza:", ["złość", "radość", "strach"], 2, "«boję się» → страх.")]),
+            Segment("Od jutra mocne ochłodzenie i spadek ciśnienia.",
+                    [LQ("Ta wypowiedź to fragment:",
+                        ["porady lekarskiej", "reklamy radiowej", "prognozy pogody"], 2, "похолодання → прогноз погоди.")]),
+            Segment("Zapraszamy na komputerowe badanie wzroku.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u optyka", "u ortopedy", "u informatyka"], 0,
+                        "перевірка зору → оптик.")]),
+            Segment("Znowu zapomniałaś, przecież byliśmy umówieni.",
+                    [LQ("Ta wypowiedź oznacza:", ["zainteresowanie", "zadowolenie", "niezadowolenie"], 2,
+                        "докір → невдоволення.")]),
+            Segment("Trudno powiedzieć, czy to dobry spektakl.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["nie jest pewna", "ma problemy z mówieniem", "ogląda ciekawy film"], 0,
+                        "«trudno powiedzieć» → не впевнена.")]),
+            Segment("Zaspałem, budzik chyba nie zadzwonił.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["obudziła się za wcześnie", "wstała za późno", "zapomniała o budziku"], 1,
+                        "«zaspałem» → проспав, встав запізно.")]),
+            Segment("Proszę czekać pod gabinetem.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w szatni", "w przychodni", "w przedszkolu"], 1,
+                        "gabinet → поліклініка.")]),
+            Segment("Co za emocje! Gol! Bramkarz nie miał szans!",
+                    [LQ("Ta wypowiedź komentuje:",
+                        ["wyścig rowerowy", "skoki narciarskie", "mecz piłki nożnej"], 2, "«gol, bramkarz» → футбол.")]),
+            Segment("Basen jest nieczynny do odwołania.",
+                    [LQ("Ta wypowiedź oznacza, że basen jest:",
+                        ["zamknięty", "otwarty w tygodniu", "nieczynny przez tydzień"], 0,
+                        "«nieczynny do odwołania» → зачинений.")]),
+            Segment("Powiedz, co zrobiłabyś na moim miejscu?",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["podjęła decyzję", "potrzebuje rady", "szuka swojego miejsca"], 1, "просить поради.")]),
+            Segment("Dzisiaj polecamy szarlotkę na ciepło.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u kosmetyczki", "na siłowni", "w restauracji"], 2,
+                        "«polecamy szarlotkę» → ресторан/кав'ярня.")]),
+            Segment("Za centrum handlowym skręć w prawo.",
+                    [LQ("Ta wypowiedź to:", ["polecenie", "zakaz", "pytanie"], 0, "вказівка напряму → доручення.")]),
+            Segment("Potrafisz zrobić naprawdę wyśmienite pierogi.",
+                    [LQ("Ta wypowiedź oznacza:", ["krytykę", "komplement", "poradę"], 1, "«wyśmienite» → комплімент.")]),
+        ],
+    ),
+    # Zad II: 6 діалогів (a/b/c). Ключ: c,b,a,c,b,c.
+    Exercise(
+        "s2404_2", "Іспит 2024-04 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– W naszym sklepie płatność przyjmujemy jedynie w gotówce. – Ale ja mam przy "
+                    "sobie tylko kartę.",
+                    [LQ("Z dialogu wynika, że klient:",
+                        ["ma tylko gotówkę", "chciałby zapłacić gotówką", "chce zapłacić kartą"], 2,
+                        "має лише картку.")]),
+            Segment("– Czy śniadania są wliczone w cenę pokoju? – Ta oferta nie zawiera posiłków.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["wszystkie posiłki są gratis", "za jedzenie trzeba dodatkowo zapłacić",
+                         "jeden posiłek jest za darmo"], 1, "оферта без харчування → доплата.")]),
+            Segment("– Może polecimy w tym roku na jakieś egzotyczne wakacje? – Ooo, brzmi bardzo "
+                    "dobrze, uwielbiam latać samolotem.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["para planuje egzotyczną podróż", "kobieta od zawsze marzyła o egzotycznej podróży",
+                         "mężczyzna pierwszy raz będzie leciał samolotem"], 0, "планують подорож.")]),
+            Segment("– I jak oceniasz ten salon fryzjerski? – Myślałam, że to dobry salon, ale "
+                    "myliłam się. Zobacz na moją fryzurę.",
+                    [LQ("Z dialogu wynika, że kobieta:",
+                        ["jest zadowolona z usług salonu", "poleca wizytę w tym salonie",
+                         "jest niezadowolona z wizyty"], 2, "«myliłam się» → незадоволена.")]),
+            Segment("– Kiedy planuje pan wziąć udział w zawodach pływackich? – Niestety. Wiek mi "
+                    "już na to nie pozwala.",
+                    [LQ("Z dialogu wynika, że mężczyzna:",
+                        ["chce wkrótce wziąć udział w zawodach", "jest za stary na udział w zawodach",
+                         "nie jest pewien, czy weźmie udział"], 1, "«wiek nie pozwala» → застарий.")]),
+            Segment("– Grasz na jakimś instrumencie? – Od dziecka regularnie gram na skrzypcach.",
+                    [LQ("Z dialogu wynika, że kobieta:",
+                        ["gra na skrzypcach razem z dzieckiem", "dała swoje skrzypce dziecku",
+                         "grała na skrzypcach już w młodym wieku"], 2, "«od dziecka» → з юних літ.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю зі стюардесою (a/b/c). Ключ: a,c,a,b,b.
+    Exercise(
+        "s2404_3", "Іспит 2024-04 — Zad III (інтерв'ю зі стюардесою)",
+        "Прослухай інтерв'ю про роботу стюардеси. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Dlaczego zostałaś stewardessą? Od zawsze marzyłam o ciekawych podróżach, już na "
+                "studiach często podróżowałam autostopem po Polsce, żeby odkrywać nowe miejsca. "
+                "Co spowodowało, że wybrałaś tę ścieżkę zawodową? Kiedy moja mama nagle "
+                "zachorowała, zrozumiałam, że życie jest krótkie i trzeba spełniać swoje marzenia. "
+                "To był impuls do działania. Gdy znalazłam ogłoszenie o pracy w liniach "
+                "lotniczych, poszłam na rozmowę kwalifikacyjną i trzy dni później podpisałam umowę. "
+                "Jak wyglądała rekrutacja i co jest ważne w tej pracy? Pracodawca nie wymagał "
+                "wykształcenia lotniczego. Liczyła się biegła znajomość języka obcego, organizacja "
+                "pracy, punktualność, komunikatywność oraz umiejętność opanowania stresu. Po "
+                "rozmowach i teście z angielskiego był egzamin praktyczny – rozwiązywanie problemów "
+                "na pokładzie samolotu. Opowiedz o plusach tej pracy. To przede wszystkim "
+                "możliwość zwiedzania świata, często z dłuższymi pobytami. Oczekiwanie na lot "
+                "powrotny to przyjemność – firma płaci wtedy za transport i hotele. Czy są minusy? "
+                "Głównym problemem jest zmiana czasu i jet lag, który rozregulowuje rytm życia.",
+                [
+                    LQ("Choroba matki:",
+                       ["pomogła podjąć decyzję o pracy", "przeszkodziła w podpisaniu umowy",
+                        "opóźniła rekrutację o trzy dni"], 0, "«impuls do działania» → допомогла зважитися."),
+                    LQ("Żeby pracować jako stewardessa, trzeba:",
+                       ["znać minimum 3 języki obce", "mieć lotnicze wykształcenie",
+                        "umieć radzić sobie w stresujących sytuacjach"], 2,
+                       "«opanowanie stresu»; освіта не потрібна."),
+                    LQ("Podczas rekrutacji kobieta:",
+                       ["miała test językowy", "leciała samolotem", "rozmawiała z pilotem"], 0,
+                       "тест з англійської."),
+                    LQ("Jedną z zalet pracy stewardessy są:",
+                       ["stabilność i rutyna", "darmowe noclegi i przejazdy", "ciekawe szkolenia zawodowe"],
+                       1, "фірма платить за транспорт і готелі."),
+                    LQ("Wady pracy stewardessy to:",
+                       ["długie oczekiwanie na lot powrotny", "nieregularny tryb życia",
+                        "brak czasu na zwiedzanie"], 1, "jet lag → нерегулярний ритм життя."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: AI і ринок праці, TAK/NIE (6). Ключ: N,N,T,N,N,T.
+    Exercise(
+        "s2404_4", "Іспит 2024-04 — Zad IV (AI і ринок праці)",
+        "Прослухай інформацію про штучний інтелект і ринок праці. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Według analityków w najbliższych latach dwadzieścia pięć procent zawodów zastąpi "
+                "sztuczna inteligencja. Firmy przyznają, że korzystają z jej pomocy i zrezygnowały "
+                "z części pracowników, którzy okazali się mało efektywni w porównaniu do "
+                "sztucznej inteligencji. Prawie co trzecia firma zwolniła w ostatnich dwunastu "
+                "miesiącach pracownika, którego zastąpiły maszyny. Są jednak zawody, którym to nie "
+                "grozi. Zdaniem ekspertów w przypadku hydraulików czy elektryków nie będzie się to "
+                "opłacało, ponieważ koszty zatrudnienia człowieka są dużo niższe. Także architekci "
+                "czy lekarze nie powinni bać się sztucznej inteligencji – będzie ona dla nich "
+                "cenną pomocą, ale w nietypowych przypadkach doświadczenie lekarza jest "
+                "ważniejsze. Artyści też mogą być spokojni – melomani chcą zobaczyć człowieka na "
+                "koncercie. Z drugiej strony sztuczna inteligencja z łatwością napisze muzykę do "
+                "filmu, dlatego kompozytorzy mogą mieć mniej pracy. Co innego muzycy, którzy "
+                "świetnie grają na instrumentach – oni mogą czuć się bezpieczni.",
+                [
+                    LQ("Firmy zwalniają pracowników, którzy nie potrafią pracować z robotami.",
+                       _TAKNIE, 1, "НІ — звільняли МАЛО ЕФЕКТИВНИХ порівняно з AI, не «не вміють з роботами»."),
+                    LQ("W ostatnim roku wszystkie badane firmy zamieniły pracownika na robota.",
+                       _TAKNIE, 1, "НІ — майже КОЖНА ТРЕТЯ фірма, не всі."),
+                    LQ("Zastąpienie hydraulika czy elektryka robotem będzie za drogie.",
+                       _TAKNIE, 0, "ТАК — вартість найму людини нижча, невигідно."),
+                    LQ("Sztuczna inteligencja to duża konkurencja dla lekarzy.",
+                       _TAKNIE, 1, "НІ — для лікарів це радше цінна допомога."),
+                    LQ("Artyści będą grać coraz mniej koncertów.",
+                       _TAKNIE, 1, "НІ — люди хочуть бачити артиста наживо, концерти лишаються."),
+                    LQ("Sztuczna inteligencja jest zagrożeniem dla kompozytorów.",
+                       _TAKNIE, 0, "ТАК — AI легко напише музику до фільму → менше роботи композиторам."),
+                ],
+            )
+        ],
+    ),
 ]
 
 

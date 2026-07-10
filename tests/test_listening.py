@@ -50,6 +50,19 @@ def test_2024_listening_present_and_sized():
     assert len(listening.by_id("s2024_3").segments) == 1
 
 
+def test_2024_04_listening_present():
+    # квітень-2024: Zad I=14, II=6, III=5, IV=6
+    assert listening.total_questions(listening.by_id("s2404_1")) == 14
+    assert listening.total_questions(listening.by_id("s2404_2")) == 6
+    assert listening.total_questions(listening.by_id("s2404_3")) == 5
+    assert listening.total_questions(listening.by_id("s2404_4")) == 6
+    for q in listening.by_id("s2404_4").segments[0].questions:
+        assert q.options == ["TAK", "NIE"]
+    # Zad I key звірено з klucz: b,c,c,a,c,a,b,b,c,a,b,c,a,b
+    z1 = [s.questions[0].correct for s in listening.by_id("s2404_1").segments]
+    assert z1 == [1, 2, 2, 0, 2, 0, 1, 1, 2, 0, 1, 2, 0, 1]
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5
