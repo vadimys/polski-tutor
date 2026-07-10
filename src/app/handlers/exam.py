@@ -26,7 +26,8 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
-from app.bot.keyboards import exam_kb, exam_match_kb, exam_text_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import exam_kb, exam_match_kb, exam_text_kb, to_menu_kb
+from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
 from app.services import (
     clock,
@@ -134,7 +135,7 @@ async def _intro(message: Message) -> None:
         "⏱ Режим іспиту: <b>без підказок і вердиктів</b>, результат у балах — у кінці. "
         f"Орієнтовний час за регламентом — <b>~{_budget_min(seq)} хв</b>; я заміряю, "
         "скільки насправді пішло.\n"
-        "<i>Письмо й мовлення оцінюються окремо (/pisanie, /mowienie).</i>",
+        "<i>Наприкінці зведу всі 5 модулів іспиту й запропоную добити письмо й мовлення.</i>",
         reply_markup=b.as_markup(),
     )
 
@@ -371,10 +372,53 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
     lines.append(f"\n{verdict}")
     if open_note:
         lines.append("<i>ℹ️ Трансформації (open) не оцінено — AI недоступний. Порівняй зі зразком у /transformacje.</i>")
-    lines.append("<i>Письмо й мовлення — окремо (/pisanie, /mowienie).</i>")
-    await message.answer("\n".join(lines), reply_markup=menu_kb())
+    await message.answer("\n".join(lines))
+
+    # повна картина всіх 5 модулів іспиту (авто-модулі щойно + продуктивні з історії)
+    text, markup = await _full_exam_block(user_id)
+    await message.answer(text, reply_markup=markup)
     if c := await goals.pop_celebration(user_id):
         await message.answer(c)
+
+
+async def _full_exam_block(user_id: int) -> tuple[str, object]:
+    """Зведення всіх 5 модулів (поріг ≥50% у КОЖНОМУ) + CTA добити письмо/мовлення."""
+    stats = await progress.compute(user_id)
+    lines = [
+        "🎯 <b>Повний іспит — усі 5 модулів</b>",
+        "<i>Щоб скласти, треба ≥50% у КОЖНОМУ окремо.</i>\n",
+    ]
+    missing: list[Module] = []
+    all_pass = True
+    for mod in Module:
+        s = stats[mod.value]
+        if s.attempts == 0:
+            lines.append(f"❔ {MODULE_LABELS[mod]} — ще не міряно")
+            all_pass = False
+            if mod in (Module.PISANIE, Module.MOWIENIE):
+                missing.append(mod)
+            continue
+        if s.pct < 50:
+            all_pass = False
+        lines.append(f"{'✅' if s.pct >= 50 else '❌'} {MODULE_LABELS[mod]} — <b>{s.pct}%</b>")
+
+    b = InlineKeyboardBuilder()
+    if missing:
+        lines.append(
+            "\n⬇️ Дороби продуктивні модулі, щоб побачити повну готовність до іспиту:"
+        )
+        if Module.PISANIE in missing:
+            b.button(text="✍️ Письмо (частина 4)", callback_data="writing:start")
+        if Module.MOWIENIE in missing:
+            b.button(text="🗣 Мовлення (частина 5)", callback_data="speaking:start")
+    elif all_pass:
+        lines.append("\n🏆 <b>Усі 5 модулів ≥50%</b> — за нашою оцінкою ти складаєш іспит! Тримай форму.")
+    else:
+        lines.append("\n💪 Підтягни модулі з ❌ — і повтори мок для впевненості.")
+    b.button(text="📊 Детальний прогрес", callback_data="progress:show")
+    b.button(text="⬅️ Меню", callback_data="menu:home")
+    b.adjust(1)
+    return "\n".join(lines), b.as_markup()
 
 
 def _grade_closed(exam_id: str, step: dict, ans) -> bool:
