@@ -50,6 +50,17 @@ async def cb_decision(cb: CallbackQuery) -> None:
             )
         except Exception:  # noqa: BLE001
             pass
+    elif action == "extend":
+        until = await access.approve(uid)  # продовження: повне вікно (6 міс / до іспиту)
+        await cb.message.edit_text(f"{cb.message.html_text}\n\n🔓 Продовжено (до {until}).")
+        try:
+            await cb.bot.send_message(
+                uid,
+                f"🔓 <b>Доступ продовжено</b> до <b>{until}</b>! Продовжуймо підготовку 👇",
+                reply_markup=approved_kb(),
+            )
+        except Exception:  # noqa: BLE001
+            pass
     elif action == "ok":
         until = await access.approve(uid)
         await cb.message.edit_text(f"{cb.message.html_text}\n\n✅ Схвалено (доступ до {until}).")

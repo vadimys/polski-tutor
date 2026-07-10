@@ -40,7 +40,7 @@ def exam_dates_kb(
 
 def send_request_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="📨 Надіслати запит адміну", callback_data="onb:send")
+    kb.button(text="🚀 Почати безкоштовно", callback_data="onb:send")
     kb.button(text="⬅️ Змінити дату", callback_data="onb:restart")
     kb.adjust(1)
     return kb.as_markup()
@@ -67,6 +67,24 @@ def admin_teacher_kb(user_id: int) -> InlineKeyboardMarkup:
 def contact_admin_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="✍️ Написати адміну", callback_data="onb:contact")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def extend_request_kb() -> InlineKeyboardMarkup:
+    """Після завершення trial: попросити продовження доступу + написати адміну."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🔓 Попросити продовження", callback_data="onb:extend")
+    kb.button(text="✍️ Написати адміну", callback_data="onb:contact")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def admin_extend_kb(user_id: int) -> InlineKeyboardMarkup:
+    """Рішення адміна щодо продовження доступу після trial."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🔓 Продовжити доступ", callback_data=f"adm:extend:{user_id}")
+    kb.button(text="❌ Ні", callback_data=f"adm:no:{user_id}")
     kb.adjust(1)
     return kb.as_markup()
 

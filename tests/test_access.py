@@ -2,8 +2,10 @@ from datetime import date, timedelta
 
 from app.services.access import (
     SIX_MONTHS_DAYS,
+    AccessInfo,
     compute_access_until,
     extend_until,
+    is_expired,
     parse_referral,
 )
 
@@ -62,3 +64,25 @@ def test_referral_keyboards_callbacks():
     assert role_cbs == ["onb:role:student", "onb:role:teacher"]
     adm_cbs = [b.callback_data for row in admin_teacher_kb(99).inline_keyboard for b in row]
     assert adm_cbs == ["adm:teacher:99", "adm:no:99"]
+
+
+def _inf(status, until):
+    return AccessInfo(status, until, "", False, "")
+
+
+def test_is_expired():
+    today = date(2026, 7, 10)
+    assert is_expired(_inf("approved", "2026-07-01"), today) is True  # минув
+    assert is_expired(_inf("approved", "2026-07-10"), today) is False  # сьогодні ще діє
+    assert is_expired(_inf("approved", "2026-12-01"), today) is False  # активний
+    assert is_expired(_inf("approved", ""), today) is False  # без терміну = безстроково
+    assert is_expired(_inf("pending", "2026-07-01"), today) is False  # не approved
+
+
+def test_extend_keyboards_callbacks():
+    from app.bot.keyboards import admin_extend_kb, extend_request_kb
+
+    ext = [b.callback_data for row in extend_request_kb().inline_keyboard for b in row]
+    assert ext == ["onb:extend", "onb:contact"]
+    adm = [b.callback_data for row in admin_extend_kb(7).inline_keyboard for b in row]
+    assert adm == ["adm:extend:7", "adm:no:7"]

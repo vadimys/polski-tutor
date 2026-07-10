@@ -13,7 +13,6 @@ from datetime import date, timedelta
 
 from sqlalchemy import select
 
-from app.config import settings
 from app.db.base import session_factory
 from app.db.models import User
 from app.services import clock
@@ -67,6 +66,11 @@ async def info(user_id: int) -> AccessInfo:
             u.access_status, u.access_until, u.exam_date, u.exam_date_confirmed,
             u.username, u.role, u.referred_by,
         )
+
+
+def is_expired(inf: AccessInfo, today: date) -> bool:
+    """Доступ був схвалений, але термін (trial/вікно) уже минув."""
+    return inf.status == "approved" and bool(inf.until) and inf.until < today.isoformat()
 
 
 def parse_referral(payload: str) -> int | None:
@@ -139,19 +143,29 @@ async def approve_teacher(user_id: int) -> str:
         return until
 
 
-async def grant_trial(user_id: int, username: str, referred_by: int) -> str:
-    """Учень за посиланням викладача → авто-доступ на trial_days (без черги до адміна).
+async def grant_trial(
+    user_id: int,
+    username: str,
+    referred_by: int,
+    days: int,
+    exam_date: str = "",
+    confirmed: bool = False,
+) -> str:
+    """Авто-доступ учню на `days` днів БЕЗ черги до адміна (self-serve / реферал).
 
-    Атрибутуємо викладача (referred_by). Повертає until (ISO)."""
+    referred_by = id викладача (0 — органічний). Повертає until (ISO)."""
     async with session_factory()() as s:
         u = await s.get(User, user_id)
         if u is None:
             u = User(id=user_id)
             s.add(u)
-        until = (clock.today_local() + timedelta(days=settings.trial_days)).isoformat()
+        until = (clock.today_local() + timedelta(days=days)).isoformat()
         u.username = username or ""
         u.role = "student"
         u.referred_by = referred_by
+        if exam_date:
+            u.exam_date = exam_date
+            u.exam_date_confirmed = confirmed
         u.access_status = "approved"
         u.access_until = until
         u.requested_at = clock.now_local().isoformat(timespec="minutes")

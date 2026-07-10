@@ -11,11 +11,12 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import (
-    admin_decision_kb,
+    admin_extend_kb,
     admin_teacher_kb,
     approved_kb,
     contact_admin_kb,
     exam_dates_kb,
+    extend_request_kb,
     role_choice_kb,
     send_request_kb,
     to_menu_kb,
@@ -54,7 +55,9 @@ async def _try_referral(message: Message, uid: int, payload: str) -> bool:
     teacher_id = access.parse_referral(payload)
     if teacher_id is None or teacher_id == uid or not await access.is_teacher(teacher_id):
         return False  # не викладач / сам себе — ігноруємо
-    until = await access.grant_trial(uid, message.from_user.username or "", teacher_id)
+    until = await access.grant_trial(
+        uid, message.from_user.username or "", teacher_id, settings.trial_days
+    )
     await vocab.seed_if_empty(uid, clock.today_local())
     await message.answer(
         f"Cześć! 👋 Тебе запросив викладач — тобі відкрито <b>безкоштовний доступ на "
@@ -77,7 +80,16 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
     await state.clear()
     uid = message.from_user.id
     inf = await access.info(uid)
-    if uid == settings.admin_id or inf.status == "approved":
+    if uid == settings.admin_id:
+        await _approved_welcome(message, uid)
+    elif access.is_expired(inf, clock.today_local()):
+        await message.answer(
+            "⏳ <b>Твій безкоштовний період завершився.</b>\n"
+            "Сподіваюсь, бот був корисний! Щоб продовжити підготовку — попроси продовження "
+            "доступу (скоро зʼявиться підписка).",
+            reply_markup=extend_request_kb(),
+        )
+    elif inf.status == "approved":
         await _approved_welcome(message, uid)
     elif inf.status == "pending":
         await message.answer(
@@ -157,7 +169,8 @@ async def cb_restart(cb: CallbackQuery, state: FSMContext) -> None:
 
 async def _confirm(message: Message, iso: str, confirmed: bool) -> None:
     await message.answer(
-        f"📅 Дата іспиту: <b>{_fmt(iso, confirmed)}</b>\n\nНадіслати запит на доступ адміну?",
+        f"📅 Дата іспиту: <b>{_fmt(iso, confirmed)}</b>\n\n"
+        f"Відкрию тобі <b>{settings.organic_trial_days} днів безкоштовно</b> — почнемо?",
         reply_markup=send_request_kb(),
     )
 
@@ -178,9 +191,9 @@ async def cb_unconfirmed(cb: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(exam_date="", confirmed=False)
     await cb.answer()
     await cb.message.answer(
-        "❔ Дата ще не підтверджена → доступ на <b>6 місяців</b>. За цей час зареєструйся "
-        "на іспит і познач дату («📅 Вказати дату іспиту») — якщо вона далі, доступ подовжимо.\n\n"
-        "Надіслати запит адміну?",
+        f"❔ Дату вкажеш пізніше. Відкрию тобі <b>{settings.organic_trial_days} днів "
+        "безкоштовно</b> — за цей час зареєструйся на іспит і познач дату "
+        "(«📅 Вказати дату іспиту»). Почнемо?",
         reply_markup=send_request_kb(),
     )
 
@@ -212,25 +225,46 @@ async def cb_examdate(cb: CallbackQuery) -> None:
 
 @router.callback_query(F.data == "onb:send")
 async def cb_send(cb: CallbackQuery, state: FSMContext) -> None:
+    """Органічний учень → авто-trial БЕЗ черги (self-serve freemium). Адмін лише інформується."""
     data = await state.get_data()
     exam_date = data.get("exam_date", "")
     confirmed = bool(data.get("confirmed", False))
     uid = cb.from_user.id
     username = cb.from_user.username or ""
-    await access.request_access(uid, username, exam_date, confirmed)
+    until = await access.grant_trial(
+        uid, username, 0, settings.organic_trial_days, exam_date, confirmed
+    )
+    await vocab.seed_if_empty(uid, clock.today_local())
     await state.clear()
     await cb.answer()
     await cb.message.answer(
-        "✅ Запит надіслано! Щойно адмін вирішить — сповіщу. Можеш поки написати йому.",
-        reply_markup=contact_admin_kb(),
+        f"🚀 <b>Доступ відкрито — {settings.organic_trial_days} днів безкоштовно!</b> "
+        f"(до <b>{until}</b>)\nПочнемо зі стартового тесту 👇",
+        reply_markup=approved_kb(),
     )
+    if settings.admin_id:  # інформуємо (без схвалення — доступ уже відкрито)
+        name = f"@{username}" if username else (cb.from_user.full_name or str(uid))
+        await cb.bot.send_message(
+            settings.admin_id,
+            f"🆕 <b>Новий учень (self-serve trial)</b>: {html.escape(name)} "
+            f"(id <code>{uid}</code>) · дата: <b>{_fmt(exam_date, confirmed)}</b> · до {until}",
+        )
+
+
+@router.callback_query(F.data == "onb:extend")
+async def cb_extend(cb: CallbackQuery) -> None:
+    """Учень просить продовження після trial → у чергу до адміна (місток до підписки)."""
+    await cb.answer()
+    uid = cb.from_user.id
+    username = cb.from_user.username or ""
+    await cb.message.answer("📨 Запит на продовження надіслано. Щойно вирішу — сповіщу 🙂")
     if settings.admin_id:
         name = f"@{username}" if username else (cb.from_user.full_name or str(uid))
         await cb.bot.send_message(
             settings.admin_id,
-            f"📨 <b>Запит на доступ</b>\nКористувач: {html.escape(name)} (id <code>{uid}</code>)\n"
-            f"Дата іспиту: <b>{_fmt(exam_date, confirmed)}</b>",
-            reply_markup=admin_decision_kb(uid),
+            f"🔓 <b>Запит на ПРОДОВЖЕННЯ</b> (trial вичерпано)\n{html.escape(name)} "
+            f"(id <code>{uid}</code>)",
+            reply_markup=admin_extend_kb(uid),
         )
 
 
