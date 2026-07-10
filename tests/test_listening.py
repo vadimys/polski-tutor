@@ -119,6 +119,19 @@ def test_2022_02_listening_present():
     assert z1 == [1, 1, 2, 0, 2, 1, 2, 1, 0, 1, 2, 0, 2, 0]
 
 
+def test_2022_11_listening_present():
+    assert listening.total_questions(listening.by_id("s2211_1")) == 14
+    assert listening.total_questions(listening.by_id("s2211_2")) == 8
+    assert listening.total_questions(listening.by_id("s2211_3")) == 5
+    assert listening.total_questions(listening.by_id("s2211_4")) == 5
+    z1 = [s.questions[0].correct for s in listening.by_id("s2211_1").segments]
+    assert z1 == [0, 1, 0, 2, 2, 1, 0, 2, 1, 2, 1, 0, 2, 0]  # klucz a,b,a,c,c,b,a,c,b,c,b,a,c,a
+    # Zad III — MCQ-інтерв'ю; Zad IV — TAK/NIE
+    assert len(listening.by_id("s2211_3").segments[0].questions[0].options) == 3
+    for q in listening.by_id("s2211_4").segments[0].questions:
+        assert q.options == ["TAK", "NIE"]
+
+
 def test_2022_03_listening_present():
     assert listening.total_questions(listening.by_id("s2203_1")) == 14
     assert listening.total_questions(listening.by_id("s2203_2")) == 8

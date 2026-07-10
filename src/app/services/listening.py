@@ -1815,6 +1815,151 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ ІСПИТ листопад-2022 (офіц.). Ключі звірено з klucz. ══
+    # Zad I: 14 висловлювань. Ключ: a,b,a,c,c,b,a,c,b,c,b,a,c,a.
+    Exercise(
+        "s2211_1", "Іспит 2022-11 — Zad I (висловлювання)",
+        "Прослухай висловлювання й обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("Na pewno zdasz! Jesteś świetnie przygotowana.",
+                    [LQ("Ta wypowiedź dotyczy:", ["egzaminu", "rozmowy o pracę", "spektaklu"], 0,
+                        "«zdasz, przygotowana» → іспит.")]),
+            Segment("Sto lat młodej parze i szczęścia na nowej drodze życia!",
+                    [LQ("Ta wypowiedź jest z okazji:", ["urodzin", "ślubu", "awansu"], 1,
+                        "«młoda para, nowa droga życia» → весілля.")]),
+            Segment("Jutro zrobię przelew za cały kurs.",
+                    [LQ("Ta wypowiedź oznacza, że kobieta:", ["jutro zapłaci za lekcje", "jutro zacznie lekcje", "będzie prowadzić lekcje"], 0,
+                        "«zrobię przelew za kurs» → завтра заплатить.")]),
+            Segment("Czy doliczyć do tych podręczników reklamówkę?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w punkcie informacji", "w przebieralni", "przy kasie"], 2,
+                        "«doliczyć reklamówkę» → біля каси.")]),
+            Segment("Jakie jest danie dnia i jak długo będę czekać?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w lodziarni", "w sklepie rybnym", "w barze"], 2,
+                        "«danie dnia» → бар/їдальня.")]),
+            Segment("Nie mam drobnych, ale reszty nie trzeba.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["kelnera", "klienta", "sprzedawcy"], 1,
+                        "«reszty nie trzeba» → клієнт.")]),
+            Segment("Pociąg do Warszawy Centralnej wjedzie na tor pierwszy przy peronie drugim.",
+                    [LQ("Ta wypowiedź jest typowa:", ["na dworcu PKP", "na dworcu autobusowym", "na przystanku tramwajowym"], 0,
+                        "«pociąg, tor, peron» → залізничний вокзал.")]),
+            Segment("Ciągle spóźnia się na spotkania. Denerwuje mnie jego zachowanie.",
+                    [LQ("Ta wypowiedź wyraża:", ["obawę", "radę", "krytykę"], 2,
+                        "«denerwuje mnie zachowanie» → критика.")]),
+            Segment("Czy wszystko panu smakowało? Podać coś jeszcze?",
+                    [LQ("Ta wypowiedź jest typowa:", ["przed posiłkiem", "po posiłku", "przy wyjściu"], 1,
+                        "«czy smakowało» → після їжі.")]),
+            Segment("Gdzie mogę odebrać prawo jazdy?",
+                    [LQ("Ta wypowiedź jest typowa:", ["na poczcie", "w biurze podróży", "w urzędzie"], 2,
+                        "«odebrać prawo jazdy» → в установі.")]),
+            Segment("Czy dostanę zniżkę przy zakupie drugiego produktu?",
+                    [LQ("To pytanie o:", ["datę ważności", "możliwe rabaty", "dostępność towaru"], 1,
+                        "«zniżkę» → про знижки.")]),
+            Segment("Mam dwa bilety na piątkowy koncert. Pójdziesz ze mną?",
+                    [LQ("Ta wypowiedź to:", ["zaproszenie", "rekomendacja", "rezygnacja"], 0,
+                        "«pójdziesz ze mną» → запрошення.")]),
+            Segment("W cenie kursu otrzyma pan również wszystkie materiały.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w firmie cateringowej", "w biurze tłumaczeń", "w szkole językowej"], 2,
+                        "«kurs, materiały» → мовна школа.")]),
+            Segment("Czy z tego rachunku mogę robić przelewy w dolarach?",
+                    [LQ("Ta wypowiedź jest typowa:", ["w banku", "na poczcie", "w kantorze"], 0,
+                        "«rachunek, przelewy» → банк.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: a,c,b,a,b,c,b,c.
+    Exercise(
+        "s2211_2", "Іспит 2022-11 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Słyszałam, że Anka przeprowadza się z Polski do Francji? – Tak, już nawet wynajęła tam mieszkanie.",
+                    [LQ("Z dialogu wynika, że Anka:", ["planuje mieszkać za granicą", "chce spędzić wakacje we Francji", "za miesiąc wróci do Polski"], 0,
+                        "«przeprowadza się, wynajęła mieszkanie» → житиме за кордоном.")]),
+            Segment("– Babciu, zagramy w szachy? – Nie tym razem, kochanie, najpierw musisz odrobić lekcje.",
+                    [LQ("Z dialogu wynika, że wnuczka:", ["nie umie grać w szachy", "jest niezdecydowana", "ma inne obowiązki"], 2,
+                        "«musisz odrobić lekcje» → інші обов'язки.")]),
+            Segment("– Zrobiłem kurczaka po tajsku. – Świetnie, lubię poznawać nowe smaki.",
+                    [LQ("Z dialogu wynika, że:", ["kobieta bardzo lubi kuchnię tajską", "kobieta nigdy nie próbowała tej potrawy", "mężczyzna nie umie gotować"], 1,
+                        "«nowe smaki» → ще не куштувала.")]),
+            Segment("– Ile kosztuje bilet na wystawę? – 30 złotych, ale od jutra wstęp jest bezpłatny.",
+                    [LQ("Z dialogu wynika, że:", ["eksponaty niedługo będzie można oglądać za darmo", "wejście na wystawę jest zamknięte", "wystawę można zobaczyć dopiero od jutra"], 0,
+                        "«od jutra bezpłatny» → скоро безкоштовно.")]),
+            Segment("– Może polecimy na jakąś egzotyczną wyspę? – Wiesz przecież, że boję się latać samolotem.",
+                    [LQ("Z dialogu wynika, że:", ["para zaplanowała już podróż", "kobieta marzy o dalekiej podróży", "mężczyzna pierwszy raz poleci samolotem"], 1,
+                        "жінка пропонує/мріє, чоловік боїться → мріє про подорож.")]),
+            Segment("– Gratuluję odważnej decyzji! – Skąd wiesz, że chcę zrezygnować z pracy i założyć szkołę jazdy?",
+                    [LQ("Z dialogu wynika, że mężczyzna:", ["zdał kurs na prawo jazdy", "dostał podwyżkę", "planuje otworzyć własny biznes"], 2,
+                        "«założyć szkołę jazdy» → власний бізнес.")]),
+            Segment("– I jak oceniasz to biuro rachunkowe? – Myślałem, że nie jest dobre, ale myliłem się.",
+                    [LQ("Z dialogu wynika, że mężczyzna:", ["pomylił dwa biura", "zmienił zdanie o biurze", "zgubił rachunek"], 1,
+                        "«myliłem się» → змінив думку.")]),
+            Segment("– Co chciałbyś dostać na urodziny? – Wiesz, że lubię niespodzianki.",
+                    [LQ("Z dialogu wynika, że:", ["kobieta już kupiła prezent", "mężczyzna nie chce prezentu", "kobieta jeszcze nie zdecydowała, co kupić"], 2,
+                        "«lubię niespodzianki» → ще не вирішила.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю з maestro czekolady (Janusz Profus), MCQ (5). Ключ: b,a,c,b,c.
+    Exercise(
+        "s2211_3", "Іспит 2022-11 — Zad III (maestro czekolady)",
+        "Прослухай інтерв'ю з майстром шоколаду. Обери правильну відповідь. Лунає двічі.",
+        [
+            Segment(
+                "Jak zaczęła się Pana przygoda z czekoladą? Kiedyś zrobiłem czekoladową rzeźbę na "
+                "pewne wydarzenie. Prezes firmy Wedel zobaczył ją i był tak zachwycony, że "
+                "postanowił poznać jej twórcę — i tak trafiłem do firmy. Gdzie zdobywał Pan "
+                "umiejętności? Przez wiele lat uczyłem się za granicą, u najlepszych mistrzów — tam "
+                "zdobywałem kwalifikacje. Jaki powinien być prawdziwy maestro czekolady? Przede "
+                "wszystkim musi kochać to, co robi; praca musi sprawiać mu przyjemność, inaczej nic "
+                "z tego nie będzie. Co jest największym problemem w Pana pracy? Ciągły pośpiech, "
+                "wyścig z czasem — zamówień jest dużo i wszystko na już. Skąd czerpie Pan pomysły "
+                "na nowe produkty? Najczęściej z wyjazdów zagranicznych: jeżdżę na targi poza "
+                "Polską i tam szukam inspiracji.",
+                [
+                    LQ("Prezes firmy Wedel:",
+                       ["kupił czekoladową rzeźbę", "chciał poznać twórcę rzeźby", "zaproponował mu praktykę"], 1,
+                       "«postanowił poznać jej twórcę» → хотів познайомитися з творцем."),
+                    LQ("Janusz za granicą:",
+                       ["zdobywał kwalifikacje", "prowadził warsztaty", "pracował w fabryce"], 0,
+                       "«uczyłem się za granicą» → здобував кваліфікацію."),
+                    LQ("Prawdziwy maestro czekolady powinien:",
+                       ["mieć własną cukiernię", "uwielbiać smak czekolady", "pracować z pasją"], 2,
+                       "«musi kochać to, co robi» → працювати з пристрастю."),
+                    LQ("Największym problemem w jego pracy jest:",
+                       ["brak zamówień", "ciągły pośpiech", "praca w nocy"], 1,
+                       "«wyścig z czasem» → постійний поспіх."),
+                    LQ("Pomysły na nowe produkty czerpie:",
+                       ["sam w pracowni", "podczas wizyt w polskich fabrykach", "dzięki wyjazdom zagranicznym"], 2,
+                       "«z wyjazdów zagranicznych, targi poza Polską» → закордонні поїздки."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: styl prowansalski, TAK/NIE (5). Ключ: T,N,T,N,N.
+    Exercise(
+        "s2211_4", "Іспит 2022-11 — Zad IV (styl prowansalski)",
+        "Прослухай текст про провансальський стиль. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Styl prowansalski pochodzi z południa Francji. Jego najważniejszą cechą jest "
+                "naturalność — używa się naturalnych materiałów: drewna, kamienia, lnu. Meble nie "
+                "powinny być nowoczesne; wręcz przeciwnie — im starsze, tym lepiej, cenione są stare, "
+                "tradycyjne sprzęty. Na tkaninach królują motywy roślinne i kwiatowe, zwłaszcza "
+                "lawenda. Trzeba jednak przyznać, że dziś ten styl nie jest już tak popularny jak "
+                "minimalistyczny, choć wciąż ma wielu miłośników. Domy w stylu prowansalskim "
+                "najczęściej buduje się na wsi, w otoczeniu natury, z dala od wielkich miast.",
+                [
+                    LQ("Cechą budynków w stylu prowansalskim jest naturalność.", _TAKNIE, 0,
+                       "ТАК — натуральність, природні матеріали."),
+                    LQ("Meble powinny być nowoczesne.", _TAKNIE, 1,
+                       "НІ — цінуються старі, традиційні меблі."),
+                    LQ("Na materiałach znajdują się wzory kwiatowe.", _TAKNIE, 0,
+                       "ТАК — рослинні й квіткові мотиви, лаванда."),
+                    LQ("Dziś styl prowansalski jest tak samo modny jak minimalistyczny.", _TAKNIE, 1,
+                       "НІ — не такий популярний, як мінімалістичний."),
+                    LQ("Domy w tym stylu buduje się najczęściej w dużych miastach.", _TAKNIE, 1,
+                       "НІ — на селі, серед природи, подалі від великих міст."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
