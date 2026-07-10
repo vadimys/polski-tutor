@@ -13,6 +13,7 @@ import logging
 from datetime import date, timedelta
 
 from aiogram import Bot
+from redis.asyncio import Redis
 
 from app.bot.keyboards import coach_kb
 from app.config import settings
@@ -22,6 +23,25 @@ from app.services import access, clock, gdpr, goals, state
 logger = logging.getLogger(__name__)
 
 _PURGE_HOUR = 3  # ретеншн-очищення denied-користувачів — раз на добу вночі
+_NUDGE_TTL = 90_000  # ~25 год — дедуп-мітка нагадування самоскидається щодоби
+
+_redis: Redis | None = None
+
+
+def _r() -> Redis:
+    global _redis
+    if _redis is None:
+        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+async def _already_nudged(user_id: int, today: str) -> bool:
+    """Чи вже слали нагадування сьогодні (Redis → переживає рестарт бота)."""
+    return bool(await _r().exists(f"polski:nudge:{user_id}:{today}"))
+
+
+async def _mark_nudged(user_id: int, today: str) -> None:
+    await _r().set(f"polski:nudge:{user_id}:{today}", "1", ex=_NUDGE_TTL)
 
 
 async def _seconds_until_next_hour() -> float:
@@ -56,18 +76,18 @@ async def _personal_nudge(user_id: int) -> str:
     )
 
 
-async def _nudge_due(bot: Bot, hour: int, today: str, sent_on: dict[int, str]) -> int:
-    """Нагадати всім, у кого персональна година = поточній (раз на добу, з дедуплікацією)."""
+async def _nudge_due(bot: Bot, hour: int, today: str) -> int:
+    """Нагадати всім, у кого персональна година = поточній (раз на добу, дедуп у Redis)."""
     sent = 0
     for uid in await state.all_user_ids():
         if not await access.is_allowed(uid, settings.admin_id):
             continue  # не турбуємо не-схвалених
         st = await state.load(uid)
-        if st.lesson_hour != hour or sent_on.get(uid) == today:
+        if st.lesson_hour != hour or await _already_nudged(uid, today):
             continue
         try:
             await bot.send_message(uid, await _personal_nudge(uid), reply_markup=coach_kb())
-            sent_on[uid] = today
+            await _mark_nudged(uid, today)
             sent += 1
         except Exception:
             logger.exception("nudge failed uid=%s", uid)
@@ -75,14 +95,13 @@ async def _nudge_due(bot: Bot, hour: int, today: str, sent_on: dict[int, str]) -
 
 
 async def daily_nudge_loop(bot: Bot) -> None:
-    sent_on: dict[int, str] = {}  # uid → дата останнього нагадування (дедуплікація в межах доби)
     purged_on: str | None = None
     while True:
         try:
             await asyncio.sleep(await _seconds_until_next_hour())
             now = clock.now_local()
             today = clock.today_local().isoformat()
-            sent = await _nudge_due(bot, now.hour, today, sent_on)
+            sent = await _nudge_due(bot, now.hour, today)
             if sent:
                 logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
             if now.hour == _PURGE_HOUR and purged_on != today:  # ретеншн — раз на добу

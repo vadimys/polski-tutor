@@ -36,6 +36,15 @@ async def allow_ai(user_id: int) -> bool:
     return n <= settings.ai_daily_limit
 
 
+async def remaining(user_id: int) -> int:
+    """Скільки AI-вправ ще доступно сьогодні (НЕ інкрементує). Адмін — повний ліміт."""
+    if settings.admin_id and user_id == settings.admin_id:
+        return settings.ai_daily_limit
+    raw = await _r().get(_key(user_id))
+    used = int(raw) if raw else 0
+    return max(0, settings.ai_daily_limit - used)
+
+
 async def refund_ai(user_id: int) -> None:
     """Повернути юніт квоти, якщо AI-виклик не вдався (щоб фейл не палив ліміт)."""
     if settings.admin_id and user_id == settings.admin_id:

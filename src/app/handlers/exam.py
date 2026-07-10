@@ -119,16 +119,16 @@ def _seq_sections(seq: list[dict]) -> list[str]:
 # ── інтро ────────────────────────────────────────────────────────────────
 @router.message(Command("egzamin"))
 async def cmd_exam(message: Message) -> None:
-    await _intro(message)
+    await _intro(message, message.from_user.id)
 
 
 @router.callback_query(F.data == "exam:open")
 async def cb_open(cb: CallbackQuery) -> None:
     await cb.answer()
-    await _intro(cb.message)
+    await _intro(cb.message, cb.from_user.id)
 
 
-async def _intro(message: Message) -> None:
+async def _intro(message: Message, user_id: int) -> None:
     exam = content.latest()  # тренуємось на найновішому повному офіційному тесті
     seq = _build_seq(exam.id)
     if not seq:
@@ -141,6 +141,13 @@ async def _intro(message: Message) -> None:
         b.button(text="📚 Обрати інший тест", callback_data="exam:pick")
     b.button(text="⬅️ Меню", callback_data="menu:home")
     b.adjust(1)
+    # попередження: якщо AI-ліміт вичерпано — трансформації підуть у самоперевірку
+    ai_warn = ""
+    if exam.open_tasks() and ai.enabled() and await limits.remaining(user_id) == 0:
+        ai_warn = (
+            "\n⚠️ <i>Денний ліміт AI вичерпано — трансформації сьогодні оцінимо лише "
+            "за офіційним зразком (самоперевірка, поза балами).</i>"
+        )
     await message.answer(
         f"🎓 <b>Повний мок іспиту</b>\nЗа замовчуванням — найновіший: <b>{exam.label}</b>\n\n"
         f"Секції: {labels} — <b>{len(seq)}</b> завдань (усі типи: 🎧 аудіо-записи, вибір, "
@@ -148,7 +155,8 @@ async def _intro(message: Message) -> None:
         "⏱ Режим іспиту: <b>без підказок і вердиктів</b>, результат у балах — у кінці. "
         f"Орієнтовний час за регламентом — <b>~{_budget_min(seq)} хв</b>; я заміряю, "
         "скільки насправді пішло.\n"
-        "<i>Наприкінці зведу всі 5 модулів іспиту й запропоную добити письмо й мовлення.</i>",
+        "<i>Наприкінці зведу всі 5 модулів іспиту й запропоную добити письмо й мовлення.</i>"
+        + ai_warn,
         reply_markup=b.as_markup(),
     )
 
