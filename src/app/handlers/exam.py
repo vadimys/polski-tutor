@@ -26,8 +26,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
 from app.bot.keyboards import exam_kb, exam_match_kb, exam_text_kb, menu_kb, to_menu_kb
-from app.integrations import ai
-from app.services import exam_scale, freefill, goals, limits, mistakes, opencheck, progress
+from app.integrations import ai, tts
+from app.services import (
+    exam_scale,
+    freefill,
+    goals,
+    limits,
+    listening,
+    mistakes,
+    opencheck,
+    progress,
+)
 from app.services import state as user_state
 
 router = Router()
@@ -42,8 +51,16 @@ class Exam(StatesGroup):
 
 # ── побудова послідовності кроків ────────────────────────────────────────
 def _build_seq(exam_id: str) -> list[dict]:
-    """Кроки моку: спершу MCQ по секціях, далі структуровані таски (match/fill/open)."""
+    """Кроки моку: спершу аудіювання (Słuchanie), тоді MCQ по секціях, далі таски."""
     seq: list[dict] = []
+    # аудіювання першим — як у реальному іспиті (Rozumienie ze słuchu — модуль 1)
+    for ex_id in content.exam_listening_ids(exam_id):
+        ex = listening.by_id(ex_id)
+        if not ex:
+            continue
+        for si, seg in enumerate(ex.segments):
+            for qi in range(len(seg.questions)):
+                seq.append({"t": "listen", "sec": "sluchanie", "ex": ex_id, "si": si, "qi": qi})
     for sec in content.exam_sections(exam_id):
         for i in range(len(content.exam_items(exam_id, sec))):
             seq.append({"t": "mcq", "sec": sec, "i": i})
@@ -94,10 +111,10 @@ async def _intro(message: Message) -> None:
     b.adjust(1)
     await message.answer(
         f"🎓 <b>Повний мок іспиту</b>\nЗа замовчуванням — найновіший: <b>{exam.label}</b>\n\n"
-        f"Секції: {labels} — <b>{len(seq)}</b> завдань (усі типи: вибір, зіставлення, "
-        "форми, трансформації).\n"
+        f"Секції: {labels} — <b>{len(seq)}</b> завдань (усі типи: 🎧 аудіо-записи, вибір, "
+        "зіставлення, форми, трансформації).\n"
         "⏱ Режим іспиту: <b>без підказок і вердиктів</b>, результат у балах — у кінці. "
-        "Виділи ~60–90 хв і не відволікайся.\n"
+        "Виділи ~90–120 хв і не відволікайся.\n"
         "<i>Письмо й мовлення оцінюються окремо (/pisanie, /mowienie).</i>",
         reply_markup=b.as_markup(),
     )
@@ -133,10 +150,33 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
     await _send_step(cb.message, exam_id, seq, 0)
 
 
+# ── аудіо-запис сегмента (piper TTS) ─────────────────────────────────────────
+async def _play_audio(message: Message, text: str) -> None:
+    """Озвучує запис сегмента; якщо TTS недоступний — показує транскрипт (деградація)."""
+    from aiogram.types import BufferedInputFile
+
+    data = await tts.synthesize(text)
+    if data:
+        await message.answer_voice(
+            BufferedInputFile(data, filename="egzamin.ogg"),
+            caption="🎧 Прослухай запис, тоді відповідай на питання нижче.",
+        )
+    else:
+        await message.answer(f"🔇 <i>(аудіо недоступне — прочитай транскрипт)</i>\n\n{html.escape(text)}")
+
+
 # ── показ кроку ────────────────────────────────────────────────────────────
 async def _send_step(message: Message, exam_id: str, seq: list[dict], pos: int) -> None:
     step = seq[pos]
     sec, head = step["sec"], f"🎓 <b>Мок · {_LABEL[step['sec']]}</b> · {pos + 1}/{len(seq)}"
+
+    # преамбула аудіо-вправи (назва/інструкція — раз) + запис перед першим питанням сегмента
+    if step["t"] == "listen":
+        ex = listening.by_id(step["ex"])
+        if ex and step["si"] == 0 and step["qi"] == 0:
+            await message.answer(f"🎧 <b>{html.escape(ex.title)}</b>\n\n{ex.intro}")
+        if ex and step["qi"] == 0:
+            await _play_audio(message, ex.segments[step["si"]].audio)
 
     # преамбула на початку структурованого таска (показуємо опору один раз)
     if step["t"] == "match" and step["gi"] == 0:
@@ -149,7 +189,10 @@ async def _send_step(message: Message, exam_id: str, seq: list[dict], pos: int) 
         icon = "✏️" if step["t"] == "fill" else "🔄"
         await message.answer(f"{icon} <b>{html.escape(t.title)}</b>\n\n{t.intro}")
 
-    if step["t"] == "mcq":
+    if step["t"] == "listen":
+        q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
+        await message.answer(f"{head}\n\n🎧 {html.escape(q.text)}", reply_markup=exam_kb(q.options, pos))
+    elif step["t"] == "mcq":
         it = content.exam_items(exam_id, sec)[step["i"]]
         ctx = f"<i>{html.escape(it.context)}</i>\n\n" if it.context else ""
         await message.answer(f"{head}\n\n{ctx}{html.escape(it.question)}", reply_markup=exam_kb(it.options, pos))
@@ -309,7 +352,10 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
 
 
 def _grade_closed(exam_id: str, step: dict, ans) -> bool:
-    """Оцінка закритого кроку (mcq/match/fill)."""
+    """Оцінка закритого кроку (listen/mcq/match/fill)."""
+    if step["t"] == "listen":
+        q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
+        return ans == q.correct
     if step["t"] == "mcq":
         it = content.exam_items(exam_id, step["sec"])[step["i"]]
         return ans == it.correct
@@ -355,7 +401,10 @@ async def _grade_open(user_id: int, exam_id: str, seq: list[dict], answers: dict
 
 async def _record_mistake(user_id: int, exam_id: str, step: dict) -> None:
     """Логуємо неправильні закриті питання в колоду (open/пропуски — без опцій — пропускаємо)."""
-    if step["t"] == "mcq":
+    if step["t"] == "listen":
+        q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
+        await mistakes.add(user_id, step["sec"], q.text, list(q.options), q.correct, q.explain)
+    elif step["t"] == "mcq":
         it = content.exam_items(exam_id, step["sec"])[step["i"]]
         await mistakes.add(user_id, step["sec"], it.question, list(it.options), it.correct, it.explain)
     elif step["t"] == "match":

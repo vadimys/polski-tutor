@@ -5,14 +5,21 @@ from app.handlers import exam
 
 
 def test_build_seq_includes_all_types_for_2020():
+    from app.services import listening
+
     seq = exam._build_seq("2020")
-    assert {s["t"] for s in seq} == {"mcq", "match", "fill", "open"}
-    # кількість кроків = MCQ + усі під-пункти тасків
+    assert {s["t"] for s in seq} == {"listen", "mcq", "match", "fill", "open"}
+    # кількість кроків = аудіо-питання + MCQ + усі під-пункти тасків
+    n_listen = sum(
+        len(seg.questions)
+        for lid in content.exam_listening_ids("2020")
+        for seg in listening.by_id(lid).segments
+    )
     n_mcq = len(content.by_id("2020").items)
     n_match = sum(len(t.prompts) for t in content.exam_match_tasks("2020"))
     n_fill = sum(len(t.prompts) for t in content.exam_fill_tasks("2020"))
     n_open = sum(len(t.prompts) for t in content.exam_open_tasks("2020"))
-    assert len(seq) == n_mcq + n_match + n_fill + n_open
+    assert len(seq) == n_listen + n_mcq + n_match + n_fill + n_open
 
 
 def test_2019_seq_mcq_only():
@@ -27,7 +34,18 @@ def test_all_exams_buildable_for_picker():
 
 
 def test_seq_sections_stable_order():
-    assert exam._seq_sections(exam._build_seq("2020")) == ["czytanie", "gramatyka"]
+    # аудіювання першим (модуль 1 реального іспиту), тоді читання, граматика
+    assert exam._seq_sections(exam._build_seq("2020")) == ["sluchanie", "czytanie", "gramatyka"]
+
+
+def test_grade_closed_listen():
+    from app.services import listening
+
+    seq = exam._build_seq("2020")
+    step = next(s for s in seq if s["t"] == "listen")
+    q = listening.by_id(step["ex"]).segments[step["si"]].questions[step["qi"]]
+    assert exam._grade_closed("2020", step, q.correct)
+    assert not exam._grade_closed("2020", step, (q.correct + 1) % len(q.options))
 
 
 def test_grade_closed_mcq():

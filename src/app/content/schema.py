@@ -87,6 +87,9 @@ class Exam:
     year: int
     items: list[MCQItem] = field(default_factory=list)
     tasks: list[Task] = field(default_factory=list)  # структуровані (не-MCQ) завдання
+    # id вправ аудіювання (services.listening) цього тесту — для повного моку /egzamin.
+    # Тут лише рядки (без імпорту services) — резолвляться через listening.by_id.
+    listening_ids: list[str] = field(default_factory=list)
 
     def section(self, section: str) -> list[MCQItem]:
         return [it for it in self.items if it.section == section]

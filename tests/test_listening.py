@@ -152,6 +152,16 @@ def test_2022_06_listening_present():
     assert len(listening.by_id("s2206_4").segments[0].questions[0].options) == 3
 
 
+def test_content_listening_ids_all_resolve():
+    """Звʼязок «тест → аудіо» (content._LISTENING) не має одруків — кожен id існує."""
+    from app import content
+
+    for e in content.EXAMS:
+        for lid in e.listening_ids:
+            assert listening.by_id(lid) is not None, f"{e.id}: неіснуючий audio-id {lid}"
+    assert content.latest().listening_ids  # найновіший повний тест має аудіо
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5

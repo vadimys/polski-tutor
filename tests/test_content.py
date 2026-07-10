@@ -37,6 +37,22 @@ def test_deterministic_order():
     assert content.all_items("gramatyka") == content.all_items("gramatyka")
 
 
+def test_mock_seq_includes_listening_first():
+    """Повний мок /egzamin включає Słuchanie і ставить його першим (як реальний іспит)."""
+    from app.handlers.exam import _build_seq
+
+    seq = _build_seq(content.latest().id)
+    assert any(s["t"] == "listen" for s in seq), "мок має містити аудіо-кроки"
+    assert seq[0]["sec"] == "sluchanie", "аудіювання — перший модуль"
+    # кожен listen-крок валідно резолвиться у питання
+    from app.services import listening
+
+    for s in seq:
+        if s["t"] == "listen":
+            ex = listening.by_id(s["ex"])
+            assert ex and 0 <= s["qi"] < len(ex.segments[s["si"]].questions)
+
+
 def test_match_tasks_wellformed():
     tasks = content.all_match_tasks()
     assert tasks, "має бути хоча б одне завдання-зіставлення"
