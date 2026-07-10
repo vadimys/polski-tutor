@@ -1676,6 +1676,145 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит червень-2022 ════════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: b,a,c,b,c,a,a,b,c,c,a,b,c,a.
+    Exercise(
+        "s2206_1", "Іспит 2022-06 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Znowu nie odrobiłeś pracy domowej.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["kelnerki", "nauczycielki", "sprzątaczki"], 1, "про домашнє завдання → вчителька.")]),
+            Segment("Aniu, czy poszłabyś ze mną na kolację?",
+                    [LQ("Ta wypowiedź oznacza:", ["propozycję", "przeprosiny", "odmowę"], 0, "запрошення на вечерю → пропозиція.")]),
+            Segment("Na widowni proszę zajmować co drugie miejsce.",
+                    [LQ("Ta wypowiedź oznacza, że:", ["można siadać wszędzie", "wszystkie miejsca są zajęte", "połowa miejsc musi być wolna"], 2,
+                        "«co drugie» → половина вільна.")]),
+            Segment("Poproszę bułkę i razowy krojony.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w kawiarni", "w piekarni", "w sklepie mięsnym"], 1, "булка, хліб → пекарня.")]),
+            Segment("Jaka szkoda, że nie przyjedziesz.",
+                    [LQ("Ta wypowiedź oznacza:", ["złość", "zadowolenie", "smutek"], 2, "«jaka szkoda» → смуток.")]),
+            Segment("Kochani, dzisiaj świętujemy mój awans, więc ja płacę rachunek za obiad.",
+                    [LQ("Ta wypowiedź oznacza, że ta osoba:", ["płaci za wszystkich", "płaci tylko za siebie", "inni płacą za niego"], 0,
+                        "«ja płacę rachunek» → платить за всіх.")]),
+            Segment("Wczoraj nasi skoczkowie narciarscy wywalczyli złoto.",
+                    [LQ("Ta wypowiedź oznacza, że sportowcy:", ["zdobyli pierwsze miejsce", "nie zdobyli medalu", "przegrali zawody"], 0,
+                        "золото → перше місце.")]),
+            Segment("W naszej firmie panuje naprawdę dobra atmosfera.",
+                    [LQ("Ta wypowiedź oznacza, że w firmie:", ["jest świeże powietrze", "miło się pracuje", "są ładne kolory ścian"], 1,
+                        "добра атмосфера → приємно працювати.")]),
+            Segment("Poproszę dwa bilety na spektakl o dwudziestej.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w autobusie", "w kinie", "w teatrze"], 2, "спектакль → театр.")]),
+            Segment("Proszę pani, to szczepienie jest obowiązkowe przed operacją.",
+                    [LQ("Ta wypowiedź oznacza, że:", ["można się zaszczepić", "nie trzeba się szczepić", "trzeba przyjąć szczepionkę"], 2,
+                        "«obowiązkowe» → треба щепитися.")]),
+            Segment("Ten zielony płaszcz jest dla mnie w sam raz.",
+                    [LQ("Ta wypowiedź oznacza, że ubranie:", ["pasuje", "jest za duże", "jest za małe"], 0, "«w sam raz» → пасує.")]),
+            Segment("Jedzenie i transport są wliczone w cenę wycieczki.",
+                    [LQ("Ta wypowiedź oznacza, że:", ["za dojazd płaci się dodatkowo", "w ofercie jest wyżywienie", "trzeba kupić osobno obiady"], 1,
+                        "їжа включена → харчування в оферті.")]),
+            Segment("Dziś polecamy ogórkową na żeberkach.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["lekarza", "klienta", "kelnera"], 2, "«polecamy zupę» → офіціант.")]),
+            Segment("Jak mogłaś pokazać jej te zdjęcia?!",
+                    [LQ("Ta wypowiedź oznacza:", ["złość", "radość", "zainteresowanie"], 0, "докір → злість.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: b,c,c,a,c,b,b,a.
+    Exercise(
+        "s2206_2", "Іспит 2022-06 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Ile kosztował cię remont łazienki? – Już przestałam liczyć, żeby się nie denerwować.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["remont kosztował zgodnie z planem", "jej zdaniem remont kosztował zbyt dużo", "udało się zaoszczędzić trochę pieniędzy"], 1,
+                        "«przestałam liczyć, żeby się nie denerwować» → задорого.")]),
+            Segment("– Przekroczyła pani dozwoloną prędkość o 30 km. – To niemożliwe, wydawało mi się, że jechałam wolniej.",
+                    [LQ("Z dialogu wynika, że kobieta:", ["jechała za wolno", "jechała zgodnie z przepisami", "nie zgadza się z policjantem"], 2,
+                        "«to niemożliwe» → не згодна.")]),
+            Segment("– Co ci przeszkadza w tym mieście? – Głównie hałas, ale też zbyt szybkie tempo życia.",
+                    [LQ("Z dialogu wynika, że ona:", ["lubi miejski rytm życia", "nie lubi korków", "ceni ciszę i spokój"], 2,
+                        "заважає шум і темп → цінує тишу.")]),
+            Segment("– Co powiesz na urlop nad morzem? Słońce, plaża, leniuchowanie… – Czyli to samo co rok temu?",
+                    [LQ("Z dialogu dowiadujemy się, że on proponuje:", ["wakacje podobne do poprzednich", "nowy sposób spędzenia urlopu", "aktywne wakacje nad wodą"], 0,
+                        "«to samo co rok temu» → як торік.")]),
+            Segment("– I jak egzamin? – Znowu źle napisałam część teoretyczną.",
+                    [LQ("Z dialogu wynika, że kobieta:", ["zdała egzamin", "pierwszy raz podeszła do egzaminu", "ponownie zdawała egzamin"], 2,
+                        "«znowu» → повторно складала.")]),
+            Segment("– Chciałabym się umówić na mycie i strzyżenie. – Najbliższy wolny termin mamy w następnym tygodniu w środę.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["wizyta jest możliwa pod koniec tygodnia", "wolne terminy są w przyszłym tygodniu", "ona planuje wizytę w myjni"], 1,
+                        "термін наступного тижня.")]),
+            Segment("– Codziennie tracę mnóstwo czasu na dojazd do pracy. – Gdybyś jeździł tramwajem zamiast samochodem, nie stałbyś w korkach.",
+                    [LQ("Z dialogu dowiadujemy się, że:", ["on narzeka na transport publiczny", "ona radzi mu dojazd transportem publicznym", "tramwaj jest tańszy niż samochód"], 1,
+                        "радить трамвай → громадський транспорт.")]),
+            Segment("– Kochanie, dzisiaj wrócę później z pracy. – Jak to? Przecież obiecaliśmy pojechać po ciocię do szpitala.",
+                    [LQ("Z dialogu wynika, że:", ["oni mieli odebrać ciocię ze szpitala", "ona przypomina mu o wizycie u cioci", "oni powinni zawieźć ciocię do lekarza"], 0,
+                        "обіцяли забрати тітку зі шпиталю.")]),
+        ],
+    ),
+    # Zad III: розмова про домашню освіту, TAK/NIE (5). Ключ: T,T,N,T,N.
+    Exercise(
+        "s2206_3", "Іспит 2022-06 — Zad III (домашня освіта)",
+        "Прослухай розмову про домашню освіту. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Jak rozpocząć edukację domową? To proste. Wystarczy zgłosić się do dyrektora "
+                "szkoły i powiedzieć, że chcielibyśmy przejść na edukację pozaszkolną. Trzeba "
+                "wypełnić wniosek z prośbą o zezwolenie, dołączyć oświadczenie, że mamy warunki w "
+                "domu, i zobowiązanie, że dziecko przystąpi do egzaminów klasyfikacyjnych – trzy "
+                "dokumenty. Podczas egzaminów nie wszystkie przedmioty są brane pod uwagę, np. WF "
+                "czy przedmioty artystyczne. Czy można to realizować w dowolnej placówce? "
+                "Doradzałbym szkołę przyjaźnie nastawioną do edukacji domowej, bo nie każda "
+                "publiczna ma dobre doświadczenia. Edukacja pozaszkolna jest bezpłatna – są "
+                "dotacje, które idą za dzieckiem. Ale edukacja domowa nie jest dla każdego: rodzice "
+                "muszą się naprawdę zaangażować, nikt ich nie zastąpi.",
+                [
+                    LQ("Rodzice sami deklarują, że dzieci mogą uczyć się w domu.", _TAKNIE, 0,
+                       "ТАК — подають заяву й oświadczenie про умови."),
+                    LQ("Egzaminy klasyfikacyjne nie obejmują plastyki czy muzyki.", _TAKNIE, 0,
+                       "ТАК — не всі предмети (напр. WF, мистецькі)."),
+                    LQ("Podczas edukacji domowej warto wybrać najbliższą szkołę.", _TAKNIE, 1,
+                       "НІ — варто школу, ПРИХИЛЬНУ до домашньої освіти, не найближчу."),
+                    LQ("Rodzice nie płacą za nauczanie domowe.", _TAKNIE, 0,
+                       "ТАК — безкоштовно (дотації йдуть за дитиною)."),
+                    LQ("Rodzice mogą liczyć na pomoc nauczycieli.", _TAKNIE, 1,
+                       "НІ — мусять самі залучитися, ніхто їх не замінить."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: інтерв'ю з лікаркою про домашнє лікування, MCQ (5). Ключ: a,b,b,a,c.
+    Exercise(
+        "s2206_4", "Іспит 2022-06 — Zad IV (домашнє лікування)",
+        "Прослухай інтерв'ю з лікаркою про домашні способи лікування. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Kiedy dziecko gorączkuje, zimne okłady pomagają? Jak najbardziej, ale jeśli mały "
+                "pacjent ma 39-40 stopni, najpierw podajemy lek przeciwgorączkowy, a po jakimś "
+                "czasie stosujemy okłady na kark lub szyję. Z czego je zrobić? Z zimnej wody – "
+                "lepiej nie przykładać kostek lodu, bo to nieprzyjemne. Każdy z nas jest po trochu "
+                "lekarzem dla siebie: potrafimy powiedzieć, co nam służy. Są tacy, którzy nie lubią "
+                "okładów, i tacy, którzy od razu kładą ręcznik na głowie. Dzieci w gorączce "
+                "domagają się zimnych płynów, a rodzice odmawiają, bo się boją – ale to bardzo "
+                "dobra metoda, żeby obniżyć temperaturę. A kąpiele? Kąpiel chłodząca dla dziecka z "
+                "40 stopniami gorączki powinna odbywać się w wodzie 39 stopni, czyli o stopień "
+                "niżej. Nie wrzucamy chorego do zimnej, trzydziestostopniowej wody, bo można "
+                "spowodować wstrząs termiczny.",
+                [
+                    LQ("Kiedy dziecko ma około 40 stopni, należy:",
+                       ["podać środek na obniżenie temperatury", "natychmiast zrobić zimny okład", "od razu zastosować obie metody"], 0,
+                       "спершу жарознижувальне, потім компрес."),
+                    LQ("Najlepiej stosować okłady:", ["z lodu", "z chłodnej wody", "na brzuch"], 1,
+                       "із прохолодної води (не лід)."),
+                    LQ("Lekarka uważa, że pacjenci:", ["najlepiej leczą się sami", "mają swoje preferencje", "rzadko mówią, co im dolega"], 1,
+                       "одні не люблять компресів, інші навпаки → мають уподобання."),
+                    LQ("Według lekarki chłodne napoje:",
+                       ["mogą pomagać małym pacjentom", "nie powinny być podawane chorym dzieciom", "są podawane chorym dzieciom przez rodziców"], 0,
+                       "холодні напої — добрий спосіб знизити температуру."),
+                    LQ("Dla dziecka z wysoką gorączką temperatura kąpieli chłodzącej powinna:",
+                       ["wynosić maksymalnie 30 stopni", "wynosić tyle stopni, ile temperatura ciała", "być niewiele niższa niż temperatura ciała"], 2,
+                       "на один градус нижче (39 при 40)."),
+                ],
+            )
+        ],
+    ),
 ]
 
 

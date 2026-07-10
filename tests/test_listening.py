@@ -128,6 +128,17 @@ def test_2022_03_listening_present():
     assert z1 == [2, 1, 0, 0, 1, 2, 1, 2, 0, 2, 2, 1, 0, 1]
 
 
+def test_2022_06_listening_present():
+    assert listening.total_questions(listening.by_id("s2206_1")) == 14
+    assert listening.total_questions(listening.by_id("s2206_2")) == 8
+    assert listening.total_questions(listening.by_id("s2206_3")) == 5
+    assert listening.total_questions(listening.by_id("s2206_4")) == 5
+    # Zad III тут TAK/NIE, Zad IV — a/b/c
+    for q in listening.by_id("s2206_3").segments[0].questions:
+        assert q.options == ["TAK", "NIE"]
+    assert len(listening.by_id("s2206_4").segments[0].questions[0].options) == 3
+
+
 def test_2020_zad5_matching_as_mcq():
     z5 = listening.by_id("s2020_5")
     assert listening.total_questions(z5) == 5
