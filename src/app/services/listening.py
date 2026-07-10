@@ -802,6 +802,161 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит лютий-2023 ══════════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: c,b,a,c,a,c,a,b,b,c,a,a,b,c.
+    Exercise(
+        "s2302_1", "Іспит 2023-02 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Aniu, życzę ci powodzenia na egzaminie!",
+                    [LQ("Ta wypowiedź jest typowa:",
+                        ["w czasie egzaminu", "po egzaminie", "przed egzaminem"], 2, "«życzę powodzenia» → перед іспитом.")]),
+            Segment("W tym tygodniu wołowina pięćdziesiąt procent taniej.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w piekarni", "w supermarkecie", "u dietetyka"], 1,
+                        "яловичина зі знижкою → супермаркет.")]),
+            Segment("Uwaga! Zaginął pies, mały, czarny, z białym ogonem.",
+                    [LQ("Ta wypowiedź to fragment:", ["ogłoszenia", "reklamy", "prośby"], 0, "«zaginął pies» → оголошення.")]),
+            Segment("Poproszę pomidorową i zapiekane brokuły.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w sklepie warzywnym", "na bazarze", "w barze mlecznym"], 2,
+                        "замовлення страв → бар/їдальня.")]),
+            Segment("Ale mam widok z okna! Nie mogę się napatrzeć!",
+                    [LQ("Ta wypowiedź oznacza:", ["radość", "zazdrość", "znudzenie"], 0, "захват → радість.")]),
+            Segment("Ostatnio ty wybierałaś film, teraz moja kolej.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["czeka na propozycję", "chce oglądać filmy o podróżach", "chce dziś decydować"], 2,
+                        "«moja kolej» → хоче вирішувати.")]),
+            Segment("Wczoraj znowu wygrałam wyścig kolarski.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["jeździła rowerem", "brała udział w rejsie", "była ostatnia na mecie"], 0,
+                        "wyścig kolarski → їздила велосипедом.")]),
+            Segment("Miałem dziś test z matematyki. Dostałem piątkę.",
+                    [LQ("Ta wypowiedź jest typowa dla:", ["pacjenta", "ucznia", "kierowcy"], 1, "тест, п'ятірка → учень.")]),
+            Segment("Następny przystanek: Gdańsk Główny.",
+                    [LQ("Ta wypowiedź jest typowa:", ["na lotnisku", "w tramwaju", "na peronie"], 1, "«następny przystanek» → трамвай.")]),
+            Segment("Przed wejściem konieczna jest zmiana obuwia.",
+                    [LQ("Ta wypowiedź oznacza, że:",
+                        ["można zmienić buty", "nie wolno mieć butów", "trzeba włożyć inne buty"], 2,
+                        "«zmiana obuwia konieczna» → треба взути інше.")]),
+            Segment("Wprost uwielbiam włoską kuchnię.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["lubi włoskie dania", "lubi włoskie meble", "mówi o podróżach"], 0, "«kuchnię» → страви.")]),
+            Segment("Kasiu, do twarzy ci w tej fryzurze.",
+                    [LQ("Ta wypowiedź to:", ["komplement", "krytyka", "porada"], 0, "«do twarzy ci» → комплімент.")]),
+            Segment("Chętnie zjadłabym coś słodkiego do kawy.",
+                    [LQ("Ta wypowiedź oznacza, że osoba:",
+                        ["prosi o cukier do kawy", "ma ochotę na deser", "jest bardzo głodna"], 1, "«coś słodkiego» → десерт.")]),
+            Segment("Mam iść z tobą do opery? Naprawdę?",
+                    [LQ("Ta wypowiedź oznacza, że osoba:", ["jest obojętna", "zgadza się", "jest zdziwiona"], 2,
+                        "«Naprawdę?» → здивування.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: c,c,b,a,a,a,c,a.
+    Exercise(
+        "s2302_2", "Іспит 2023-02 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Wyjeżdżałeś ostatnio na wakacje, gdzie byłeś? – Jeździłem trochę tu i tam.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona pyta o plany wakacyjne", "on odpowiada dokładnie", "on nie podaje szczegółów"], 2,
+                        "«tu i tam» → без деталей.")]),
+            Segment("– Przy zakupie lodówki pralkę można kupić 30 procent taniej. – Biorę obydwa urządzenia!",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona rezygnuje z zakupu", "ona kupuje tylko lodówkę", "ona kupuje lodówkę i pralkę"], 2,
+                        "«obydwa urządzenia» → обидва.")]),
+            Segment("– O co chodzi w tym zadaniu z fizyki? – Też się zastanawiam.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona potrafi zrobić zadanie", "on nie rozumie zadania", "on wyjaśnia polecenie"], 1,
+                        "«też się zastanawiam» → не розуміє.")]),
+            Segment("– Robię kolację, o której będziesz w domu? – Trochę się spóźnię, będę za około "
+                    "czterdzieści pięć minut. Muszę skończyć raport.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["coś ją zatrzymało", "ona wróci za kwadrans", "ona będzie punktualnie"], 0, "звіт затримав.")]),
+            Segment("– Ile jeszcze mam na ciebie czekać? – Jestem już gotowa.",
+                    [LQ("Z dialogu wynika, że kobieta:",
+                        ["może już wyjść", "potrzebuje kilku minut", "właśnie gotuje obiad"], 0, "«już gotowa» → може вийти.")]),
+            Segment("– Od tygodnia ciągle jest mi niedobrze. – Może masz osłabienie wiosenne?",
+                    [LQ("Z dialogu wynika, że kobieta:",
+                        ["od kilku dni ma złe samopoczucie", "informuje o wizycie u lekarza",
+                         "dzisiaj wyjątkowo źle się czuje"], 0, "«od tygodnia niedobrze» → кілька днів.")]),
+            Segment("– Muszę oddać samochód do naprawy. – Nie lepiej kupić nowy? Ten ma już tyle lat.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["on sam naprawi samochód", "samochód jest u mechanika", "ona nie widzi sensu w naprawie"], 2,
+                        "радить купити новий → нема сенсу ремонтувати.")]),
+            Segment("– Chciałbym, żebyśmy w tym roku spędzili święta u moich rodziców. – Obiecałam "
+                    "babci i dziadkowi, że przyjdziemy do nich.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona już umówiła się z dziadkami", "on chce zaprosić rodziców", "ona zgadza się na propozycję"], 0,
+                        "обіцяла бабусі й дідусю.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю про волонтерів у Татрах. Ключ: a,b,c,a,b.
+    Exercise(
+        "s2302_3", "Іспит 2023-02 — Zad III (волонтаріат у Татрах)",
+        "Прослухай інтерв'ю про волонтерів Татранського парку. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Co roku Tatrzański Park Narodowy w ramach programu „Wolontariat dla Tatr” angażuje "
+                "młodych ludzi, którzy pomagają w edukowaniu turystów. Jedną z uczestniczek jest "
+                "Anna Nowicka. Aniu, jak można dostać się do programu? Najpierw trzeba odwiedzić "
+                "stronę Parku i wypełnić formularz zgłoszeniowy online. Następnie wybrać z listy "
+                "zadanie, którym chcielibyśmy się zająć – jest kilka form aktywności. Co musi umieć "
+                "wolontariusz? Najważniejsze to dobra kondycja fizyczna, podstawowa znajomość Tatr "
+                "i regulaminu, a poza tym chęci i wolny czas. Nie jest trudno nim zostać. Co "
+                "należało do twoich obowiązków? Przeprowadzałam ankiety wśród turystów i zachęcałam "
+                "ich, by zabierali ze sobą to, co przynieśli: puste opakowania, chusteczki, "
+                "papierki. Jak długo trwa wolontariat? Programy są tygodniowe, ale na każde siedem "
+                "dni pracy mamy dwa wolne dni, które można wykorzystać na wędrowanie po górach.",
+                [
+                    LQ("Żeby zostać wolontariuszem, należy:",
+                       ["zarejestrować się przez internet", "wysłać zgłoszenie pocztą tradycyjną",
+                        "wypełnić deklarację w biurze organizacji"], 0, "формуляр онлайн на сайті."),
+                    LQ("Wolontariusze wybierają rodzaj pracy:",
+                       ["po rozmowie z dyrektorem", "zgodnie ze swoimi preferencjami",
+                        "zgodnie z wykształceniem"], 1, "обирають завдання зі списку самі."),
+                    LQ("Każdy wolontariusz powinien:",
+                       ["przynajmniej raz w życiu być w górach", "bardzo dobrze mówić po angielsku",
+                        "być wysportowany i dyspozycyjny"], 2, "добра кондиція + бажання + вільний час."),
+                    LQ("Ania jako wolontariuszka:",
+                       ["informowała turystów, co robić ze śmieciami", "oprowadzała grupy turystów po górach",
+                        "zbierała śmieci w górach"], 0, "закликала забирати сміття із собою."),
+                    LQ("Wolontariusze mają:",
+                       ["zajęty każdy dzień w tygodniu", "trochę czasu wolnego dla siebie",
+                        "wolny weekend co dwa tygodnie"], 1, "на 7 днів — 2 вільні дні."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: текст про продукти bio, TAK/NIE (5). Ключ: N,T,N,T,N.
+    Exercise(
+        "s2302_4", "Іспит 2023-02 — Zad IV (продукти bio)",
+        "Прослухай текст про екопродукти в Польщі. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Moda na zdrowy styl życia rozwija się w Polsce od kilku lat, a produkty bio "
+                "cieszą się coraz większą popularnością. Prawie czterdzieści procent Polaków "
+                "wybiera produkty z certyfikatem ekologicznym, a regularnie kupuje je dziewiętnaście "
+                "procent. W porównaniu do Europy Zachodniej Polska wypada gorzej – we Francji czy "
+                "w Niemczech ekologiczne restauracje i supermarkety to standard, w Polsce jest ich "
+                "dużo mniej. Główną przeszkodą jest wysoka cena. Kilka lat temu bio szukali głównie "
+                "ludzie młodzi, ale ostatnio nawyki zmienili też starsi konsumenci. Tę zmianę "
+                "spowodowała izolacja podczas pandemii: Polacy kupowali więcej bio, częściej "
+                "odwiedzali lokalne bazary, wróciło gotowanie w domu. Na talerzu przeciętnego "
+                "Polaka jest teraz więcej warzyw i owoców.",
+                [
+                    LQ("Ponad połowa Polaków systematycznie kupuje jedzenie bio.", _TAKNIE, 1,
+                       "НІ — регулярно лише 19%."),
+                    LQ("We Francji i w Niemczech jest więcej restauracji bio niż w Polsce.", _TAKNIE, 0,
+                       "ТАК — там це стандарт, у Польщі менше."),
+                    LQ("Seniorzy jako pierwsi zainteresowali się produktami bio.", _TAKNIE, 1,
+                       "НІ — спершу молоді люди."),
+                    LQ("W czasie pandemii Polacy zmienili swoje preferencje zakupowe.", _TAKNIE, 0,
+                       "ТАК — купували більше bio, ходили на базари."),
+                    LQ("Polacy obecnie jedzą coraz więcej mięsa.", _TAKNIE, 1,
+                       "НІ — більше овочів і фруктів."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
