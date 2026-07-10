@@ -957,6 +957,155 @@ EXERCISES: list[Exercise] = [
             )
         ],
     ),
+    # ══ РЕАЛЬНИЙ іспит квітень-2023 ════════════════════════════════════════
+    # Zad I: 14 висловлювань. Ключ: c,b,c,b,a,c,a,c,b,b,a,c,b,c.
+    Exercise(
+        "s2304_1", "Іспит 2023-04 — Zad I (короткі висловлювання)",
+        "Прослухай коротку фразу й обери правильну відповідь. На іспиті лунає ОДИН раз.",
+        [
+            Segment("Chciałbym kupić poradnik dla ogrodników.",
+                    [LQ("Ta wypowiedź jest typowa:", ["w bibliotece", "w kasie biletowej", "w księgarni"], 2,
+                        "купити довідник → книгарня.")]),
+            Segment("Uważam, że dieta wegetariańska będzie dla pani najlepsza.",
+                    [LQ("Ta wypowiedź oznacza, że kobieta:",
+                        ["proponuje komuś mięso", "poleca komuś tę dietę", "krytykuje taką dietę"], 1, "радить дієту.")]),
+            Segment("Zapomnij o wyjściu do kina, dopóki nie poprawisz ocen z biologii.",
+                    [LQ("Ta wypowiedź oznacza:", ["pomoc", "gratulacje", "zakaz"], 2, "«zapomnij o wyjściu» → заборона.")]),
+            Segment("W całej Polsce będzie duże zachmurzenie, na północy możliwe burze.",
+                    [LQ("Ta wypowiedź oznacza, że w całym kraju:",
+                        ["będzie dosyć zimno", "będzie brakować słońca", "będzie padał deszcz"], 1,
+                        "велика хмарність → бракуватиме сонця.")]),
+            Segment("Będzie mi miło, jeśli wpadniecie do mnie w sobotę wieczorem.",
+                    [LQ("Ta wypowiedź to:", ["zaproszenie", "pozdrowienia", "komplement"], 0, "запрошення в гості.")]),
+            Segment("Czy te babeczki z kremem cytrynowym są świeże?",
+                    [LQ("Ta wypowiedź jest typowa:", ["na stoisku z owocami", "w warzywniaku", "w cukierni"], 2,
+                        "тістечка → кондитерська.")]),
+            Segment("Ma pan brzydki kaszel, powinien pan rzucić palenie.",
+                    [LQ("Ta wypowiedź jest typowa:", ["u lekarza", "na przyjęciu", "w barze"], 0, "порада щодо здоров'я → лікар.")]),
+            Segment("Przepraszam, szukam drukarki, a nie mogę znaleźć działu z elektroniką.",
+                    [LQ("Ta wypowiedź jest typowa dla:",
+                        ["pracownika sklepu", "kierownika działu", "klienta w sklepie"], 2, "шукає товар → покупець.")]),
+            Segment("Gratulacje dla szczęśliwych rodziców! Jak mała ma na imię?",
+                    [LQ("Ta wypowiedź dotyczy:", ["ślubu znajomych", "narodzin dziecka", "nadchodzących świąt"], 1,
+                        "«szczęśliwi rodzice, mała» → народження дитини.")]),
+            Segment("Jedź z nimi, na pewno nie będziesz żałować. Toruń to piękne miasto.",
+                    [LQ("Ta wypowiedź oznacza:", ["prośbę", "radę", "odmowę"], 1, "«jedź, nie będziesz żałować» → порада.")]),
+            Segment("Ten ekspres do kawy był tani, ale nie myślałam, że po tygodniu przestanie działać.",
+                    [LQ("Ta wypowiedź oznacza, że ekspres:", ["jest zepsuty", "jest w promocji", "jest niedostępny"], 0,
+                        "«przestał działać» → зламаний.")]),
+            Segment("Wyglądasz na chorą. Na twoim miejscu skonsultowałabym się z lekarzem.",
+                    [LQ("Ta wypowiedź oznacza:", ["krytykę", "rozkaz", "radę"], 2, "«na twoim miejscu» → порада.")]),
+            Segment("Miło było pana spotkać. Zapraszamy ponownie!",
+                    [LQ("Ta wypowiedź to:", ["powitanie", "pożegnanie", "przeprosiny"], 1, "«miło było spotkać» → прощання.")]),
+            Segment("Ta błękitna sukienka jest bardzo ładna, ale czy jest o numer większa?",
+                    [LQ("Ta wypowiedź to pytanie o:", ["kolor", "cenę", "rozmiar"], 2, "«o numer większa» → розмір.")]),
+        ],
+    ),
+    # Zad II: 8 діалогів. Ключ: c,b,a,c,b,a,b,a.
+    Exercise(
+        "s2304_2", "Іспит 2023-04 — Zad II (діалоги)",
+        "Прослухай короткий діалог і обери правильну відповідь. На іспиті лунає двічі.",
+        [
+            Segment("– Pójdziesz z nami w sobotę na mecz? – Czemu nie!",
+                    [LQ("Z dialogu wynika, że:", ["on odmawia wyjścia", "ona nie chce wyjść", "on zgadza się na wyjście"], 2,
+                        "«Czemu nie!» → погоджується.")]),
+            Segment("– Dziś polecam żurek w chlebie i stek wołowy. – A mają państwo coś dla wegetarian?",
+                    [LQ("Z dialogu wynika, że ona:",
+                        ["nie chce jeść kanapek", "pyta o dania bezmięsne", "zamawia proponowane potrawy"], 1,
+                        "питає про вегетаріанське.")]),
+            Segment("– Doliczyć papierową torbę? – Dziękuję, nie trzeba, mam swoją.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["on przyniósł własną torbę", "w sklepie reklamówki są za darmo", "on rezygnuje z zakupów"], 0,
+                        "«mam swoją» → має власну торбу.")]),
+            Segment("– Do twarzy ci w tych krótkich włosach. – Nie wyglądam zbyt poważnie?",
+                    [LQ("Z dialogu wynika, że:",
+                        ["on krytykuje fryzurę kobiety", "ona jest zadowolona ze swojej fryzury", "on mówi kobiecie komplement"], 2,
+                        "«do twarzy ci» → комплімент.")]),
+            Segment("– Kiedy przyjmuje doktor Nowak? – Codziennie od ósmej do trzynastej, ale do "
+                    "piątku jest na urlopie.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["wizyta jest możliwa w tym tygodniu", "lekarz w tym tygodniu ma wolne", "lekarz w piątki ma wizyty domowe"], 1,
+                        "до п'ятниці у відпустці → цього тижня вільний.")]),
+            Segment("– Spakowałeś walizkę? Za chwilę musimy wyjść. – Nie radzę sobie sam z pakowaniem.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["oni mają mało czasu", "on nie potrzebuje pomocy", "on już przygotował bagaż"], 0,
+                        "«za chwilę musimy wyjść» → мало часу.")]),
+            Segment("– Słyszałem, że kupiłaś mieszkanie. – Trzy pokoje z aneksem kuchennym i widokiem na las.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona kupiła małą kawalerkę", "z okien mieszkania widać drzewa", "mieszkanie ma dużą kuchnię"], 1,
+                        "«widok na las» → видно дерева.")]),
+            Segment("– Dziadku, straciłam pracę. – Bardzo mi przykro, moje dziecko.",
+                    [LQ("Z dialogu wynika, że:",
+                        ["ona przekazuje złą wiadomość", "ona dostała pracę", "on gratuluje kobiecie decyzji"], 0,
+                        "«straciłam pracę» → погана новина.")]),
+        ],
+    ),
+    # Zad III: інтерв'ю про велотуризм. Ключ: c,c,b,a,b.
+    Exercise(
+        "s2304_3", "Іспит 2023-04 — Zad III (велотуризм)",
+        "Прослухай інтерв'ю з Henrykiem про велосипедний туризм. На іспиті лунає двічі.",
+        [
+            Segment(
+                "Dziś rozmawiam z Henrykiem Konopką, którego pasją jest jazda rowerem. Henryku, od "
+                "kiedy uprawiasz turystykę rowerową? Rower od najmłodszych lat był dla mnie ważny "
+                "– mieszkałem na wsi, jeździłem nim do szkoły, do sklepu. Ale turystyką rowerową "
+                "zainteresowałem się wiosną 2010 roku, minęło już ponad 10 lat. Dlaczego lubisz "
+                "jeździć na rowerze? To dla mnie nie tylko relaks, ale najlepszy moment na "
+                "przemyślenia – analizuję trudne sprawy zawodowe, myślę o przyszłości, podejmuję "
+                "ważne decyzje. Czego nie lubisz? Nie lubię jeździć w tym samym tempie co inni; "
+                "nawet w grupie nie dostosowuję się – jestem rowerowym indywidualistą. Po jakich "
+                "drogach jeździsz? Planuję wycieczki tam, gdzie jest mały ruch, najlepiej w lesie. "
+                "Mam ulubioną trasę wokół Jeziora Nidzkiego. Jakie jest twoje rowerowe marzenie? "
+                "Od kilku lat planuję polecieć do Chin, żeby tam pojeździć, ale zawsze coś mi wypada.",
+                [
+                    LQ("Henryk zaczął uprawiać turystykę rowerową:",
+                       ["dokładnie rok temu", "pod koniec ubiegłego roku", "już jakiś czas temu"], 2,
+                       "від 2010 → понад 10 років тому."),
+                    LQ("Dla Henryka jazda na rowerze to:",
+                       ["przede wszystkim trening fizyczny", "czas na rozmowy z innymi",
+                        "czas na planowanie i refleksję"], 2, "«najlepszy moment na przemyślenia»."),
+                    LQ("Henryk Konopka zwykle wybiera:",
+                       ["zorganizowane wycieczki rowerowe", "jazdę samodzielną", "bardzo szybką jazdę"], 1,
+                       "індивідуаліст, не пристосовується."),
+                    LQ("Henryk najbardziej lubi jeździć:",
+                       ["po spokojnych okolicach", "w kilkudniowe trasy", "po miejskich trasach rowerowych"], 0,
+                       "малий рух, ліс."),
+                    LQ("Henryk Konopka chciałby:",
+                       ["pojechać rowerem do Chin", "pojeździć na rowerze za granicą", "wziąć udział w wyścigu rowerowym"], 1,
+                       "полетіти в Китай, щоб там покататися → покататися за кордоном."),
+                ],
+            )
+        ],
+    ),
+    # Zad IV: поради з облаштування малого житла, TAK/NIE (5). Ключ: N,N,T,N,T.
+    Exercise(
+        "s2304_4", "Іспит 2023-04 — Zad IV (мале житло)",
+        "Прослухай поради, як облаштувати мале житло. Познач TAK/NIE. Лунає двічі.",
+        [
+            Segment(
+                "Dziś opowiem, jak urządzić małe mieszkanie – rok temu sama kupiłam kawalerkę. "
+                "Niewielkie mieszkania zwykle mają salon połączony z kuchnią, dzięki czemu mamy "
+                "więcej miejsca; między kuchnią a pokojem można postawić funkcjonalny stół. Do "
+                "salonu warto kupić sofę z funkcją spania, by zaproponować nocleg gościom. Nad sofą "
+                "dobrze zawiesić lustro – optycznie powiększy mieszkanie. Stolik kawowy wybierzmy "
+                "raczej nieduży, bo w małym mieszkaniu mieszka jedna osoba lub para. Warto pamiętać "
+                "o roślinach, których widok uspokaja. Jeśli mamy małą sypialnię, łóżko warto "
+                "postawić pod ścianą, którą zabudujemy szafkami aż do sufitu – na ubrania i książki.",
+                [
+                    LQ("Do dużego pokoju trzeba wybrać wygodne fotele dla gości.", _TAKNIE, 1,
+                       "НІ — радять софу з функцією спання, не фотелі."),
+                    LQ("W małym pokoju warto postawić na podłodze lustro.", _TAKNIE, 1,
+                       "НІ — дзеркало вішають НАД софою."),
+                    LQ("W małym salonie nie musimy rezygnować ze stolika kawowego.", _TAKNIE, 0,
+                       "ТАК — просто обираємо невеликий столик."),
+                    LQ("Rośliny są najlepszą dekoracją mieszkania.", _TAKNIE, 1,
+                       "НІ — про рослини варто пам'ятати, але «найкраща» не сказано."),
+                    LQ("Szafki powinny wisieć w sypialni nad łóżkiem.", _TAKNIE, 0,
+                       "ТАК — стіну над ліжком забудовуємо шафками."),
+                ],
+            )
+        ],
+    ),
 ]
 
 
