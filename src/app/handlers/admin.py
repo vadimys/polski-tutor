@@ -44,8 +44,8 @@ async def cb_decision(cb: CallbackQuery) -> None:
                 "🔗 <b>Твоє реферальне посилання для учнів:</b>\n"
                 f"<code>{link}</code>\n\n"
                 "Учень, який зайде за ним, одразу отримає безкоштовний доступ на "
-                f"<b>{settings.trial_days} днів</b>, а ти зможеш стежити за його прогресом. "
-                "Ділись посиланням зі своїм класом! 🚀",
+                f"<b>{settings.trial_days} днів</b>, а ти бачитимеш його прогрес у "
+                "<b>/uczniowie</b> (твій клас). Ділись посиланням зі своїм класом! 🚀",
                 reply_markup=approved_kb(),
             )
         except Exception:  # noqa: BLE001
