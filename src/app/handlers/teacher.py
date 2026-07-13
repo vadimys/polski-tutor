@@ -19,7 +19,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import cancel_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, billing, broadcast, clock, groups, progress, quest, viewas
+from app.services import (
+    access,
+    billing,
+    broadcast,
+    clock,
+    groups,
+    leaderboard,
+    progress,
+    quest,
+    viewas,
+)
 from app.services import state as user_state
 
 router = Router()
@@ -123,6 +133,7 @@ async def _send_group_roster(message: Message, teacher_id: int, gid: int, bot_us
     paying = await billing.paying_student_ids(teacher_id)
     body = "\n\n".join([_row(await _gather(sid), sid in paying) for sid in ids]) if ids else "<i>Поки порожньо.</i>"
     kb = InlineKeyboardBuilder()
+    kb.button(text="🏆 Лідерборд", callback_data=f"teacher:board:{gid}")
     kb.button(text="📣 Написати групі", callback_data=f"teacher:gnotify:{gid}")
     if gid:
         kb.button(text="✏️ Перейменувати", callback_data=f"teacher:grename:{gid}")
@@ -158,6 +169,23 @@ async def cb_group(cb: CallbackQuery) -> None:
         return
     me = await cb.bot.get_me()
     await _send_group_roster(cb.message, cb.from_user.id, int(cb.data.split(":")[2]), me.username or "")
+
+
+@router.callback_query(F.data.startswith("teacher:board:"))
+async def cb_board(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    tid, gid = cb.from_user.id, int(cb.data.split(":")[2])
+    if gid:
+        g = await groups.get(gid)
+        ids, title = await groups.members(gid), (g["name"] if g else "Група")
+    else:
+        ids, title = await groups.ungrouped(tid), "Без групи"
+    rows = await leaderboard.board(ids)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Група", callback_data=f"teacher:grp:{gid}")
+    await cb.message.answer(leaderboard.render(rows, title), reply_markup=kb.as_markup())
 
 
 @router.callback_query(F.data == "teacher:newgrp")

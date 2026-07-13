@@ -27,6 +27,8 @@ from app.services import (
     exam_dates,
     exam_scale,
     goals,
+    groups,
+    leaderboard,
     missions,
     progress,
     quest,
@@ -485,6 +487,35 @@ async def cmd_quest(message: Message) -> None:
 async def cb_quest(cb: CallbackQuery) -> None:
     await _send_quest(cb.message, cb.from_user.id)
     await cb.answer()
+
+
+# --- Рейтинг класу (для учня в групі) ---
+
+
+@router.callback_query(F.data == "lb:me")
+async def cb_my_board(cb: CallbackQuery) -> None:
+    await cb.answer()
+    uid = cb.from_user.id
+    st = await user_state.load(uid)
+    if viewas.role_for(await viewas.get(uid), st.role) == "teacher":
+        await cb.message.answer(
+            "👩‍🏫 Рейтинги класів — у <b>/uczniowie</b> → група → «🏆 Лідерборд».",
+            reply_markup=to_menu_kb(),
+        )
+        return
+    if not st.group_id:
+        await cb.message.answer(
+            "🏆 Ти навчаєшся <b>індивідуально</b> — рейтинг класу зʼявиться, коли долучишся "
+            "до групи викладача (за його join-посиланням).",
+            reply_markup=to_menu_kb(),
+        )
+        return
+    g = await groups.get(st.group_id)
+    rows = await leaderboard.board(await groups.members(st.group_id))
+    await cb.message.answer(
+        leaderboard.render(rows, g["name"] if g else "Клас", highlight_id=uid),
+        reply_markup=to_menu_kb(),
+    )
 
 
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---

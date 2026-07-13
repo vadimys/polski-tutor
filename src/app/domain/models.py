@@ -46,6 +46,7 @@ class UserState:
     placement_done: bool = False
     lesson_hour: int = 8
     role: str = "student"  # student / teacher / admin — впливає на рамку й «зарахування»
+    group_id: int = 0  # група (клас) викладача, 0 = без групи
     # готовність 0..100 за кожним модулем (ключі — Module.value)
     readiness: dict[str, int] = field(default_factory=dict)
 

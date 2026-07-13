@@ -174,6 +174,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
         ("📅 Мій план", "plan:show"),
+        ("🏆 Рейтинг класу", "lb:me"),
         ("🆘 Підтримка / 💡 Ідея", "support:open"),
     ]
     for i in range(0, len(practice), 2):  # у 2 колонки — менше скролу

@@ -24,6 +24,7 @@ def _to_state(u: User) -> UserState:
         placement_done=u.placement_done,
         lesson_hour=u.lesson_hour,
         role=u.role,
+        group_id=u.group_id,
         readiness=dict(u.readiness or {}),
     )
 
