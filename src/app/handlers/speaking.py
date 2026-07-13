@@ -15,7 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb_for, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech, tts
 from app.services import goals, guidance, limits, speaking, tts_say
@@ -225,7 +225,7 @@ async def on_voice(message: Message, state: FSMContext) -> None:
     task = speaking.task_by_id(data.get("task_id", ""))
     await state.clear()
     if task is None:
-        await message.answer("Завдання загубилось — почнімо заново.", reply_markup=menu_kb())
+        await message.answer("Завдання загубилось — почнімо заново.", reply_markup=await menu_kb_for(message.from_user.id))
         return
 
     await message.answer("🎧 Слухаю й розпізнаю…")

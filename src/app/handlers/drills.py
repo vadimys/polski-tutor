@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot import quiz
-from app.bot.keyboards import drill_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import drill_kb, menu_kb_for, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.services import drills, goals, mistakes, mock, pollquiz
 from app.services import state as user_state
@@ -89,7 +89,7 @@ async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
     await cb.message.answer(
         "⏹ Тренування завершено — <b>без оцінки</b> (готовність рухає лише повністю пройдена серія).",
-        reply_markup=menu_kb(),
+        reply_markup=await menu_kb_for(cb.from_user.id),
     )
 
 
@@ -126,7 +126,7 @@ async def _finalize(
     await message.answer(
         f"{emoji} <b>Результат: {correct}/{total} ({score}%)</b>\n"
         f"Готовність {MODULE_LABELS[Module(section)]} оновлено.",
-        reply_markup=menu_kb() if score >= 50 else to_menu_kb(),
+        reply_markup=(await menu_kb_for(user_id)) if score >= 50 else to_menu_kb(),
     )
     if c := await goals.pop_celebration(user_id):
         await message.answer(c)

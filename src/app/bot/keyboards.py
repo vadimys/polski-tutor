@@ -184,6 +184,18 @@ def menu_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+async def menu_kb_for(user_id: int) -> InlineKeyboardMarkup:
+    """Меню за роллю: викладачу (у т.ч. view-as) — його інструмент, інакше учнівський хаб.
+    Використовується у фіналах вправ, щоб превʼю-вправа не викидала викладача в учнівське меню."""
+    from app.services import state as user_state
+    from app.services import viewas
+
+    st = await user_state.load(user_id)
+    if viewas.role_for(await viewas.get(user_id), st.role) == "teacher":
+        return teacher_menu_kb()
+    return menu_kb()
+
+
 def teacher_menu_kb() -> InlineKeyboardMarkup:
     """Меню викладача — живе й функціональне САМЕ для викладача: клас, матеріали,
     запрошення учнів, оплати. Без учнівського (тест рівня, урок дня, план, місії, SRS)."""

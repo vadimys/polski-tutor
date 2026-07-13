@@ -18,7 +18,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
-from app.bot.keyboards import menu_kb, open_kb, to_menu_kb
+from app.bot.keyboards import menu_kb_for, open_kb, to_menu_kb
 from app.integrations import ai
 from app.services import goals, limits, opencheck
 from app.services import state as user_state
@@ -98,7 +98,7 @@ async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
     await cb.message.answer(
         "⏹ Завдання завершено достроково — <b>без оцінки</b> (оцінюємо лише повністю).",
-        reply_markup=menu_kb(),
+        reply_markup=await menu_kb_for(cb.from_user.id),
     )
 
 
@@ -182,7 +182,7 @@ async def _show_graded(
         f"{_LABEL.get(section, section)} оновлено."
     )
     await message.answer(
-        "\n\n".join(lines), reply_markup=menu_kb() if score >= 50 else to_menu_kb()
+        "\n\n".join(lines), reply_markup=(await menu_kb_for(user_id)) if score >= 50 else to_menu_kb()
     )
     if c := await goals.pop_celebration(user_id):
         await message.answer(c)
@@ -200,4 +200,4 @@ async def _show_selfcheck(
         "\nℹ️ Це самоперевірка — <b>готовність не змінюємо</b>. Порівняй свої речення "
         "зі зразками (можливі й інші правильні варіанти)."
     )
-    await message.answer("\n\n".join(lines), reply_markup=menu_kb())
+    await message.answer("\n\n".join(lines), reply_markup=to_menu_kb())

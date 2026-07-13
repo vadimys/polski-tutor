@@ -574,9 +574,15 @@ async def cb_assignments(cb: CallbackQuery) -> None:
 
 @router.callback_query(F.data.startswith("asgn:done:"))
 async def cb_assignment_done(cb: CallbackQuery) -> None:
-    await assignments.mark_done(int(cb.data.split(":")[2]), cb.from_user.id)
+    aid = int(cb.data.split(":")[2])
+    uid = cb.from_user.id
+    # захист від IDOR: зараховувати лише завдання, що реально таргетять цього учня
+    if not any(r["id"] == aid for r in await assignments.for_student(uid)):
+        await cb.answer("Завдання недоступне.", show_alert=True)
+        return
+    await assignments.mark_done(aid, uid)
     await cb.answer("✅ Позначено виконаним!")
-    await _send_assignments(cb.message, cb.from_user.id)
+    await _send_assignments(cb.message, uid)
 
 
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---

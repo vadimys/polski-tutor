@@ -5,7 +5,7 @@ from __future__ import annotations
 from aiogram import Bot, Router
 from aiogram.types import PollAnswer
 
-from app.bot.keyboards import menu_kb, to_menu_kb
+from app.bot.keyboards import menu_kb_for, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.services import clock, goals, mistakes, pollquiz, vocab
 from app.services import state as user_state
@@ -49,7 +49,7 @@ async def on_poll_answer(poll_answer: PollAnswer, bot: Bot) -> None:
             chat_id,
             f"{emoji} <b>{session.get('title') or 'Результат'}: {correct}/{total} ({pct}%)</b>\n"
             f"Готовність {label} оновлено.",
-            reply_markup=menu_kb() if pct >= 50 else to_menu_kb(),
+            reply_markup=(await menu_kb_for(session["user_id"])) if pct >= 50 else to_menu_kb(),
         )
     else:
         await goals.add(session["user_id"], goals.REVIEW_MIN, goals.XP_REVIEW, kind="review")

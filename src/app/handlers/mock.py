@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot import quiz
-from app.bot.keyboards import menu_kb, mock_kb, mock_menu_kb, to_menu_kb
+from app.bot.keyboards import menu_kb_for, mock_kb, mock_menu_kb, to_menu_kb
 from app.domain.models import Module
 from app.services import exam_scale, goals, mistakes, mock, progress
 from app.services import state as user_state
@@ -78,7 +78,7 @@ async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
     await cb.message.answer(
         "⏹ МОК завершено достроково — <b>без оцінки</b> (готовність рухає лише повністю пройдена секція).",
-        reply_markup=menu_kb(),
+        reply_markup=await menu_kb_for(cb.from_user.id),
     )
 
 
@@ -118,7 +118,7 @@ async def _finalize(
         f"🏁 <b>{_SECTION_LABEL[section]} — результат: {correct}/{total} ({pct}%)</b>\n"
         f"📊 {exam_scale.module_line(_SECTION_MODULE[section].value, pct)}\n"
         f"{passed}. Готовність оновлено.",
-        reply_markup=menu_kb() if pct >= 50 else to_menu_kb(),
+        reply_markup=(await menu_kb_for(user_id)) if pct >= 50 else to_menu_kb(),
     )
     if c := await goals.pop_celebration(user_id):
         await message.answer(c)

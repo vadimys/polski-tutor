@@ -68,6 +68,15 @@ async def count_open() -> int:
     return len(await all_tickets(open_only=True))
 
 
+async def delete_user_tickets(user_id: int) -> int:
+    """Видалити всі тікети користувача (GDPR-забуття). Повертає к-сть видалених."""
+    raw = await _r().hgetall(_TICKETS)
+    victims = [k for k, v in raw.items() if json.loads(v).get("user_id") == user_id]
+    if victims:
+        await _r().hdel(_TICKETS, *victims)
+    return len(victims)
+
+
 def render_ticket(tid: int, t: dict) -> str:
     import html as _h
 

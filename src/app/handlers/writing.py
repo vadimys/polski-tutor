@@ -11,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb_for, to_menu_kb
 from app.domain.models import Module
 from app.services import goals, guidance, limits, writing
 from app.services import state as user_state
@@ -160,7 +160,7 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
     text_a = data.get("text_a", "")
     await state.clear()
     if ws is None:
-        await message.answer("Набір загубився — почнімо заново.", reply_markup=menu_kb())
+        await message.answer("Набір загубився — почнімо заново.", reply_markup=await menu_kb_for(message.from_user.id))
         return
     if not await limits.allow_ai(message.from_user.id):
         await message.answer(

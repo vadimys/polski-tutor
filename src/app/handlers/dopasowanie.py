@@ -20,7 +20,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
 from app.bot import quiz
-from app.bot.keyboards import match_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import match_kb, menu_kb_for, to_menu_kb
 from app.services import goals
 from app.services import state as user_state
 
@@ -102,7 +102,7 @@ async def cb_stop(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
     await cb.message.answer(
         "⏹ Зіставлення завершено — <b>без оцінки</b> (готовність рухає лише пройдене повністю).",
-        reply_markup=menu_kb(),
+        reply_markup=await menu_kb_for(cb.from_user.id),
     )
 
 
@@ -139,7 +139,7 @@ async def _finalize(
     await message.answer(
         f"{emoji} <b>Зіставлення: {correct}/{total} ({score}%)</b>\n"
         f"Готовність {_LABEL.get(section, section)} оновлено.",
-        reply_markup=menu_kb() if score >= 50 else to_menu_kb(),
+        reply_markup=(await menu_kb_for(user_id)) if score >= 50 else to_menu_kb(),
     )
     if c := await goals.pop_celebration(user_id):
         await message.answer(c)

@@ -103,6 +103,19 @@ async def _guard_teacher(message: Message, user_id: int) -> bool:
     return True
 
 
+async def _owns_group(teacher_id: int, gid: int) -> bool:
+    """Чи gid — група САМЕ цього викладача (gid=0 — власний бакет «без групи»).
+    Захист від IDOR: gid приходить із підроблюваного callback."""
+    if not gid:
+        return True
+    g = await groups.get(gid)
+    return bool(g and g["teacher_id"] == teacher_id)
+
+
+async def _deny_foreign(message: Message) -> None:
+    await message.answer("Групу не знайдено.", reply_markup=to_menu_kb())
+
+
 async def _send_overview(message: Message, teacher_id: int, bot_username: str) -> None:
     gs = await groups.list_for(teacher_id)
     ung = await groups.ungrouped(teacher_id)
@@ -284,6 +297,9 @@ async def cb_board(cb: CallbackQuery) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
     tid, gid = cb.from_user.id, int(cb.data.split(":")[2])
+    if not await _owns_group(tid, gid):
+        await _deny_foreign(cb.message)
+        return
     if gid:
         g = await groups.get(gid)
         ids, title = await groups.members(gid), (g["name"] if g else "Група")
@@ -318,15 +334,23 @@ async def cb_assignments(cb: CallbackQuery) -> None:
     await cb.answer()
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
-    await _send_assignments(cb.message, cb.from_user.id, int(cb.data.split(":")[2]))
+    gid = int(cb.data.split(":")[2])
+    if not await _owns_group(cb.from_user.id, gid):
+        await _deny_foreign(cb.message)
+        return
+    await _send_assignments(cb.message, cb.from_user.id, gid)
 
 
 @router.callback_query(F.data.startswith("teacher:asgnnew:"))
 async def cb_assign_new(cb: CallbackQuery, state: FSMContext) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
+    gid = int(cb.data.split(":")[2])
+    if not await _owns_group(cb.from_user.id, gid):
+        await _deny_foreign(cb.message)
+        return
     await state.set_state(AssignNew.title)
-    await state.update_data(gid=int(cb.data.split(":")[2]))
+    await state.update_data(gid=gid)
     await cb.answer()
     await cb.message.answer(
         "📝 Опиши завдання одним повідомленням (напр. «Пройти /sluchanie 2 рази»):",
@@ -399,6 +423,9 @@ async def cb_assign_del(cb: CallbackQuery) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
     _, _, gid, aid = cb.data.split(":")
+    if not await _owns_group(cb.from_user.id, int(gid)):
+        await _deny_foreign(cb.message)
+        return
     a = await assignments.get(int(aid))
     if a and a["teacher_id"] == cb.from_user.id:
         await assignments.delete_one(int(aid))
@@ -419,8 +446,12 @@ async def cb_newgroup(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_rename(cb: CallbackQuery, state: FSMContext) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
+    gid = int(cb.data.split(":")[2])
+    if not await _owns_group(cb.from_user.id, gid):
+        await _deny_foreign(cb.message)
+        return
     await state.set_state(GroupName.waiting)
-    await state.update_data(mode="rename", gid=int(cb.data.split(":")[2]))
+    await state.update_data(mode="rename", gid=gid)
     await cb.answer()
     await cb.message.answer("✏️ Нова назва групи:", reply_markup=cancel_kb())
 
@@ -432,7 +463,11 @@ async def on_group_name(message: Message, state: FSMContext) -> None:
     name = (message.text or "").strip()[:64]
     tid = message.from_user.id
     if data.get("mode") == "rename":
-        await groups.rename(int(data.get("gid", 0)), name)
+        gid = int(data.get("gid", 0))
+        if not await _owns_group(tid, gid):
+            await _deny_foreign(message)
+            return
+        await groups.rename(gid, name)
         await message.answer(f"✏️ Групу перейменовано на «{html.escape(name)}».", reply_markup=to_menu_kb())
         return
     gid = await groups.create(tid, name)
@@ -463,8 +498,12 @@ async def cb_notify(cb: CallbackQuery, state: FSMContext) -> None:
 async def cb_gnotify(cb: CallbackQuery, state: FSMContext) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
+    gid = int(cb.data.split(":")[2])
+    if not await _owns_group(cb.from_user.id, gid):
+        await _deny_foreign(cb.message)
+        return
     await state.set_state(NotifyClass.waiting)
-    await state.update_data(gid=int(cb.data.split(":")[2]))
+    await state.update_data(gid=gid)
     await cb.answer()
     await cb.message.answer(
         "📣 Повідомлення для цієї групи одним повідомленням — надішлю від твого імені.",
@@ -478,6 +517,9 @@ async def on_notify(message: Message, state: FSMContext) -> None:
     await state.clear()
     tid = message.from_user.id
     gid = int(data.get("gid", 0))
+    if not await _owns_group(tid, gid):
+        await _deny_foreign(message)
+        return
     ids = await groups.members(gid) if gid else await access.students_of(tid)
     if not ids:
         await message.answer("У цій вибірці поки немає учнів.", reply_markup=to_menu_kb())

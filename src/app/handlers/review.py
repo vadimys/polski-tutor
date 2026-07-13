@@ -11,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import menu_kb, review_grade_kb, to_menu_kb
+from app.bot.keyboards import menu_kb_for, review_grade_kb, to_menu_kb
 from app.integrations import tts
 from app.services import clock, goals, pollquiz, tts_say, vocab
 
@@ -44,7 +44,7 @@ async def _start(message: Message, user_id: int, state: FSMContext) -> None:
     if not items:
         await message.answer(
             "🎉 Слів на повторення сьогодні немає. Повертайся завтра або зроби урок!",
-            reply_markup=menu_kb(),
+            reply_markup=await menu_kb_for(user_id),
         )
         return
     due_pairs = [(it.pl, it.uk) for it in items][:SESSION_CAP]
