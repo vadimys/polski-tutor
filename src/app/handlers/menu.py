@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 from contextlib import suppress
 from datetime import date
 
@@ -14,8 +15,9 @@ from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
-from app.bot.keyboards import cancel_kb, menu_kb, start_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
 from app.bot.ui import bar
+from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
 from app.services import (
     access,
@@ -28,6 +30,7 @@ from app.services import (
     missions,
     progress,
     quest,
+    resets,
     vocab,
 )
 from app.services import state as user_state
@@ -485,45 +488,43 @@ async def cb_quest(cb: CallbackQuery) -> None:
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---
 
 
-async def _reset_prompt(message: Message) -> None:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="♻️ Так, почати заново", callback_data="reset:do")
-    kb.button(text="↩️ Скасувати", callback_data="reset:cancel")
-    kb.adjust(1)
-    await message.answer(
-        "♻️ <b>Почати навчання заново?</b>\n\n"
-        "Обнуляться <b>повністю</b>: рівень, готовність усіх модулів, стрік, XP і бейджі, "
-        "історія вправ, колода помилок, повторення слів, лічильники.\n"
-        "✅ Доступ і дата іспиту <b>залишаться</b> (онбординг проходити не треба).\n\n"
-        "Це незворотно.",
-        reply_markup=kb.as_markup(),
-    )
+class ResetReq(StatesGroup):
+    waiting = State()  # очікуємо причину запиту на повне обнулення
 
 
 @router.message(Command("reset"))
-async def cmd_reset(message: Message) -> None:
-    await _reset_prompt(message)
-
-
-@router.callback_query(F.data == "reset:ask")
-async def cb_reset_ask(cb: CallbackQuery) -> None:
-    await cb.answer()
-    await _reset_prompt(cb.message)
-
-
-@router.callback_query(F.data == "reset:do")
-async def cb_reset_do(cb: CallbackQuery, state: FSMContext) -> None:
-    await state.clear()
-    await user_state.full_reset(cb.from_user.id)  # повний wipe (вправи/XP/помилки/слова/лічильники)
-    await cb.answer("Готово")
-    await cb.message.answer(
-        "♻️ <b>Прогрес повністю обнулено.</b> Починаємо з чистого аркуша!\n"
-        "Найкраще стартувати зі стартового тесту 👇",
-        reply_markup=start_kb(),
+async def cmd_reset(message: Message, state: FSMContext) -> None:
+    await state.set_state(ResetReq.waiting)
+    await message.answer(
+        "♻️ <b>Почати навчання з нуля</b>\n\n"
+        "Повне обнулення (рівень, готовність, стрік, XP, історія, помилки, слова) виконує "
+        "<b>адмін за запитом</b> — щоб убезпечити від випадкового скидання.\n\n"
+        "Напиши <b>причину</b> одним повідомленням (навіщо обнулити) — я передам адміну.",
+        reply_markup=cancel_kb(),
     )
 
 
-@router.callback_query(F.data == "reset:cancel")
-async def cb_reset_cancel(cb: CallbackQuery) -> None:
-    await cb.answer("Скасовано")
-    await cb.message.answer("Ок, нічого не змінено 🙂", reply_markup=to_menu_kb())
+@router.message(ResetReq.waiting, F.text, ~F.text.startswith("/"))
+async def on_reset_reason(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    uid = message.from_user.id
+    reason = (message.text or "").strip()[:500]
+    at = clock.now_local().isoformat(timespec="minutes")
+    await resets.request(uid, reason, at)
+    await message.answer(
+        "📨 <b>Запит надіслано.</b> Щойно адмін підтвердить — обнулю твій прогрес, "
+        "і почнемо з чистого аркуша (стартовий тест)."
+    )
+    if settings.admin_id:
+        uname = message.from_user.username
+        name = f"@{uname}" if uname else (message.from_user.full_name or str(uid))
+        kb = InlineKeyboardBuilder()
+        kb.button(text="♻️ Обнулити", callback_data=f"ac:resetask:{uid}")
+        kb.button(text="❌ Відхилити", callback_data=f"ac:resetno:{uid}")
+        kb.adjust(2)
+        await message.bot.send_message(
+            settings.admin_id,
+            f"♻️ <b>Запит на повний RESET</b>\n{html.escape(name)} (id <code>{uid}</code>)\n"
+            f"Коли: {at}\nПричина: {html.escape(reason)}",
+            reply_markup=kb.as_markup(),
+        )

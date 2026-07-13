@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import html
+import logging
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -13,9 +15,11 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb
 from app.config import settings
-from app.services import access, admin_stats, events
+from app.services import access, admin_stats, events, resets
+from app.services import state as user_state
 
 router = Router()
+logger = logging.getLogger(__name__)
 
 
 class AdminMsg(StatesGroup):
@@ -72,7 +76,7 @@ async def cb_learn(cb: CallbackQuery) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="📝 Стартовий тест", callback_data="placement:start")
     kb.button(text="📋 Меню навчання", callback_data="menu:home")
-    kb.button(text="♻️ Почати з нуля", callback_data="reset:ask")
+    kb.button(text="♻️ Почати з нуля", callback_data=f"ac:resetask:{cb.from_user.id}")
     kb.button(text="🛠 Назад у панель", callback_data="ac:hub")
     kb.adjust(1)
     await cb.message.answer(
@@ -223,6 +227,7 @@ async def cb_user_card(cb: CallbackQuery) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="✉️ Написати", callback_data=f"ac:msg:{uid}")
     kb.button(text="🔓 Продовжити доступ", callback_data=f"adm:extend:{uid}")
+    kb.button(text="♻️ Reset прогресу", callback_data=f"ac:resetask:{uid}")
     kb.button(text="❌ Відмовити", callback_data=f"adm:no:{uid}")
     kb.button(text="⬅️ Список", callback_data="ac:users:0")
     kb.adjust(1)
@@ -363,3 +368,70 @@ async def cmd_reply(message: Message) -> None:
         await message.answer("Надіслано ✅")
     except Exception:  # noqa: BLE001
         await message.answer("Не вдалося надіслати (можливо, користувач не активний).")
+
+
+# ── Повний reset прогресу — виконує ЛИШЕ адмін (за запитом користувача або з картки) ──
+@router.callback_query(F.data.startswith("ac:resetask:"))
+async def cb_reset_ask(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    uid = int(cb.data.split(":")[2])
+    req = await resets.get(uid)
+    reason = f"\nПричина: {html.escape(req[1])}" if req else ""
+    who = "ТВІЙ прогрес" if uid == cb.from_user.id else f"прогрес користувача <code>{uid}</code>"
+    kb = InlineKeyboardBuilder()
+    kb.button(text="♻️ Так, обнулити", callback_data=f"ac:resetdo:{uid}")
+    kb.button(text="↩️ Ні", callback_data="ac:hub")
+    kb.adjust(1)
+    await cb.message.answer(
+        f"♻️ Обнулити {who}? Це <b>незворотно</b> (вправи/готовність/XP/помилки/слова)."
+        f"{reason}",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("ac:resetdo:"))
+async def cb_reset_do(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer("Обнулено")
+    uid = int(cb.data.split(":")[2])
+    await user_state.full_reset(uid)
+    await resets.clear(uid)
+    logger.info("full_reset by admin for uid=%s", uid)
+    if uid == cb.from_user.id:  # адмін обнулив себе
+        await cb.message.answer(
+            "♻️ <b>Твій прогрес обнулено.</b> Починаємо з чистого аркуша — стартовий тест 👇",
+            reply_markup=approved_kb(),
+        )
+    else:  # обнулили користувача за запитом
+        try:
+            await cb.bot.send_message(
+                uid,
+                "♻️ <b>Твій прогрес обнулено</b> за твоїм запитом. Починаємо з чистого аркуша!\n"
+                "Почни зі стартового тесту (/test) 👇",
+                reply_markup=approved_kb(),
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        await cb.message.answer(f"♻️ Прогрес користувача <code>{uid}</code> обнулено.")
+
+
+@router.callback_query(F.data.startswith("ac:resetno:"))
+async def cb_reset_no(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer("Відхилено")
+    uid = int(cb.data.split(":")[2])
+    await resets.clear(uid)
+    logger.info("reset request declined for uid=%s", uid)
+    with suppress(Exception):
+        await cb.bot.send_message(
+            uid, "ℹ️ Запит на повне обнулення прогресу відхилено. Якщо потрібно — напиши адміну."
+        )
+    with suppress(Exception):
+        await cb.message.edit_text(f"{cb.message.html_text}\n\n❌ Відхилено.")
