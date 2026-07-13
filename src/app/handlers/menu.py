@@ -31,6 +31,7 @@ from app.services import (
     progress,
     quest,
     resets,
+    viewas,
     vocab,
 )
 from app.services import state as user_state
@@ -40,7 +41,7 @@ router = Router()
 async def _menu_header(user_id: int) -> str:
     """Жива шапка меню: рівень/XP/серія + ціль дня + похід + місія дня — для мотивації."""
     st = await user_state.load(user_id)
-    if st.role == "teacher":
+    if viewas.role_for(await viewas.get(user_id), st.role) == "teacher":
         return (
             "👩‍🏫 <b>Меню викладача</b>\n\n"
             "👥 Прогрес твого класу — <b>/uczniowie</b>\n"
@@ -241,7 +242,8 @@ def _readiness_scene(inf, status: str, mods: list) -> tuple[str | None, object |
 
 
 async def _send_progress(msg: Message, user_id: int) -> None:
-    if (await user_state.load(user_id)).role == "teacher":
+    _st = await user_state.load(user_id)
+    if viewas.role_for(await viewas.get(user_id), _st.role) == "teacher":
         await msg.answer(
             "📊 Ти <b>викладач</b> — особистий «прогрес до B1» не ведеться (твої вправи — превʼю).\n"
             "Дивись прогрес своїх учнів: <b>/uczniowie</b> 👥",

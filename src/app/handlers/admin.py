@@ -15,7 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb
 from app.config import settings
-from app.services import access, admin_stats, events, resets, support
+from app.services import access, admin_stats, events, resets, support, viewas
 from app.services import state as user_state
 
 router = Router()
@@ -43,6 +43,7 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
     kb.button(text="📈 Аналітика", callback_data="ac:analytics")
     kb.button(text="🆘 Підтримка", callback_data="ac:support")
+    kb.button(text="🧪 Режими", callback_data="ac:viewas")
     kb.button(text="🎓 Моє навчання", callback_data="ac:learn")
     kb.adjust(2)
     return kb
@@ -526,3 +527,52 @@ async def cb_ticket_close(cb: CallbackQuery) -> None:
     await cb.answer("Закрито")
     with suppress(Exception):
         await cb.message.edit_text(f"{cb.message.html_text}\n\n☑️ Закрито.")
+
+
+# ── View-as: тестові режими (учень/викладач/референс) ────────────────────────
+_VA_LABELS = {"student": "🎓 учень", "teacher": "👩‍🏫 викладач", "referred": "🎁 референс-учень"}
+
+
+@router.callback_query(F.data == "ac:viewas")
+async def cb_viewas(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    cur = await viewas.get(cb.from_user.id)
+    now = f"Зараз: <b>{_VA_LABELS.get(cur, '—')}</b>" if cur else "Зараз: <b>адмін</b>"
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🎓 Як учень", callback_data="ac:va:student")
+    kb.button(text="👩‍🏫 Як викладач", callback_data="ac:va:teacher")
+    kb.button(text="🎁 Як референс-учень", callback_data="ac:va:referred")
+    kb.button(text="⏹ Вийти в адміна", callback_data="ac:va:off")
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    kb.adjust(1)
+    await cb.message.answer(
+        "🧪 <b>Тестові режими (view-as)</b>\n"
+        f"{now}\n\n"
+        "Перемикає, як бот <b>виглядає й поводиться</b> для тебе (меню, /start, /uczniowie, "
+        "знижка реферала). Обери роль — далі тисни /start.\n"
+        "<i>⚠️ Прогрес у тебе один: це тест UX/флоу, не окремі дані. Для ізольованих "
+        "історій навчання — заведи вторинний Telegram-акаунт і зайди звичайним користувачем.</i>",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("ac:va:"))
+async def cb_viewas_set(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    mode = cb.data.split(":")[2]
+    if mode == "off":
+        await viewas.clear(cb.from_user.id)
+        await cb.answer("Вихід у адміна")
+        await cb.message.answer("⏹ Режим перегляду вимкнено. Ти знову адмін — /admin.")
+        return
+    await viewas.set_mode(cb.from_user.id, mode)
+    await cb.answer()
+    await cb.message.answer(
+        f"👁 Увімкнено режим: <b>{_VA_LABELS.get(mode, mode)}</b>.\n"
+        "Тисни <b>/start</b>, щоб побачити досвід цієї ролі. Вийти — /admin → 🧪 Режими → «Вийти»."
+    )

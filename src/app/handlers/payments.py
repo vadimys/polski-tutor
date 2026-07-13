@@ -23,14 +23,16 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb
 from app.config import settings
-from app.services import billing
+from app.services import billing, viewas
 
 router = Router()
 logger = logging.getLogger(__name__)
 
 
 async def _is_referred(user_id: int) -> bool:
-    return (await billing.referrer_of(user_id)) > 0
+    if (await billing.referrer_of(user_id)) > 0:
+        return True
+    return (await viewas.get(user_id)) == "referred"  # view-as: тест знижки реферала
 
 
 async def _offer(message: Message, user_id: int) -> None:

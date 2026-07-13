@@ -16,7 +16,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, billing, clock, progress, quest
+from app.services import access, billing, clock, progress, quest, viewas
 from app.services import state as user_state
 
 router = Router()
@@ -88,7 +88,7 @@ async def _send_class(message: Message, teacher_id: int, bot_username: str) -> N
 
 async def _guard_teacher(message: Message, user_id: int) -> bool:
     inf = await access.info(user_id)
-    if inf.role != "teacher":
+    if viewas.role_for(await viewas.get(user_id), inf.role) != "teacher":
         await message.answer(
             "👩‍🏫 Цей розділ — для викладачів. Хочеш навчати учнів через бота? "
             "Натисни /start і обери «Я викладач».",

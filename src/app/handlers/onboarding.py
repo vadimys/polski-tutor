@@ -24,7 +24,7 @@ from app.bot.keyboards import (
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
-from app.services import access, clock, exam_dates, vocab
+from app.services import access, clock, exam_dates, viewas, vocab
 
 router = Router()
 
@@ -56,11 +56,14 @@ def _days_line(inf) -> str:
 
 async def _approved_welcome(message: Message, user_id: int) -> None:
     inf = await access.info(user_id)
-    if inf.role == "teacher":
+    mode = await viewas.get(user_id)
+    role = viewas.role_for(mode, inf.role)
+    banner = f"👁 <i>Режим перегляду: {mode}. Вийти — /admin.</i>\n\n" if mode else ""
+    if role == "teacher":
         me = await message.bot.get_me()
         link = f"https://t.me/{me.username}?start=t{user_id}"
         await message.answer(
-            "👩‍🏫 <b>Вітаю, викладачу!</b> Доступ активний.\n\n"
+            f"{banner}👩‍🏫 <b>Вітаю, викладачу!</b> Доступ активний.\n\n"
             "🔗 Твоє посилання для учнів:\n"
             f"<code>{link}</code>\n\n"
             "👥 Прогрес класу — <b>/uczniowie</b>\n"
@@ -70,14 +73,14 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
         return
     await vocab.seed_if_empty(user_id, clock.today_local())
     # іспит минув, а результат ще не зафіксовано → питаємо «як пройшло?»
-    if exam_dates.status(inf.exam_date, inf.confirmed, clock.today_local()) == "past" and \
-            inf.exam_result in ("", "pending"):
+    if not mode and exam_dates.status(inf.exam_date, inf.confirmed, clock.today_local()) == "past" \
+            and inf.exam_result in ("", "pending"):
         await message.answer(
             "📅 Твій іспит уже позаду. <b>Як пройшло?</b>", reply_markup=exam_result_kb()
         )
         return
     await message.answer(
-        f"Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
+        f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
         "Почнемо зі стартового тесту або обери в меню 👇",
         reply_markup=approved_kb(),
     )
@@ -114,8 +117,11 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
     uid = message.from_user.id
     inf = await access.info(uid)
     if uid == settings.admin_id:
-        from app.handlers.admin import send_hub  # адмін → одразу панель керування
-        await send_hub(message)
+        if await viewas.get(uid):  # у режимі перегляду — рендеримо досвід обраної ролі
+            await _approved_welcome(message, uid)
+        else:
+            from app.handlers.admin import send_hub  # адмін → одразу панель керування
+            await send_hub(message)
     elif access.is_expired(inf, clock.today_local()):
         await message.answer(
             "⏳ <b>Твій безкоштовний період завершився.</b>\n"
