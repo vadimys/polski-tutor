@@ -39,3 +39,25 @@ def upcoming(today: date) -> list[str]:
 
 def is_official(iso: str) -> bool:
     return iso in OFFICIAL_SESSIONS
+
+
+def days_left(iso: str, today: date) -> int | None:
+    """Днів до іспиту (може бути відʼємним, якщо минув). None — дати нема/битої."""
+    if not iso:
+        return None
+    try:
+        return (date.fromisoformat(iso) - today).days
+    except ValueError:
+        return None
+
+
+def status(iso: str, confirmed: bool, today: date) -> str:
+    """'none' | 'future' | 'today' | 'past' — фаза відносно дати іспиту."""
+    if not (confirmed and iso):
+        return "none"
+    d = days_left(iso, today)
+    if d is None:
+        return "none"
+    if d > 0:
+        return "future"
+    return "today" if d == 0 else "past"

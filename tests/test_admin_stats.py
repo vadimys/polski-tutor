@@ -13,11 +13,12 @@ def test_render_overview():
         "today": "2026-07-13", "total": 42, "active7": 10, "active30": 25, "new7": 5,
         "students": 38, "organic": 30, "referred": 8, "teachers": 4,
         "approved": 35, "pending": 2, "payers": 6, "revenue": 1800, "conv_pct": 16,
-        "avg_readiness": 54,
+        "avg_readiness": 54, "passed": 3, "failed": 1, "pass_rate": 75,
     }
     t = admin_stats.render_overview(d)
     assert "Усього: <b>42</b>" in t and "Викладачі: <b>4</b>" in t
     assert "1800</b>⭐" in t and "конверсія 16%" in t
+    assert "склали <b>3</b>" in t and "pass-rate 75%" in t
     assert "Сер. готовність учнів: <b>54%</b>" in t
 
 

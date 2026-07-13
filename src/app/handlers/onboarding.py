@@ -16,6 +16,7 @@ from app.bot.keyboards import (
     approved_kb,
     contact_admin_kb,
     exam_dates_kb,
+    exam_result_kb,
     extend_request_kb,
     role_choice_kb,
     send_request_kb,
@@ -41,6 +42,18 @@ def _date_kb():
     return exam_dates_kb(exam_dates.upcoming(clock.today_local()), "onb:date", with_unconfirmed=True)
 
 
+def _days_line(inf) -> str:
+    """Рядок про іспит з урахуванням фази (майбутнє/сьогодні/минув)."""
+    d = exam_dates.days_left(inf.exam_date, clock.today_local()) if inf.confirmed else None
+    if d is None:
+        return "Дату іспиту ще не підтверджено — познач її в меню."
+    if d > 0:
+        return f"До іспиту <b>{d}</b> днів."
+    if d == 0:
+        return "🍀 Сьогодні твій іспит — powodzenia!"
+    return "Іспит уже позаду. Признач нову дату, якщо готуєшся знову."
+
+
 async def _approved_welcome(message: Message, user_id: int) -> None:
     inf = await access.info(user_id)
     if inf.role == "teacher":
@@ -56,8 +69,15 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
         )
         return
     await vocab.seed_if_empty(user_id, clock.today_local())
+    # іспит минув, а результат ще не зафіксовано → питаємо «як пройшло?»
+    if exam_dates.status(inf.exam_date, inf.confirmed, clock.today_local()) == "past" and \
+            inf.exam_result in ("", "pending"):
+        await message.answer(
+            "📅 Твій іспит уже позаду. <b>Як пройшло?</b>", reply_markup=exam_result_kb()
+        )
+        return
     await message.answer(
-        f"Cześć! 👋 Доступ активний. До іспиту <b>{clock.days_to_exam()}</b> днів.\n"
+        f"Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
         "Почнемо зі стартового тесту або обери в меню 👇",
         reply_markup=approved_kb(),
     )
@@ -233,6 +253,40 @@ async def cb_examdate(cb: CallbackQuery) -> None:
     await cb.message.answer(
         f"✅ Дату іспиту збережено: <b>{exam_dates.label(iso)}</b>."
         + (f"\nДоступ активний до <b>{until}</b>." if until else ""),
+        reply_markup=to_menu_kb(),
+    )
+
+
+# --- Post-exam: результат іспиту (питання шле scheduler, коли дата минула) ---
+@router.callback_query(F.data == "exam:res:passed")
+async def cb_exam_passed(cb: CallbackQuery) -> None:
+    await access.set_exam_result(cb.from_user.id, "passed")
+    await cb.answer("🎉")
+    await cb.message.answer(
+        "🎉 <b>Вітаю зі складанням іспиту B1!</b> Це велика робота — ти дійшов до мети! 🇵🇱\n\n"
+        "Якщо бот був корисний — <b>порекомендуй його друзям</b>, хто теж готується. "
+        "Дякую, що був з нами! 💚",
+        reply_markup=to_menu_kb(),
+    )
+
+
+@router.callback_query(F.data == "exam:res:failed")
+async def cb_exam_failed(cb: CallbackQuery) -> None:
+    await access.set_exam_result(cb.from_user.id, "failed")
+    await cb.answer()
+    await cb.message.answer(
+        "Нічого страшного — це досвід, і ти вже близько. Обери <b>наступну сесію</b>, "
+        "і ми підтягнемо слабкі місця (весь прогрес зберігається):",
+        reply_markup=exam_dates_kb(exam_dates.upcoming(clock.today_local()), "onb:exam"),
+    )
+
+
+@router.callback_query(F.data == "exam:res:wait")
+async def cb_exam_wait(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await cb.message.answer(
+        "🤞 Тримаю кулаки! Коли дізнаєшся результат — познач його: /start → як пройшло, "
+        "або зміни дату (📅), якщо перескладатимеш.",
         reply_markup=to_menu_kb(),
     )
 

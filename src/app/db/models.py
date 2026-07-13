@@ -33,6 +33,7 @@ class User(Base):
     # контроль доступу (для грандіозного плану; наразі дефолти)
     exam_date: Mapped[str] = mapped_column(String(16), default="")
     exam_date_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
+    exam_result: Mapped[str] = mapped_column(String(16), default="")  # ''/pending/passed/failed
     access_status: Mapped[str] = mapped_column(String(16), default="pending")  # pending/approved/denied
     access_until: Mapped[str] = mapped_column(String(16), default="")
     requested_at: Mapped[str] = mapped_column(String(32), default="")

@@ -80,6 +80,16 @@ def extend_request_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def exam_result_kb() -> InlineKeyboardMarkup:
+    """Після іспиту: як пройшло?"""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Склав!", callback_data="exam:res:passed")
+    kb.button(text="❌ Не склав", callback_data="exam:res:failed")
+    kb.button(text="⏳ Чекаю результат", callback_data="exam:res:wait")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def admin_extend_kb(user_id: int) -> InlineKeyboardMarkup:
     """Рішення адміна щодо продовження доступу після trial."""
     kb = InlineKeyboardBuilder()

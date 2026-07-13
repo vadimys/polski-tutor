@@ -55,6 +55,7 @@ class AccessInfo:
     username: str
     role: str = "student"  # student / teacher / admin
     referred_by: int = 0
+    exam_result: str = ""  # '' / pending / passed / failed
 
 
 async def info(user_id: int) -> AccessInfo:
@@ -64,7 +65,7 @@ async def info(user_id: int) -> AccessInfo:
             return AccessInfo("new", "", "", False, "")
         return AccessInfo(
             u.access_status, u.access_until, u.exam_date, u.exam_date_confirmed,
-            u.username, u.role, u.referred_by,
+            u.username, u.role, u.referred_by, u.exam_result,
         )
 
 
@@ -220,10 +221,20 @@ async def set_exam_date(user_id: int, exam_date: str) -> str:
             return ""
         u.exam_date = exam_date
         u.exam_date_confirmed = True
+        u.exam_result = ""  # нова ціль → результат старого іспиту скидаємо (перецілення)
         if u.access_status == "approved":
             u.access_until = extend_until(u.access_until, exam_date)
         await s.commit()
         return u.access_until
+
+
+async def set_exam_result(user_id: int, result: str) -> None:
+    """Зафіксувати результат іспиту: pending / passed / failed."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is not None:
+            u.exam_result = result
+            await s.commit()
 
 
 async def deny(user_id: int) -> None:

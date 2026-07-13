@@ -74,6 +74,8 @@ async def overview() -> dict:
     measured = [u for u in students if u.readiness]
     avg_readiness = round(sum(_overall(u.readiness) for u in measured) / len(measured)) if measured else 0
     new7 = sum(1 for u in users if u.created_at and u.created_at >= d7)
+    passed = sum(1 for u in students if u.exam_result == "passed")
+    failed = sum(1 for u in students if u.exam_result == "failed")
     return {
         "total": len(users),
         "teachers": len(teachers),
@@ -90,6 +92,9 @@ async def overview() -> dict:
         "avg_readiness": avg_readiness,
         # конверсія trial→оплата: платних / (схвалених учнів)
         "conv_pct": round(payers / len(students) * 100) if students else 0,
+        "passed": passed,
+        "failed": failed,
+        "pass_rate": round(passed / (passed + failed) * 100) if (passed + failed) else 0,
         "today": today.isoformat(),
     }
 
@@ -176,6 +181,8 @@ def render_overview(d: dict) -> str:
         f"🟢 Доступ: схвалено {d['approved']} · очікують {d['pending']}\n"
         f"💎 Платних: <b>{d['payers']}</b> · дохід <b>{d['revenue']}</b>⭐ · "
         f"конверсія {d['conv_pct']}%\n"
+        f"🎓 Іспит: склали <b>{d['passed']}</b> · не склали {d['failed']} · "
+        f"pass-rate {d['pass_rate']}%\n"
         f"📈 Сер. готовність учнів: <b>{d['avg_readiness']}%</b>"
     )
 

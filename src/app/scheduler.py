@@ -15,15 +15,17 @@ from datetime import date, timedelta
 from aiogram import Bot
 from redis.asyncio import Redis
 
-from app.bot.keyboards import coach_kb
+from app.bot.keyboards import coach_kb, exam_result_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
-from app.services import access, clock, gdpr, goals, state
+from app.services import access, clock, exam_dates, gdpr, goals, state
 
 logger = logging.getLogger(__name__)
 
 _PURGE_HOUR = 3  # ретеншн-очищення denied-користувачів — раз на добу вночі
+_EXAM_HOUR = 9  # exam-lifecycle (напередодні/день/post-exam) — раз на добу зранку
 _NUDGE_TTL = 90_000  # ~25 год — дедуп-мітка нагадування самоскидається щодоби
+_EXAM_TTL = 40 * 24 * 3600  # дедуп exam-повідомлень (довше за вікно до/після іспиту)
 
 _redis: Redis | None = None
 
@@ -42,6 +44,41 @@ async def _already_nudged(user_id: int, today: str) -> bool:
 
 async def _mark_nudged(user_id: int, today: str) -> None:
     await _r().set(f"polski:nudge:{user_id}:{today}", "1", ex=_NUDGE_TTL)
+
+
+async def _claim(key: str) -> bool:
+    """Атомарно «займає» разову подію (exam-lifecycle) — True, якщо ще не було."""
+    return bool(await _r().set(key, "1", nx=True, ex=_EXAM_TTL))
+
+
+async def _exam_lifecycle(bot: Bot, today: date) -> None:
+    """Раз на добу: напередодні іспиту — поради, у день — powodzenia, після — «як пройшло?»."""
+    for uid in await state.all_user_ids():
+        if uid == settings.admin_id or not await access.is_allowed(uid, settings.admin_id):
+            continue
+        inf = await access.info(uid)
+        if inf.role == "teacher" or not (inf.confirmed and inf.exam_date):
+            continue
+        d = exam_dates.days_left(inf.exam_date, today)
+        if d is None:
+            continue
+        try:
+            if d == 1 and await _claim(f"exl:before:{uid}:{inf.exam_date}"):
+                await bot.send_message(
+                    uid,
+                    "📅 <b>Завтра твій іспит B1!</b> Поради: сьогодні відпочинь і виспись, "
+                    "звечора склади документи (паспорт), приходь на місце завчасно. "
+                    "Ти готувався — вір у себе! 🍀",
+                )
+            elif d == 0 and await _claim(f"exl:day:{uid}:{inf.exam_date}"):
+                await bot.send_message(uid, "🍀 <b>Powodzenia na egzaminie!</b> Ти впораєшся 💪")
+            elif d < 0 and inf.exam_result == "":
+                await access.set_exam_result(uid, "pending")  # питаємо один раз
+                await bot.send_message(
+                    uid, "📅 Твій іспит уже позаду. <b>Як пройшло?</b>", reply_markup=exam_result_kb()
+                )
+        except Exception:  # noqa: BLE001
+            logger.exception("exam lifecycle failed uid=%s", uid)
 
 
 async def _seconds_until_next_hour() -> float:
@@ -114,6 +151,8 @@ async def daily_nudge_loop(bot: Bot) -> None:
                         logger.info("Retention: видалено %d denied-користувачів", purged)
                 except Exception:
                     logger.exception("retention purge failed")
+            if now.hour == _EXAM_HOUR:  # exam-lifecycle (дедуп усередині) — раз на добу
+                await _exam_lifecycle(bot, clock.today_local())
         except asyncio.CancelledError:
             raise
         except Exception:
