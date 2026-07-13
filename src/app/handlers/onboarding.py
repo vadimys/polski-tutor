@@ -123,6 +123,42 @@ async def _try_referral(message: Message, uid: int, payload: str) -> bool:
     return True
 
 
+async def _expired_paywall(uid: int, inf) -> str:  # noqa: ANN001
+    """Paywall завершеного trial за скілом `paywalls`: спершу ПІДСУМУВАТИ отриману
+    цінність (досягнення) → нагадати ціль і скільки лишилось → чіткий ціннісний CTA.
+    Втрата на пів-дорозі болючіша за ціну — тому спираємось на реальний прогрес учня."""
+    from app.services import progress, quest
+    from app.services import state as user_state
+
+    st = await user_state.load(uid)
+    total_sessions, _ = await progress.counts(uid)
+    words = await vocab.count(uid)
+    overall = quest.overall_pct(st.readiness or {})
+
+    lines = ["⏳ <b>Твій безкоштовний період завершився.</b>\n"]
+    if total_sessions:  # показуємо цінність, яку вже отримав (а не лише ціну)
+        acc = [f"🏋️ вправ пройдено: <b>{total_sessions}</b>", f"🏁 готовність до B1: <b>{overall}%</b>"]
+        if words:
+            acc.append(f"📚 слів у памʼяті: <b>{words}</b>")
+        if st.streak:
+            acc.append(f"🔥 серія: <b>{st.streak}</b> дн")
+        lines.append("За цей час ти вже:\n• " + "\n• ".join(acc) + "\n")
+
+    days = (
+        exam_dates.days_left(inf.exam_date, clock.today_local())
+        if inf.confirmed and inf.exam_date
+        else None
+    )
+    if days is not None and days >= 0:
+        lines.append(f"⏰ До іспиту <b>{days} днів</b> — шкода спинятися на пів-дорозі.")
+    lines.append(
+        "Щоб не втратити прогрес і <b>довести справу до складеного B1</b>, відкрий повний "
+        "доступ до всіх 5 модулів (з фідбеком письма й мовлення від AI) — "
+        f"<b>{settings.sub_stars} ⭐ / {settings.sub_days} днів</b>."
+    )
+    return "\n".join(lines)
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, command: CommandObject) -> None:
     await state.clear()
@@ -135,12 +171,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
             from app.handlers.admin import send_hub  # адмін → одразу панель керування
             await send_hub(message)
     elif access.is_expired(inf, clock.today_local()):
-        await message.answer(
-            "⏳ <b>Твій безкоштовний період завершився.</b>\n"
-            f"Сподіваюсь, бот був корисний! Щоб продовжити підготовку — оформи підписку "
-            f"(<b>{settings.sub_stars} ⭐ / {settings.sub_days} днів</b>) через Telegram Stars.",
-            reply_markup=extend_request_kb(),
-        )
+        await message.answer(await _expired_paywall(uid, inf), reply_markup=extend_request_kb())
     elif inf.status == "approved":
         await _approved_welcome(message, uid)
     elif inf.status == "pending":
