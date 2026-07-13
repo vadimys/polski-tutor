@@ -15,7 +15,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb, teacher_welcome_kb
 from app.config import settings
-from app.services import access, admin_stats, broadcast, churn, events, resets, support, viewas
+from app.services import (
+    access,
+    admin_stats,
+    broadcast,
+    churn,
+    events,
+    experiments,
+    resets,
+    support,
+    viewas,
+)
 from app.services import state as user_state
 
 router = Router()
@@ -199,6 +209,7 @@ async def cb_analytics(cb: CallbackQuery) -> None:
     kb.button(text="📈 Фічі (увага)", callback_data="ac:an:feat")
     kb.button(text="🔻 Воронка", callback_data="ac:an:funnel")
     kb.button(text="🙅 Причини відмов", callback_data="ac:an:churn")
+    kb.button(text="🧪 A/B тести", callback_data="ac:an:abtest")
     kb.button(text="📉 Складність модулів", callback_data="ac:an:mods")
     kb.button(text="🛠 Хаб", callback_data="ac:hub")
     kb.adjust(1)
@@ -220,6 +231,12 @@ async def cb_analytics_view(cb: CallbackQuery) -> None:
         text = admin_stats.render_funnel(await admin_stats.funnel())
     elif what == "churn":
         text = admin_stats.render_churn(await churn.reasons_report())
+    elif what == "abtest":
+        blocks = [
+            experiments.render_report(key, await experiments.report(key))
+            for key in experiments.TESTS
+        ]
+        text = "\n\n".join(blocks) if blocks else "🧪 Немає активних тестів."
     else:  # mods
         text = admin_stats.render_mods(await admin_stats.module_difficulty())
     kb = InlineKeyboardBuilder()

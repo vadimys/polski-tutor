@@ -23,7 +23,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb
 from app.config import settings
-from app.services import billing, viewas
+from app.services import billing, experiments, viewas
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -125,6 +125,7 @@ async def on_paid(message: Message) -> None:
         reply_markup=approved_kb(),
     )
     logger.info("payment ok uid=%s stars=%s until=%s", uid, stars, until)
+    await experiments.convert("paywall_expiry", uid)  # A/B: конверсія trial→оплата
     # сповістити викладача, якщо учень приведений (референс-бонус/атрибуція)
     teacher_id = await billing.referrer_of(uid)
     if teacher_id:

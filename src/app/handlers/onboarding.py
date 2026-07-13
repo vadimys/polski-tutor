@@ -27,7 +27,17 @@ from app.bot.keyboards import (
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
-from app.services import access, activation, churn, clock, exam_dates, groups, viewas, vocab
+from app.services import (
+    access,
+    activation,
+    churn,
+    clock,
+    exam_dates,
+    experiments,
+    groups,
+    viewas,
+    vocab,
+)
 
 router = Router()
 
@@ -133,10 +143,10 @@ async def _try_referral(message: Message, uid: int, payload: str) -> bool:
     return True
 
 
-async def _expired_paywall(uid: int, inf) -> str:  # noqa: ANN001
-    """Paywall завершеного trial за скілом `paywalls`: спершу ПІДСУМУВАТИ отриману
-    цінність (досягнення) → нагадати ціль і скільки лишилось → чіткий ціннісний CTA.
-    Втрата на пів-дорозі болючіша за ціну — тому спираємось на реальний прогрес учня."""
+async def _expired_paywall(uid: int, inf, variant: int = 0) -> str:  # noqa: ANN001
+    """Paywall завершеного trial (A/B — skill ab-testing). Обидва варіанти спираються
+    на РЕАЛЬНИЙ прогрес; різниться ЛИШЕ формулювання (одна змінна):
+    A — підсумок-досягнень + ціль; B — втрата+терміновість (дедлайн)."""
     from app.services import progress, quest
     from app.services import state as user_state
 
@@ -144,28 +154,46 @@ async def _expired_paywall(uid: int, inf) -> str:  # noqa: ANN001
     total_sessions, _ = await progress.counts(uid)
     words = await vocab.count(uid)
     overall = quest.overall_pct(st.readiness or {})
+    days = (
+        exam_dates.days_left(inf.exam_date, clock.today_local())
+        if inf.confirmed and inf.exam_date
+        else None
+    )
+    cta = (
+        "повний доступ до всіх 5 модулів (з фідбеком письма й мовлення від AI) — "
+        f"<b>{settings.sub_stars} ⭐ / {settings.sub_days} днів</b>."
+    )
 
+    if variant == 1:  # B — втрата + терміновість
+        lines = ["⏳ <b>Твій безкоштовний період завершився.</b>\n"]
+        if total_sessions:
+            stat = [f"🏁 готовність {overall}%"]
+            if st.streak:
+                stat.append(f"🔥 серія {st.streak} дн")
+            if words:
+                stat.append(f"📚 {words} слів")
+            lines.append(
+                "⚠️ Без практики польська швидко тане. Ти вже наробив: "
+                + " · ".join(stat)
+                + " — не даймо цьому згаснути."
+            )
+        if days is not None and days >= 0:
+            lines.append(f"\n⏰ До іспиту <b>{days} днів</b> — час працює або на тебе, або проти.")
+        lines.append(f"\nВідкрий {cta}")
+        return "\n".join(lines)
+
+    # A — підсумок-досягнень + ціль (контроль)
     lines = ["⏳ <b>Твій безкоштовний період завершився.</b>\n"]
-    if total_sessions:  # показуємо цінність, яку вже отримав (а не лише ціну)
+    if total_sessions:
         acc = [f"🏋️ вправ пройдено: <b>{total_sessions}</b>", f"🏁 готовність до B1: <b>{overall}%</b>"]
         if words:
             acc.append(f"📚 слів у памʼяті: <b>{words}</b>")
         if st.streak:
             acc.append(f"🔥 серія: <b>{st.streak}</b> дн")
         lines.append("За цей час ти вже:\n• " + "\n• ".join(acc) + "\n")
-
-    days = (
-        exam_dates.days_left(inf.exam_date, clock.today_local())
-        if inf.confirmed and inf.exam_date
-        else None
-    )
     if days is not None and days >= 0:
         lines.append(f"⏰ До іспиту <b>{days} днів</b> — шкода спинятися на пів-дорозі.")
-    lines.append(
-        "Щоб не втратити прогрес і <b>довести справу до складеного B1</b>, відкрий повний "
-        "доступ до всіх 5 модулів (з фідбеком письма й мовлення від AI) — "
-        f"<b>{settings.sub_stars} ⭐ / {settings.sub_days} днів</b>."
-    )
+    lines.append(f"Щоб не втратити прогрес і <b>довести справу до складеного B1</b>, відкрий {cta}")
     return "\n".join(lines)
 
 
@@ -228,7 +256,8 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
             from app.handlers.admin import send_hub  # адмін → одразу панель керування
             await send_hub(message)
     elif access.is_expired(inf, clock.today_local()):
-        await message.answer(await _expired_paywall(uid, inf), reply_markup=churn_survey_kb())
+        v = await experiments.expose("paywall_expiry", uid)  # A/B копії paywall
+        await message.answer(await _expired_paywall(uid, inf, v), reply_markup=churn_survey_kb())
     elif inf.status == "approved":
         await _approved_welcome(message, uid)
     elif inf.status == "pending":
