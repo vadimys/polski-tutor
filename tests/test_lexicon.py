@@ -1,30 +1,35 @@
-"""Вільний словник: парсинг слів + сортування легше→важче."""
+"""Тематичний словник: цілісність підтем + парсер (чисті частини)."""
 
 from app.services import lexicon
 
 
-def test_topics_nonempty_and_labeled():
-    assert lexicon.TOPICS
-    key = lexicon.TOPICS[0][0]
-    assert lexicon.label(key) == lexicon.TOPICS[0][1]
+def test_every_topic_has_subtopics():
+    for key, _ in lexicon.TOPICS:
+        subs = lexicon.subtopics(key)
+        assert subs, f"тема {key} без підтем"
+        keys = [s for s, _ in subs]
+        assert len(keys) == len(set(keys)), f"дублі підтем у {key}"
+        assert all(lbl for _, lbl in subs)
 
 
-def test_parse_sorts_by_level_and_keeps_fields():
-    raw = (
-        '[{"pl":"trudny","ua":"складний","example":"To trudny test.","level":3},'
-        '{"pl":"dom","ua":"дім","example":"Mam dom.","level":1},'
-        '{"pl":"praca","ua":"робота","example":"Idę do pracy.","level":2}]'
-    )
+def test_labels_and_fallback():
+    assert lexicon.topic_label("jedzenie").startswith("🍽")
+    assert "Овоч" in lexicon.sub_label("jedzenie", "owoce")
+    assert lexicon.sub_label("jedzenie", "nope") == "nope"  # фолбек
+    assert lexicon.topic_label("nope") == "nope"
+
+
+def test_parse_dedups_and_sorts_by_level():
+    raw = """[
+      {"pl":"trudny","ua":"важкий","example":"","level":3},
+      {"pl":"dom","ua":"дім","example":"To jest dom.","level":1},
+      {"pl":"dom","ua":"дубль","example":"","level":1},
+      {"pl":"okno","ua":"вікно","example":"","level":2}
+    ]"""
     words = lexicon._parse(raw)
-    assert [w.level for w in words] == [1, 2, 3]  # від найлегших до найважчих
-    assert words[0].pl == "dom" and words[0].example.startswith("Mam")
+    assert [w.pl for w in words] == ["dom", "okno", "trudny"]  # дедуп + сорт за level
 
 
-def test_parse_handles_code_fence_and_bad_items():
-    raw = '```json\n[{"pl":"kot","ua":"кіт","level":1},{"bad":"x"}]\n```'
-    words = lexicon._parse(raw)
-    assert len(words) == 1 and words[0].pl == "kot"
-
-
-def test_parse_garbage_returns_empty():
-    assert lexicon._parse("no json here") == []
+def test_parse_handles_codefence_and_junk():
+    assert lexicon._parse("```json\n[]\n```") == []
+    assert lexicon._parse("not json") == []

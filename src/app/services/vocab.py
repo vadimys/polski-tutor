@@ -76,6 +76,27 @@ async def add(user_id: int, pl: str, uk: str, today: date) -> bool:
     return True
 
 
+async def add_many(user_id: int, pairs: list[tuple[str, str]], today: date) -> int:
+    """Додати одразу багато слів (нові — box=1). Повертає, скільки реально додано."""
+    r = _r()
+    k = _key(user_id)
+    existing = set(await r.hkeys(k))
+    fresh = {pl: _dump(uk, 1, today.isoformat()) for pl, uk in pairs if pl not in existing}
+    if fresh:
+        await r.hset(k, mapping=fresh)
+    return len(fresh)
+
+
+async def has_words(user_id: int, pls: list[str]) -> set[str]:
+    """Які з наданих pl уже є у словнику користувача (для прогресу теми)."""
+    if not pls:
+        return set()
+    r = _r()
+    k = _key(user_id)
+    flags = await r.hmget(k, pls)
+    return {pl for pl, v in zip(pls, flags, strict=True) if v is not None}
+
+
 async def get(user_id: int, pl: str) -> VocabItem | None:
     raw = await _r().hget(_key(user_id), pl)
     if not raw:

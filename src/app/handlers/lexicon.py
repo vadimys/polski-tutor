@@ -1,7 +1,7 @@
-"""Вільний словник за темами: мікро-навчання будь-де (флеш-картки, легше→важче).
+"""Тематичний словник: тема → підтема → огляд / флешкарти / гуртом у SRS + пошук.
 
-Пресінгу немає: не рухає готовність/ціль. «➕ У мій словник» додає слово в SRS
-(потім у /powtorki). 🔊 — вимова (спільний say-хендлер).
+Пресінгу немає: не рухає готовність/ціль. «➕ У словник» додає в SRS (потім /powtorki).
+🔊 — вимова (спільний say-хендлер). Слова AI-генеруються на підтему й кешуються.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from __future__ import annotations
 import html
 
 from aiogram import F, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -20,33 +20,38 @@ from app.services import clock, lexicon, tts_say, vocab
 
 router = Router()
 
+_OV_PAGE = 12  # слів на сторінку огляду
+
 
 class Lexicon(StatesGroup):
-    browsing = State()
+    browsing = State()  # флешкарти
 
 
-def _topics_kb() -> object:
-    kb = InlineKeyboardBuilder()
-    for key, lbl in lexicon.TOPICS:
-        kb.button(text=lbl, callback_data=f"lex:t:{key}")
-    kb.button(text="⬅️ Меню", callback_data="menu:home")
-    kb.adjust(1)
-    return kb.as_markup()
+# ---------- теми ----------
 
 
 async def _send_topics(message: Message) -> None:
+    kb = InlineKeyboardBuilder()
+    for key, lbl in lexicon.TOPICS:
+        kb.button(text=f"{lbl} ({len(lexicon.subtopics(key))})", callback_data=f"lex:t:{key}")
+    kb.button(text="🔎 Пошук слова", callback_data="lex:searchhint")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
     await message.answer(
-        "📚 <b>Вільний словник</b> — вчи слова коли є хвилинка (у черзі, на лавці…).\n"
-        "Обери тему (слова йдуть від найлегших до найважчих):",
-        reply_markup=_topics_kb(),
+        "📚 <b>Словник за темами</b> — вчи слова коли є хвилинка (у черзі, на лавці…).\n"
+        "12 тем · сотні слів. Обери тему, тоді підтему.\n"
+        "🔎 Або знайди слово: <code>/szukaj &lt;слово&gt;</code>",
+        reply_markup=kb.as_markup(),
     )
 
 
 @router.message(Command("slownik"))
-async def cmd_lexicon(message: Message) -> None:
+async def cmd_lexicon(message: Message, state: FSMContext) -> None:
+    await state.clear()
     await _send_topics(message)
 
 
+@router.callback_query(F.data == "lex:open")
 @router.callback_query(F.data == "lex:topics")
 async def cb_topics(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
@@ -54,29 +59,136 @@ async def cb_topics(cb: CallbackQuery, state: FSMContext) -> None:
     await _send_topics(cb.message)
 
 
+# ---------- підтеми (з прогресом) ----------
+
+
+async def _send_subtopics(message: Message, user_id: int, topic: str) -> None:
+    kb = InlineKeyboardBuilder()
+    for sub_key, sub_lbl in lexicon.subtopics(topic):
+        words = await lexicon.cached_words(topic, sub_key)  # без генерації
+        suffix = ""
+        if words:
+            in_deck = len(await vocab.has_words(user_id, [w.pl for w in words]))
+            suffix = f" · 📥 {in_deck}/{len(words)}"
+        kb.button(text=f"{sub_lbl}{suffix}", callback_data=f"lex:s:{topic}:{sub_key}")
+    kb.button(text="⬅️ Теми", callback_data="lex:topics")
+    kb.adjust(1)
+    await message.answer(
+        f"📚 <b>{lexicon.topic_label(topic)}</b>\nОбери підтему (📥 — скільки вже у твоєму словнику):",
+        reply_markup=kb.as_markup(),
+    )
+
+
 @router.callback_query(F.data.startswith("lex:t:"))
 async def cb_topic(cb: CallbackQuery, state: FSMContext) -> None:
-    topic = cb.data.split(":", 2)[2]
+    await state.clear()
     await cb.answer()
-    status = await cb.message.answer("⏳ Готую слова теми…")
-    words = await lexicon.words_for(topic)
+    await _send_subtopics(cb.message, cb.from_user.id, cb.data.split(":", 2)[2])
+
+
+# ---------- підтема: вибір режиму ----------
+
+
+async def _send_subtopic(message: Message, user_id: int, topic: str, sub: str) -> None:
+    status = await message.answer("⏳ Готую слова…")
+    words = await lexicon.words_for(topic, sub)
     if not words:
         await status.edit_text(
-            "😔 Не вдалося завантажити слова. Спробуй пізніше.", reply_markup=_topics_kb()
+            "😔 Не вдалося завантажити слова. Спробуй пізніше.",
+            reply_markup=_back_kb(f"lex:t:{topic}", "⬅️ Підтеми"),
         )
         return
+    in_deck = len(await vocab.has_words(user_id, [w.pl for w in words]))
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📖 Огляд (список)", callback_data=f"lex:ov:{topic}:{sub}:0")
+    kb.button(text="🎴 Флешкарти", callback_data=f"lex:fc:{topic}:{sub}")
+    kb.button(text=f"➕ Додати всі {len(words)} у словник", callback_data=f"lex:aa:{topic}:{sub}")
+    kb.button(text="⬅️ Підтеми", callback_data=f"lex:t:{topic}")
+    kb.adjust(1)
+    await status.edit_text(
+        f"📚 <b>{lexicon.topic_label(topic)} · {lexicon.sub_label(topic, sub)}</b>\n"
+        f"📊 {len(words)} слів · 📥 {in_deck} вже у твоєму словнику\n\nЯк вчимо?",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data.startswith("lex:s:"))
+async def cb_subtopic(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer()
+    _, _, topic, sub = cb.data.split(":")
+    await _send_subtopic(cb.message, cb.from_user.id, topic, sub)
+
+
+# ---------- огляд (список із перекладами, сторінками) ----------
+
+
+@router.callback_query(F.data.startswith("lex:ov:"))
+async def cb_overview(cb: CallbackQuery) -> None:
+    await cb.answer()
+    _, _, topic, sub, page_s = cb.data.split(":")
+    page = int(page_s)
+    words = await lexicon.words_for(topic, sub)
+    if not words:
+        return
+    pages = (len(words) + _OV_PAGE - 1) // _OV_PAGE
+    page = max(0, min(page, pages - 1))
+    chunk = words[page * _OV_PAGE : (page + 1) * _OV_PAGE]
+    lines = [f"📖 <b>{lexicon.sub_label(topic, sub)}</b> · стор. {page + 1}/{pages}\n"]
+    for i, w in enumerate(chunk, start=page * _OV_PAGE + 1):
+        ex = f"\n   <i>{html.escape(w.example)}</i>" if w.example else ""
+        lines.append(f"{i}. 🇵🇱 <b>{html.escape(w.pl)}</b> — {html.escape(w.ua)}{ex}")
+    kb = InlineKeyboardBuilder()
+    if page > 0:
+        kb.button(text="◀️", callback_data=f"lex:ov:{topic}:{sub}:{page - 1}")
+    if page < pages - 1:
+        kb.button(text="▶️", callback_data=f"lex:ov:{topic}:{sub}:{page + 1}")
+    kb.button(text="➕ Додати всі у словник", callback_data=f"lex:aa:{topic}:{sub}")
+    kb.button(text="🎴 Флешкарти", callback_data=f"lex:fc:{topic}:{sub}")
+    kb.button(text="⬅️ Підтема", callback_data=f"lex:s:{topic}:{sub}")
+    kb.adjust(2, 1, 1, 1)
+    with _suppress():
+        await cb.message.edit_text("\n".join(lines), reply_markup=kb.as_markup())
+
+
+# ---------- гуртове додавання ----------
+
+
+@router.callback_query(F.data.startswith("lex:aa:"))
+async def cb_add_all(cb: CallbackQuery) -> None:
+    _, _, topic, sub = cb.data.split(":")
+    words = await lexicon.words_for(topic, sub)
+    added = await vocab.add_many(
+        cb.from_user.id, [(w.pl, w.ua) for w in words], clock.today_local()
+    )
+    await cb.answer(
+        f"➕ Додано {added} нових слів у словник!" if added else "Усі слова вже у твоєму словнику 🙂",
+        show_alert=True,
+    )
+
+
+# ---------- флешкарти ----------
+
+
+@router.callback_query(F.data.startswith("lex:fc:"))
+async def cb_flashcards(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    _, _, topic, sub = cb.data.split(":")
+    words = await lexicon.words_for(topic, sub)
+    if not words:
+        return
     await state.set_state(Lexicon.browsing)
-    await state.update_data(topic=topic, words=[w.__dict__ for w in words], idx=0)
-    await _render_card(status, state, reveal=False)
+    await state.update_data(topic=topic, sub=sub, words=[w.__dict__ for w in words], idx=0)
+    await _render_card(cb.message, state, reveal=False, fresh=True)
 
 
-async def _render_card(msg: Message, state: FSMContext, reveal: bool) -> None:
-    await tts_say.forget_voice(msg.bot, msg.chat.id)  # прибрати голосове попереднього слова
+async def _render_card(msg: Message, state: FSMContext, reveal: bool, fresh: bool = False) -> None:
+    await tts_say.forget_voice(msg.bot, msg.chat.id)
     data = await state.get_data()
-    words, idx, topic = data["words"], data["idx"], data["topic"]
+    words, idx, topic, sub = data["words"], data["idx"], data["topic"], data["sub"]
     w = words[idx]
     stars = "★" * w["level"] + "☆" * (3 - w["level"])
-    head = f"📚 <b>{lexicon.label(topic)}</b> · {idx + 1}/{len(words)} · {stars}"
+    head = f"🎴 <b>{lexicon.sub_label(topic, sub)}</b> · {idx + 1}/{len(words)} · {stars}"
     kb = InlineKeyboardBuilder()
     if tts.available():
         kb.button(text="🔊 Вимова", callback_data=f"say:{await tts_say.stash(w['pl'])}")
@@ -84,20 +196,24 @@ async def _render_card(msg: Message, state: FSMContext, reveal: bool) -> None:
         body = f"🇵🇱 <b>{html.escape(w['pl'])}</b> — {html.escape(w['ua'])}"
         if w["example"]:
             body += f"\n📌 <i>{html.escape(w['example'])}</i>"
-        body += "\n\nЗнаєш це слово? <b>➕ Додай у словник</b>, щоб повторити пізніше, або <b>➡️ Далі</b>."
+        body += "\n\n<b>➕ Додай у словник</b>, щоб повторити пізніше, або <b>➡️ Далі</b>."
         kb.button(text="➕ У мій словник", callback_data="lex:add")
         kb.button(text="➡️ Далі", callback_data="lex:next")
     else:
         body = (
             f"🇵🇱 <b>{html.escape(w['pl'])}</b>\n\n"
-            "🧠 Згадай переклад у голові, послухай вимову — тоді тисни "
-            "<b>👁 Показати переклад</b>, щоб перевірити себе."
+            "🧠 Згадай переклад, послухай вимову — тоді <b>👁 Показати переклад</b>."
         )
         kb.button(text="👁 Показати переклад", callback_data="lex:show")
         kb.button(text="➡️ Далі", callback_data="lex:next")
-    kb.button(text="⬅️ Теми", callback_data="lex:topics")
+    kb.button(text="⬅️ Підтема", callback_data=f"lex:s:{topic}:{sub}")
     kb.adjust(1)
-    await msg.edit_text(f"{head}\n\n{body}", reply_markup=kb.as_markup())
+    text = f"{head}\n\n{body}"
+    if fresh:
+        await msg.answer(text, reply_markup=kb.as_markup())
+    else:
+        with _suppress():
+            await msg.edit_text(text, reply_markup=kb.as_markup())
 
 
 @router.callback_query(Lexicon.browsing, F.data == "lex:show")
@@ -112,14 +228,15 @@ async def _advance(cb: CallbackQuery, state: FSMContext) -> None:
     if idx >= len(data["words"]):
         await state.clear()
         kb = InlineKeyboardBuilder()
-        kb.button(text="🔁 Спочатку", callback_data=f"lex:t:{data['topic']}")
-        kb.button(text="⬅️ Теми", callback_data="lex:topics")
-        kb.button(text="⬅️ Меню", callback_data="menu:home")
+        kb.button(text="➕ Додати всю підтему", callback_data=f"lex:aa:{data['topic']}:{data['sub']}")
+        kb.button(text="🔁 Спочатку", callback_data=f"lex:fc:{data['topic']}:{data['sub']}")
+        kb.button(text="⬅️ Підтеми", callback_data=f"lex:t:{data['topic']}")
         kb.adjust(1)
-        await cb.message.edit_text(
-            "🎉 <b>Тему пройдено!</b> Додані слова чекають на тебе у /powtorki 🔁",
-            reply_markup=kb.as_markup(),
-        )
+        with _suppress():
+            await cb.message.edit_text(
+                "🎉 <b>Підтему пройдено!</b> Додані слова чекають у /powtorki 🔁",
+                reply_markup=kb.as_markup(),
+            )
         return
     await state.update_data(idx=idx)
     await _render_card(cb.message, state, reveal=False)
@@ -140,8 +257,49 @@ async def cb_add(cb: CallbackQuery, state: FSMContext) -> None:
     await _advance(cb, state)
 
 
-@router.callback_query(F.data == "lex:open")  # вхід із меню
-async def cb_open(cb: CallbackQuery, state: FSMContext) -> None:
-    await state.clear()
-    await cb.answer()
-    await _send_topics(cb.message)
+# ---------- пошук ----------
+
+
+@router.callback_query(F.data == "lex:searchhint")
+async def cb_search_hint(cb: CallbackQuery) -> None:
+    await cb.answer(
+        "Надішли: /szukaj <слово> — знайду серед уже відкритих тем 🔎", show_alert=True
+    )
+
+
+@router.message(Command("szukaj"))
+async def cmd_search(message: Message, command: CommandObject) -> None:
+    query = (command.args or "").strip()
+    if len(query) < 2:
+        await message.answer("🔎 Приклад: <code>/szukaj książka</code> або <code>/szukaj книга</code>")
+        return
+    results = await lexicon.search(query)
+    if not results:
+        await message.answer(
+            "😔 Нічого не знайшов серед уже відкритих тем. Пошук працює по темах, які ти вже "
+            "відкривав — спершу зайди у кілька тем, щоб наповнити словник.",
+        )
+        return
+    lines = [f"🔎 <b>Знайдено ({len(results)})</b> за «{html.escape(query)}»:\n"]
+    for w, topic, sub in results:
+        lines.append(
+            f"🇵🇱 <b>{html.escape(w.pl)}</b> — {html.escape(w.ua)}  "
+            f"<i>({lexicon.topic_label(topic)} · {lexicon.sub_label(topic, sub)})</i>"
+        )
+    await message.answer("\n".join(lines))
+
+
+# ---------- утиліти ----------
+
+
+def _back_kb(cb_data: str, label: str) -> object:
+    kb = InlineKeyboardBuilder()
+    kb.button(text=label, callback_data=cb_data)
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def _suppress():  # noqa: ANN202 — контекст-менеджер придушення «message not modified» тощо
+    from contextlib import suppress
+
+    return suppress(Exception)
