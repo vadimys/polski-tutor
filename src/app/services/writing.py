@@ -10,11 +10,14 @@ wykonanie zadania 0-10 · środki językowe 0-10 · poprawność językowa 0-10 
 
 from __future__ import annotations
 
+import logging
 import random
 from dataclasses import dataclass
 
 from app.integrations import ai
 from app.services.feedback import parse_official_pisanie, strip_official_line
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -183,4 +186,10 @@ async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple
     out = await ai.ask(_SYSTEM, _prompt(ws, text_a, text_b), strong=True, max_tokens=1900)
     if not out:
         return "", None
-    return strip_official_line(out), parse_official_pisanie(out)
+    fb, scores = strip_official_line(out), parse_official_pisanie(out)
+    from app.services.eval_feedback import contract_issues  # відкладено — уникаємо циклів
+
+    issues = contract_issues(fb, scores)
+    if issues:  # моніторинг якості: злам формату/рубрики видно в логах (не блокує учня)
+        logger.warning("writing feedback contract issues %s (set=%s)", issues, ws.id)
+    return fb, scores

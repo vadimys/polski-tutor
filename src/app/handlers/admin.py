@@ -79,6 +79,22 @@ async def cmd_admin(message: Message) -> None:
     await send_hub(message)
 
 
+@router.message(Command("eval_pisanie"))
+async def cmd_eval_pisanie(message: Message) -> None:
+    """Калібрування якості AI-фідбеку письма (LLM-as-judge на фікстурах). Лише адмін."""
+    if not _is_admin(message.from_user.id):
+        return
+    from app.integrations import ai
+    from app.services import eval_feedback
+
+    if not ai.enabled():
+        await message.answer("AI вимкнено — калібрування недоступне.")
+        return
+    await message.answer("🧪 Ганяю калібрування фідбеку письма (може зайняти ~хвилину)…")
+    rows = await eval_feedback.run_calibration()
+    await message.answer(eval_feedback.render_calibration(rows))
+
+
 @router.callback_query(F.data == "ac:hub")
 async def cb_hub(cb: CallbackQuery) -> None:
     if not _is_admin(cb.from_user.id):
