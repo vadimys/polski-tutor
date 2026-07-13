@@ -23,7 +23,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb
 from app.config import settings
-from app.services import billing, experiments, viewas
+from app.services import access, billing, experiments, referrals, viewas
 
 router = Router()
 logger = logging.getLogger(__name__)
@@ -126,6 +126,17 @@ async def on_paid(message: Message) -> None:
     )
     logger.info("payment ok uid=%s stars=%s until=%s", uid, stars, until)
     await experiments.convert("paywall_expiry", uid)  # A/B: конверсія trial→оплата
+    # word-of-mouth: якщо оплатив запрошений друг — винагородити запрошувача
+    referrer = await referrals.on_subscription(uid)
+    if referrer:
+        r_until = await access.extend_days(referrer, settings.referral_reward_days)
+        with suppress(Exception):
+            await message.bot.send_message(
+                referrer,
+                f"🎉 Друг, якого ти запросив, оформив підписку! Тобі <b>+"
+                f"{settings.referral_reward_days} днів</b> доступу (до <b>{r_until}</b>). "
+                "Дякуємо, що ділишся 🙌",
+            )
     # сповістити викладача, якщо учень приведений (референс-бонус/атрибуція)
     teacher_id = await billing.referrer_of(uid)
     if teacher_id:

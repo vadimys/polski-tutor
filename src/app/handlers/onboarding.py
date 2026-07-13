@@ -35,6 +35,7 @@ from app.services import (
     exam_dates,
     experiments,
     groups,
+    referrals,
     viewas,
     vocab,
 )
@@ -93,9 +94,12 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
         )
         return
     steps = await activation.checklist(user_id)
-    if activation.all_done(steps):  # уже освоївся → звичайне меню
+    if activation.all_done(steps):  # уже освоївся (aha!) → меню + тригер запрошення друга
         await message.answer(
-            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\nОбери дію в меню 👇",
+            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
+            "Обери дію в меню 👇\n\n"
+            f"🎁 <i>Подобається? Запроси друга («🎁 Запросити друга» в меню) — він отримає "
+            f"trial, а ти +{settings.referral_reward_days} днів, коли він оформить підписку.</i>",
             reply_markup=approved_kb(),
         )
     else:  # веду до наступного кроку з видимим прогресом (one goal per session)
@@ -137,10 +141,32 @@ async def _try_referral(message: Message, uid: int, payload: str) -> bool:
         await _grant_referral(message, uid, g["teacher_id"], gid, g["name"])
         return True
     teacher_id = access.parse_referral(payload)
-    if teacher_id is None or teacher_id == uid or not await access.is_teacher(teacher_id):
-        return False  # не викладач / сам себе — ігноруємо
-    await _grant_referral(message, uid, teacher_id, 0, "")
-    return True
+    if teacher_id is not None and teacher_id != uid and await access.is_teacher(teacher_id):
+        await _grant_referral(message, uid, teacher_id, 0, "")
+        return True
+    friend = referrals.parse(payload)  # учень→друг (word-of-mouth)
+    if friend is not None and friend != uid:
+        await _grant_friend(message, uid, friend)
+        return True
+    return False
+
+
+async def _grant_friend(message: Message, uid: int, referrer: int) -> None:
+    """Друг за посиланням учня → trial + фіксація реферала (винагорода — на оплаті друга)."""
+    until = await access.grant_trial(uid, message.from_user.username or "", 0, settings.trial_days)
+    await vocab.seed_if_empty(uid, clock.today_local())
+    await referrals.record_invite(uid, referrer)
+    await message.answer(
+        f"Cześć! 👋 Тебе запросив друг — тобі відкрито <b>безкоштовний доступ на "
+        f"{settings.trial_days} днів</b> (до <b>{until}</b>).\n\nПочнемо зі стартового тесту 👇",
+        reply_markup=approved_kb(),
+    )
+    with suppress(Exception):  # підбадьорити запрошувача (petля живіша)
+        await message.bot.send_message(
+            referrer,
+            f"🎉 Твій друг долучився за твоїм посиланням! Щойно він оформить підписку — "
+            f"ти отримаєш <b>+{settings.referral_reward_days} днів</b> доступу. Дякуємо, що ділишся 🙌",
+        )
 
 
 async def _expired_paywall(uid: int, inf, variant: int = 0) -> str:  # noqa: ANN001

@@ -572,6 +572,24 @@ async def cb_assignments(cb: CallbackQuery) -> None:
     await _send_assignments(cb.message, uid)
 
 
+@router.callback_query(F.data == "ref:invite")
+async def cb_ref_invite(cb: CallbackQuery) -> None:
+    await cb.answer()
+    from app.services import referrals
+
+    me = await cb.bot.get_me()
+    link = referrals.link(me.username or "", cb.from_user.id)
+    s = await referrals.stats(cb.from_user.id)
+    await cb.message.answer(
+        "🎁 <b>Запроси друга — виграєте обидва</b>\n\n"
+        f"Друг отримає <b>{settings.trial_days} днів</b> безкоштовно, а ти — "
+        f"<b>+{settings.referral_reward_days} днів</b> доступу, щойно він оформить підписку.\n\n"
+        f"🔗 Твоє посилання:\n<code>{link}</code>\n\n"
+        f"👥 Запрошено: <b>{s['invited']}</b> · 🎉 винагороджено: <b>{s['rewarded']}</b>",
+        reply_markup=to_menu_kb(),
+    )
+
+
 @router.callback_query(F.data.startswith("asgn:done:"))
 async def cb_assignment_done(cb: CallbackQuery) -> None:
     aid = int(cb.data.split(":")[2])
