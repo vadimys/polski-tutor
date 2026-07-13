@@ -85,6 +85,19 @@ async def reset_progress(user_id: int) -> None:
         await s.commit()
 
 
+async def full_reset(user_id: int) -> None:
+    """Повний wipe навчання (старт із нуля): сесії+готовність+рівень+стрік+placement (PG),
+    гейміфікація (XP/бейджі/лічильники), колода помилок, прапорці моків, повторення слів.
+    Зберігає акаунт/доступ/роль/дату іспиту."""
+    await reset_progress(user_id)  # sessions + рівень/готовність/стрік/placement
+    from app.services import goals, mistakes, progress, vocab  # відкладено — уникаємо циклів
+
+    await goals.reset(user_id)
+    await mistakes.clear(user_id)
+    await progress.reset_marks(user_id)
+    await vocab.reset(user_id)
+
+
 async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
     """Лог сесії (сирий бал) + перерахунок ЧЕСНОЇ готовності з історії.
 

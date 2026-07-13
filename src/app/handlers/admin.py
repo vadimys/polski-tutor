@@ -69,11 +69,17 @@ async def cb_learn(cb: CallbackQuery) -> None:
         await cb.answer("Лише адмін.", show_alert=True)
         return
     await cb.answer()
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📝 Стартовий тест", callback_data="placement:start")
+    kb.button(text="📋 Меню навчання", callback_data="menu:home")
+    kb.button(text="♻️ Почати з нуля", callback_data="reset:ask")
+    kb.button(text="🛠 Назад у панель", callback_data="ac:hub")
+    kb.adjust(1)
     await cb.message.answer(
         "🎓 <b>Режим навчання</b> — тут ти звичайний учень (прогрес зараховується).\n"
-        "Почни зі стартового тесту або відкрий меню 👇\n"
-        "<i>Повернутись у панель: /admin</i>",
-        reply_markup=approved_kb(),
+        "Почни зі стартового тесту або відкрий меню. Можеш обнулити прогрес і почати з нуля 👇\n"
+        "<i>Повернутись у панель будь-коли: /admin</i>",
+        reply_markup=kb.as_markup(),
     )
 
 

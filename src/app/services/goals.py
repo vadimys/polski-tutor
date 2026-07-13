@@ -123,6 +123,25 @@ async def _migrate_from_redis(user_id: int) -> dict:
     return g
 
 
+async def reset(user_id: int) -> None:
+    """Повне обнулення гейміфікації: durable gamify (PG) + денні/легасі лічильники (Redis)."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is not None:
+            u.gamify = {}
+            await s.commit()
+    r = _r()
+    for pat in (
+        f"polski:min:{user_id}:*", f"polski:act:{user_id}:*", f"polski:goalmet:{user_id}:*",
+    ):
+        async for key in r.scan_iter(pat):
+            await r.delete(key)
+    await r.delete(
+        f"polski:celeb:{user_id}", f"polski:xp:{user_id}",
+        f"polski:goal:{user_id}", f"polski:freeze:{user_id}", f"polski:streak:{user_id}",
+    )
+
+
 async def get_goal(user_id: int) -> int:
     return int((await _get(user_id))["goal"])
 

@@ -485,29 +485,39 @@ async def cb_quest(cb: CallbackQuery) -> None:
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---
 
 
-@router.message(Command("reset"))
-async def cmd_reset(message: Message) -> None:
+async def _reset_prompt(message: Message) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="♻️ Так, почати заново", callback_data="reset:do")
     kb.button(text="↩️ Скасувати", callback_data="reset:cancel")
     kb.adjust(1)
     await message.answer(
         "♻️ <b>Почати навчання заново?</b>\n\n"
-        "Обнуляться: рівень, готовність усіх модулів, стрік, історія вправ і повторення слів.\n"
+        "Обнуляться <b>повністю</b>: рівень, готовність усіх модулів, стрік, XP і бейджі, "
+        "історія вправ, колода помилок, повторення слів, лічильники.\n"
         "✅ Доступ і дата іспиту <b>залишаться</b> (онбординг проходити не треба).\n\n"
         "Це незворотно.",
         reply_markup=kb.as_markup(),
     )
 
 
+@router.message(Command("reset"))
+async def cmd_reset(message: Message) -> None:
+    await _reset_prompt(message)
+
+
+@router.callback_query(F.data == "reset:ask")
+async def cb_reset_ask(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await _reset_prompt(cb.message)
+
+
 @router.callback_query(F.data == "reset:do")
 async def cb_reset_do(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
-    await user_state.reset_progress(cb.from_user.id)
-    await vocab.reset(cb.from_user.id)
+    await user_state.full_reset(cb.from_user.id)  # повний wipe (вправи/XP/помилки/слова/лічильники)
     await cb.answer("Готово")
     await cb.message.answer(
-        "♻️ <b>Прогрес обнулено.</b> Починаємо з чистого аркуша!\n"
+        "♻️ <b>Прогрес повністю обнулено.</b> Починаємо з чистого аркуша!\n"
         "Найкраще стартувати зі стартового тесту 👇",
         reply_markup=start_kb(),
     )

@@ -107,6 +107,13 @@ async def record_mock_pass(user_id: int, section: str, pct: int) -> None:
         await _r().set(f"polski:mokpass:{user_id}:{section}", "1", ex=_MOCK_TTL)
 
 
+async def reset_marks(user_id: int) -> None:
+    """Скинути прапорці складених моків (для повного reset прогресу)."""
+    r = _r()
+    for sec in _MOCK_SECTIONS:
+        await r.delete(f"polski:mokpass:{user_id}:{sec}")
+
+
 async def mock_ok(user_id: int) -> bool:
     """Чи складено НЕЩОДАВНО повний мок обох секцій (доказ «під іспитом»)."""
     for sec in _MOCK_SECTIONS:
