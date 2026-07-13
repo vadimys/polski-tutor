@@ -15,7 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb
 from app.config import settings
-from app.services import access, admin_stats, events, resets, support, viewas
+from app.services import access, admin_stats, broadcast, events, resets, support, viewas
 from app.services import state as user_state
 
 router = Router()
@@ -28,6 +28,10 @@ class AdminMsg(StatesGroup):
 
 class TicketReply(StatesGroup):
     waiting = State()  # адмін відповідає на тікет підтримки
+
+
+class Broadcast(StatesGroup):
+    text = State()  # адмін пише текст розсилки (сегмент уже обрано)
 
 
 def _is_admin(user_id: int) -> bool:
@@ -43,6 +47,7 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
     kb.button(text="📈 Аналітика", callback_data="ac:analytics")
     kb.button(text="🆘 Підтримка", callback_data="ac:support")
+    kb.button(text="📣 Розсилка", callback_data="ac:bcast")
     kb.button(text="🧪 Режими", callback_data="ac:viewas")
     kb.button(text="🎓 Моє навчання", callback_data="ac:learn")
     kb.adjust(2)
@@ -576,3 +581,71 @@ async def cb_viewas_set(cb: CallbackQuery) -> None:
         f"👁 Увімкнено режим: <b>{_VA_LABELS.get(mode, mode)}</b>.\n"
         "Тисни <b>/start</b>, щоб побачити досвід цієї ролі. Вийти — /admin → 🧪 Режими → «Вийти»."
     )
+
+
+# ── Розсилка/оголошення по сегментах ─────────────────────────────────────────
+@router.callback_query(F.data == "ac:bcast")
+async def cb_bcast(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    kb = InlineKeyboardBuilder()
+    for seg, lbl in broadcast.SEGMENTS.items():
+        kb.button(text=lbl, callback_data=f"ac:bcseg:{seg}")
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    kb.adjust(2)
+    await cb.message.answer(
+        "📣 <b>Розсилка / оголошення</b>\nОбери кому надіслати:", reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(F.data.startswith("ac:bcseg:"))
+async def cb_bcast_seg(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    seg = cb.data.split(":")[2]
+    await state.set_state(Broadcast.text)
+    await state.update_data(seg=seg)
+    await cb.answer()
+    await cb.message.answer(
+        f"✍️ Напиши текст розсилки для «<b>{broadcast.label(seg)}</b>» (HTML можна). "
+        "Надішли одним повідомленням — покажу прев'ю."
+    )
+
+
+@router.message(Broadcast.text, F.text)
+async def on_bcast_text(message: Message, state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id):
+        await state.clear()
+        return
+    data = await state.get_data()
+    seg = data.get("seg", "all")
+    text = message.text or ""
+    ids = await broadcast.recipients(seg)
+    await state.update_data(text=text)  # сегмент уже є
+    kb = InlineKeyboardBuilder()
+    kb.button(text=f"✅ Надіслати ({len(ids)})", callback_data="ac:bcgo")
+    kb.button(text="↩️ Скасувати", callback_data="ac:hub")
+    kb.adjust(1)
+    await message.answer(
+        f"📣 <b>Прев'ю</b> · сегмент «{broadcast.label(seg)}» · отримувачів: <b>{len(ids)}</b>\n\n"
+        f"{text}",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(Broadcast.text, F.data == "ac:bcgo")
+async def cb_bcast_go(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    data = await state.get_data()
+    await state.clear()
+    seg, text = data.get("seg", "all"), data.get("text", "")
+    ids = await broadcast.recipients(seg)
+    await cb.answer("Надсилаю…")
+    sent, failed = await broadcast.send(cb.bot, ids, text)
+    logger.info("broadcast seg=%s sent=%s failed=%s", seg, sent, failed)
+    await cb.message.answer(f"📣 Готово: доставлено <b>{sent}</b> · не вдалося {failed}.")

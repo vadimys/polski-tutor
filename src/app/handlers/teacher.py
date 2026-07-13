@@ -12,14 +12,21 @@ import html
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import to_menu_kb
+from app.bot.keyboards import cancel_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, billing, clock, progress, quest, viewas
+from app.services import access, billing, broadcast, clock, progress, quest, viewas
 from app.services import state as user_state
 
 router = Router()
+
+
+class NotifyClass(StatesGroup):
+    waiting = State()  # викладач пише повідомлення своєму класу
 
 
 def _activity(days_since: int) -> str:
@@ -77,11 +84,46 @@ async def _send_class(message: Message, teacher_id: int, bot_username: str) -> N
     paying = await billing.paying_student_ids(teacher_id)
     rows = [_row(await _gather(sid), sid in paying) for sid in students]
     paid_line = f" · 💰 платних: <b>{len(paying)}</b>" if paying else ""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📣 Написати класу", callback_data="teacher:notify")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
     await message.answer(
         f"👩‍🏫 <b>Твій клас — {len(students)} учнів</b>{paid_line}\n"
         "<i>🏁 — готовність до B1; N/5 — модулів ≥50%; 📉 — найслабше; 💎 — платна підписка.</i>\n\n"
         + "\n\n".join(rows)
         + f"\n\n🔗 Запросити ще: <code>{link}</code>",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(F.data == "teacher:notify")
+async def cb_notify(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(NotifyClass.waiting)
+    await cb.answer()
+    await cb.message.answer(
+        "📣 Напиши повідомлення для свого класу одним повідомленням — надішлю всім учням "
+        "від твого імені.",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(NotifyClass.waiting, F.text, ~F.text.startswith("/"))
+async def on_notify(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    tid = message.from_user.id
+    students = await access.students_of(tid)
+    if not students:
+        await message.answer("У тебе поки немає учнів.", reply_markup=to_menu_kb())
+        return
+    uname = message.from_user.username
+    who = f"@{uname}" if uname else "твій викладач"
+    text = f"📣 <b>Повідомлення від викладача</b> ({html.escape(who)}):\n{html.escape(message.text or '')}"
+    sent, failed = await broadcast.send(message.bot, students, text)
+    await message.answer(
+        f"✅ Надіслано класу: доставлено <b>{sent}</b>" + (f" · не вдалося {failed}" if failed else ""),
         reply_markup=to_menu_kb(),
     )
 
