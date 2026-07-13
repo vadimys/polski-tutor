@@ -80,6 +80,15 @@ def extend_request_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def support_category_kb() -> InlineKeyboardMarkup:
+    """Тип звернення до підтримки."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🛠 Проблема", callback_data="support:cat:problem")
+    kb.button(text="💡 Ідея / пропозиція", callback_data="support:cat:idea")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def exam_result_kb() -> InlineKeyboardMarkup:
     """Після іспиту: як пройшло?"""
     kb = InlineKeyboardBuilder()
@@ -165,6 +174,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
         ("📅 Мій план", "plan:show"),
+        ("🆘 Підтримка / 💡 Ідея", "support:open"),
     ]
     for i in range(0, len(practice), 2):  # у 2 колонки — менше скролу
         kb.row(*(InlineKeyboardButton(text=t, callback_data=c) for t, c in practice[i : i + 2]))

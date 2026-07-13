@@ -40,6 +40,7 @@ from app.handlers import (
     say,
     speaking,
     start,
+    support,
     teacher,
     transformacja,
     uzupelnianie,
@@ -128,7 +129,7 @@ async def main() -> None:
     for r in (
         placement, lesson, writing, drills, review, say, lexicon, mistakes,
         speaking, listening, mock, exam, dopasowanie, uzupelnianie, transformacja,
-        audiomatch, teacher, plan, menu,
+        audiomatch, teacher, support, plan, menu,
     ):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())

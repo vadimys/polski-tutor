@@ -15,7 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb
 from app.config import settings
-from app.services import access, admin_stats, events, resets
+from app.services import access, admin_stats, events, resets, support
 from app.services import state as user_state
 
 router = Router()
@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class AdminMsg(StatesGroup):
     waiting = State()  # адмін пише повідомлення конкретному користувачу
+
+
+class TicketReply(StatesGroup):
+    waiting = State()  # адмін відповідає на тікет підтримки
 
 
 def _is_admin(user_id: int) -> bool:
@@ -38,6 +42,7 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb.button(text="🧑‍🎓 Сегменти", callback_data="ac:segments")
     kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
     kb.button(text="📈 Аналітика", callback_data="ac:analytics")
+    kb.button(text="🆘 Підтримка", callback_data="ac:support")
     kb.button(text="🎓 Моє навчання", callback_data="ac:learn")
     kb.adjust(2)
     return kb
@@ -435,3 +440,89 @@ async def cb_reset_no(cb: CallbackQuery) -> None:
         )
     with suppress(Exception):
         await cb.message.edit_text(f"{cb.message.html_text}\n\n❌ Відхилено.")
+
+
+# ── Support-inbox: черга звернень + відповідь у 1 тап ────────────────────────
+@router.callback_query(F.data == "ac:support")
+async def cb_support(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    tickets = await support.all_tickets(open_only=True)
+    kb = InlineKeyboardBuilder()
+    for tid, t in tickets[:20]:
+        kb.button(
+            text=f"🎫 #{tid} {support.cat_label(t['cat']).split()[0]} · {t['name']}",
+            callback_data=f"ac:ticket:{tid}",
+        )
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    kb.adjust(1)
+    head = f"🆘 <b>Відкриті звернення</b> — {len(tickets)}\nОбери тікет:" if tickets else "🆘 Відкритих звернень немає ✅"
+    await cb.message.answer(head, reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data.startswith("ac:ticket:"))
+async def cb_ticket(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    tid = int(cb.data.split(":")[2])
+    t = await support.get(tid)
+    if t is None:
+        await cb.message.answer("Тікет не знайдено.")
+        return
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✉️ Відповісти", callback_data=f"ac:treply:{tid}")
+    kb.button(text="☑️ Закрити", callback_data=f"ac:tclose:{tid}")
+    kb.button(text="⬅️ Звернення", callback_data="ac:support")
+    kb.adjust(1)
+    await cb.message.answer(support.render_ticket(tid, t), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data.startswith("ac:treply:"))
+async def cb_ticket_reply(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    tid = int(cb.data.split(":")[2])
+    await state.set_state(TicketReply.waiting)
+    await state.update_data(tid=tid)
+    await cb.answer()
+    await cb.message.answer(f"✍️ Відповідь на тікет #{tid} (одним повідомленням):")
+
+
+@router.message(TicketReply.waiting, F.text)
+async def on_ticket_reply(message: Message, state: FSMContext) -> None:
+    if not _is_admin(message.from_user.id):
+        await state.clear()
+        return
+    data = await state.get_data()
+    await state.clear()
+    tid = int(data.get("tid", 0))
+    t = await support.get(tid)
+    if not t:
+        await message.answer("Тікет не знайдено.")
+        return
+    try:
+        await message.bot.send_message(
+            int(t["uid"]),
+            f"✉️ <b>Відповідь підтримки</b> (звернення #{tid}):\n{html.escape(message.text or '')}",
+        )
+        await support.set_status(tid, "closed")
+        await message.answer(f"Надіслано ✅ Тікет #{tid} закрито.")
+    except Exception:  # noqa: BLE001
+        await message.answer("Не вдалося надіслати (користувач міг не активувати бота).")
+
+
+@router.callback_query(F.data.startswith("ac:tclose:"))
+async def cb_ticket_close(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    tid = int(cb.data.split(":")[2])
+    await support.set_status(tid, "closed")
+    await cb.answer("Закрито")
+    with suppress(Exception):
+        await cb.message.edit_text(f"{cb.message.html_text}\n\n☑️ Закрито.")
