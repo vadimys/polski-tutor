@@ -19,14 +19,18 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import cancel_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
-from app.services import access, billing, broadcast, clock, progress, quest, viewas
+from app.services import access, billing, broadcast, clock, groups, progress, quest, viewas
 from app.services import state as user_state
 
 router = Router()
 
 
 class NotifyClass(StatesGroup):
-    waiting = State()  # викладач пише повідомлення своєму класу
+    waiting = State()  # викладач пише повідомлення класу/групі (gid у data)
+
+
+class GroupName(StatesGroup):
+    waiting = State()  # назва нової/переіменованої групи (mode/gid у data)
 
 
 def _activity(days_since: int) -> str:
@@ -69,65 +73,6 @@ async def _gather(student_id: int) -> dict:
     }
 
 
-async def _send_class(message: Message, teacher_id: int, bot_username: str) -> None:
-    students = await access.students_of(teacher_id)
-    link = f"https://t.me/{bot_username}?start=t{teacher_id}"
-    if not students:
-        await message.answer(
-            "👩‍🏫 <b>Твій клас</b> — поки порожній.\n\n"
-            "Поділись реферальним посиланням з учнями — кожен, хто зайде за ним, "
-            "отримає безкоштовний доступ, а ти бачитимеш його прогрес тут:\n"
-            f"<code>{link}</code>",
-            reply_markup=to_menu_kb(),
-        )
-        return
-    paying = await billing.paying_student_ids(teacher_id)
-    rows = [_row(await _gather(sid), sid in paying) for sid in students]
-    paid_line = f" · 💰 платних: <b>{len(paying)}</b>" if paying else ""
-    kb = InlineKeyboardBuilder()
-    kb.button(text="📣 Написати класу", callback_data="teacher:notify")
-    kb.button(text="⬅️ Меню", callback_data="menu:home")
-    kb.adjust(1)
-    await message.answer(
-        f"👩‍🏫 <b>Твій клас — {len(students)} учнів</b>{paid_line}\n"
-        "<i>🏁 — готовність до B1; N/5 — модулів ≥50%; 📉 — найслабше; 💎 — платна підписка.</i>\n\n"
-        + "\n\n".join(rows)
-        + f"\n\n🔗 Запросити ще: <code>{link}</code>",
-        reply_markup=kb.as_markup(),
-    )
-
-
-@router.callback_query(F.data == "teacher:notify")
-async def cb_notify(cb: CallbackQuery, state: FSMContext) -> None:
-    if not await _guard_teacher(cb.message, cb.from_user.id):
-        return
-    await state.set_state(NotifyClass.waiting)
-    await cb.answer()
-    await cb.message.answer(
-        "📣 Напиши повідомлення для свого класу одним повідомленням — надішлю всім учням "
-        "від твого імені.",
-        reply_markup=cancel_kb(),
-    )
-
-
-@router.message(NotifyClass.waiting, F.text, ~F.text.startswith("/"))
-async def on_notify(message: Message, state: FSMContext) -> None:
-    await state.clear()
-    tid = message.from_user.id
-    students = await access.students_of(tid)
-    if not students:
-        await message.answer("У тебе поки немає учнів.", reply_markup=to_menu_kb())
-        return
-    uname = message.from_user.username
-    who = f"@{uname}" if uname else "твій викладач"
-    text = f"📣 <b>Повідомлення від викладача</b> ({html.escape(who)}):\n{html.escape(message.text or '')}"
-    sent, failed = await broadcast.send(message.bot, students, text)
-    await message.answer(
-        f"✅ Надіслано класу: доставлено <b>{sent}</b>" + (f" · не вдалося {failed}" if failed else ""),
-        reply_markup=to_menu_kb(),
-    )
-
-
 async def _guard_teacher(message: Message, user_id: int) -> bool:
     inf = await access.info(user_id)
     if viewas.role_for(await viewas.get(user_id), inf.role) != "teacher":
@@ -140,12 +85,61 @@ async def _guard_teacher(message: Message, user_id: int) -> bool:
     return True
 
 
+async def _send_overview(message: Message, teacher_id: int, bot_username: str) -> None:
+    gs = await groups.list_for(teacher_id)
+    ung = await groups.ungrouped(teacher_id)
+    link = f"https://t.me/{bot_username}?start=t{teacher_id}"
+    kb = InlineKeyboardBuilder()
+    for g in gs:
+        kb.button(text=f"👥 {g['name']} · {g['n']}", callback_data=f"teacher:grp:{g['id']}")
+    if ung:
+        kb.button(text=f"👤 Без групи · {len(ung)}", callback_data="teacher:grp:0")
+    kb.button(text="➕ Нова група", callback_data="teacher:newgrp")
+    kb.button(text="📣 Написати всім", callback_data="teacher:notify")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    total = sum(g["n"] for g in gs) + len(ung)
+    await message.answer(
+        f"👩‍🏫 <b>Твої класи</b> — груп: {len(gs)} · учнів усього: <b>{total}</b>\n"
+        "Обери групу, створи нову або напиши всім. Кожна група має свій join-лінк.\n\n"
+        f"🔗 Загальне посилання (без групи): <code>{link}</code>",
+        reply_markup=kb.as_markup(),
+    )
+
+
+async def _send_group_roster(message: Message, teacher_id: int, gid: int, bot_username: str) -> None:
+    if gid:
+        g = await groups.get(gid)
+        if not g or g["teacher_id"] != teacher_id:
+            await message.answer("Групу не знайдено.")
+            return
+        ids = await groups.members(gid)
+        title = f"👥 <b>{html.escape(g['name'])}</b>"
+        link = f"https://t.me/{bot_username}?start=g{gid}"
+    else:
+        ids = await groups.ungrouped(teacher_id)
+        title = "👤 <b>Без групи</b>"
+        link = f"https://t.me/{bot_username}?start=t{teacher_id}"
+    paying = await billing.paying_student_ids(teacher_id)
+    body = "\n\n".join([_row(await _gather(sid), sid in paying) for sid in ids]) if ids else "<i>Поки порожньо.</i>"
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📣 Написати групі", callback_data=f"teacher:gnotify:{gid}")
+    if gid:
+        kb.button(text="✏️ Перейменувати", callback_data=f"teacher:grename:{gid}")
+    kb.button(text="⬅️ Класи", callback_data="teacher:class")
+    kb.adjust(1)
+    await message.answer(
+        f"{title} — учнів: <b>{len(ids)}</b>\n\n{body}\n\n🔗 Приєднатись: <code>{link}</code>",
+        reply_markup=kb.as_markup(),
+    )
+
+
 @router.message(Command("uczniowie"))
 async def cmd_class(message: Message) -> None:
     if not await _guard_teacher(message, message.from_user.id):
         return
     me = await message.bot.get_me()
-    await _send_class(message, message.from_user.id, me.username or "")
+    await _send_overview(message, message.from_user.id, me.username or "")
 
 
 @router.callback_query(F.data == "teacher:class")
@@ -154,4 +148,100 @@ async def cb_class(cb: CallbackQuery) -> None:
     if not await _guard_teacher(cb.message, cb.from_user.id):
         return
     me = await cb.bot.get_me()
-    await _send_class(cb.message, cb.from_user.id, me.username or "")
+    await _send_overview(cb.message, cb.from_user.id, me.username or "")
+
+
+@router.callback_query(F.data.startswith("teacher:grp:"))
+async def cb_group(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    me = await cb.bot.get_me()
+    await _send_group_roster(cb.message, cb.from_user.id, int(cb.data.split(":")[2]), me.username or "")
+
+
+@router.callback_query(F.data == "teacher:newgrp")
+async def cb_newgroup(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(GroupName.waiting)
+    await state.update_data(mode="create", gid=0)
+    await cb.answer()
+    await cb.message.answer("➕ Назва нової групи (напр. «Ранкова B1»):", reply_markup=cancel_kb())
+
+
+@router.callback_query(F.data.startswith("teacher:grename:"))
+async def cb_rename(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(GroupName.waiting)
+    await state.update_data(mode="rename", gid=int(cb.data.split(":")[2]))
+    await cb.answer()
+    await cb.message.answer("✏️ Нова назва групи:", reply_markup=cancel_kb())
+
+
+@router.message(GroupName.waiting, F.text, ~F.text.startswith("/"))
+async def on_group_name(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    await state.clear()
+    name = (message.text or "").strip()[:64]
+    tid = message.from_user.id
+    if data.get("mode") == "rename":
+        await groups.rename(int(data.get("gid", 0)), name)
+        await message.answer(f"✏️ Групу перейменовано на «{html.escape(name)}».", reply_markup=to_menu_kb())
+        return
+    gid = await groups.create(tid, name)
+    me = await message.bot.get_me()
+    link = f"https://t.me/{me.username}?start=g{gid}"
+    await message.answer(
+        f"✅ Групу «<b>{html.escape(name)}</b>» створено!\n\n"
+        f"🔗 Join-лінк для учнів цієї групи:\n<code>{link}</code>\n\n"
+        "Учень, який зайде за ним, потрапить саме в цю групу.",
+        reply_markup=to_menu_kb(),
+    )
+
+
+@router.callback_query(F.data == "teacher:notify")
+async def cb_notify(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(NotifyClass.waiting)
+    await state.update_data(gid=0)
+    await cb.answer()
+    await cb.message.answer(
+        "📣 Повідомлення для ВСІХ учнів одним повідомленням — надішлю від твого імені.",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.callback_query(F.data.startswith("teacher:gnotify:"))
+async def cb_gnotify(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(NotifyClass.waiting)
+    await state.update_data(gid=int(cb.data.split(":")[2]))
+    await cb.answer()
+    await cb.message.answer(
+        "📣 Повідомлення для цієї групи одним повідомленням — надішлю від твого імені.",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(NotifyClass.waiting, F.text, ~F.text.startswith("/"))
+async def on_notify(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    await state.clear()
+    tid = message.from_user.id
+    gid = int(data.get("gid", 0))
+    ids = await groups.members(gid) if gid else await access.students_of(tid)
+    if not ids:
+        await message.answer("У цій вибірці поки немає учнів.", reply_markup=to_menu_kb())
+        return
+    uname = message.from_user.username
+    who = f"@{uname}" if uname else "твій викладач"
+    text = f"📣 <b>Повідомлення від викладача</b> ({html.escape(who)}):\n{html.escape(message.text or '')}"
+    sent, failed = await broadcast.send(message.bot, ids, text)
+    await message.answer(
+        f"✅ Надіслано: доставлено <b>{sent}</b>" + (f" · не вдалося {failed}" if failed else ""),
+        reply_markup=to_menu_kb(),
+    )

@@ -6,6 +6,7 @@ from app.services.access import (
     compute_access_until,
     extend_until,
     is_expired,
+    parse_group,
     parse_referral,
 )
 
@@ -86,3 +87,11 @@ def test_extend_keyboards_callbacks():
     assert ext == ["pay:start", "onb:contact"]  # підписка Stars — головний CTA після trial
     adm = [b.callback_data for row in admin_extend_kb(7).inline_keyboard for b in row]
     assert adm == ["adm:extend:7", "adm:no:7"]
+
+
+def test_parse_group():
+    assert parse_group("g5")==5
+    assert parse_group("g367724841")==367724841
+    assert parse_group("t5") is None
+    assert parse_group("") is None
+    assert parse_group("g") is None

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+from contextlib import suppress
 
 from aiogram import F, Router
 from aiogram.filters import CommandObject, CommandStart
@@ -24,7 +25,7 @@ from app.bot.keyboards import (
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
-from app.services import access, clock, exam_dates, viewas, vocab
+from app.services import access, clock, exam_dates, groups, viewas, vocab
 
 router = Router()
 
@@ -86,28 +87,39 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
     )
 
 
-async def _try_referral(message: Message, uid: int, payload: str) -> bool:
-    """Учень за посиланням викладача (payload='t<teacher_id>') → авто-trial. True якщо спрацювало."""
-    teacher_id = access.parse_referral(payload)
-    if teacher_id is None or teacher_id == uid or not await access.is_teacher(teacher_id):
-        return False  # не викладач / сам себе — ігноруємо
+async def _grant_referral(message: Message, uid: int, teacher_id: int, group_id: int, group_name: str) -> None:
+    """Відкрити trial приведеному учню + сповістити викладача (з назвою групи, якщо є)."""
     until = await access.grant_trial(
-        uid, message.from_user.username or "", teacher_id, settings.trial_days
+        uid, message.from_user.username or "", teacher_id, settings.trial_days, group_id=group_id
     )
     await vocab.seed_if_empty(uid, clock.today_local())
+    grp = f" (група «{html.escape(group_name)}»)" if group_name else ""
     await message.answer(
-        f"Cześć! 👋 Тебе запросив викладач — тобі відкрито <b>безкоштовний доступ на "
+        f"Cześć! 👋 Тебе запросив викладач{grp} — тобі відкрито <b>безкоштовний доступ на "
         f"{settings.trial_days} днів</b> (до <b>{until}</b>).\n"
         "<i>Твій викладач бачитиме твій прогрес, щоб допомагати.</i>\n\n"
         "Почнемо зі стартового тесту 👇",
         reply_markup=approved_kb(),
     )
-    if teacher_id:  # сповістити викладача про нового учня
-        name = f"@{message.from_user.username}" if message.from_user.username else message.from_user.full_name
-        try:
-            await message.bot.send_message(teacher_id, f"🎉 Новий учень долучився за твоїм посиланням: {html.escape(name)}")
-        except Exception:  # noqa: BLE001
-            pass
+    name = f"@{message.from_user.username}" if message.from_user.username else message.from_user.full_name
+    with suppress(Exception):
+        where = f" у групу «{html.escape(group_name)}»" if group_name else " за твоїм посиланням"
+        await message.bot.send_message(teacher_id, f"🎉 Новий учень долучився{where}: {html.escape(name)}")
+
+
+async def _try_referral(message: Message, uid: int, payload: str) -> bool:
+    """Учень за посиланням викладача (t<teacher>) або групи (g<group>) → авто-trial."""
+    gid = access.parse_group(payload)
+    if gid is not None:
+        g = await groups.get(gid)
+        if not g or g["teacher_id"] == uid or not await access.is_teacher(g["teacher_id"]):
+            return False
+        await _grant_referral(message, uid, g["teacher_id"], gid, g["name"])
+        return True
+    teacher_id = access.parse_referral(payload)
+    if teacher_id is None or teacher_id == uid or not await access.is_teacher(teacher_id):
+        return False  # не викладач / сам себе — ігноруємо
+    await _grant_referral(message, uid, teacher_id, 0, "")
     return True
 
 

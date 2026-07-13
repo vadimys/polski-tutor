@@ -29,6 +29,7 @@ class User(Base):
     # ролі та реферали (B2B2C: учні платять, викладачі — безкоштовний канал залучення)
     role: Mapped[str] = mapped_column(String(16), default="student")  # student/teacher/admin
     referred_by: Mapped[int] = mapped_column(BigInteger, default=0)  # id викладача-реферера (0=немає)
+    group_id: Mapped[int] = mapped_column(BigInteger, default=0)  # група викладача (0=без групи)
 
     # контроль доступу (для грандіозного плану; наразі дефолти)
     exam_date: Mapped[str] = mapped_column(String(16), default="")
@@ -53,6 +54,17 @@ class Session(Base):
     )
     module: Mapped[str] = mapped_column(String(16))
     score: Mapped[int] = mapped_column(Integer)  # результат саме цієї вправи, 0..100
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Group(Base):
+    """Група (клас) викладача. Учень входить за join-лінком ?start=g<id>."""
+
+    __tablename__ = "groups"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    teacher_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    name: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

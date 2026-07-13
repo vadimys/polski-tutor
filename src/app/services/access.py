@@ -82,6 +82,14 @@ def parse_referral(payload: str) -> int | None:
     return None
 
 
+def parse_group(payload: str) -> int | None:
+    """Розібрати deep-link payload 'g<group_id>' → id групи (або None)."""
+    p = (payload or "").strip()
+    if p.startswith("g") and p[1:].isdigit():
+        return int(p[1:])
+    return None
+
+
 async def ensure_admin(admin_id: int) -> None:
     """Нормалізувати рядок адміна: role=admin + approved (щоб не показувавсь як
     pending-учень і не потрапляв у статистику учнів). Викликається на старті."""
@@ -166,10 +174,12 @@ async def grant_trial(
     days: int,
     exam_date: str = "",
     confirmed: bool = False,
+    group_id: int = 0,
 ) -> str:
     """Авто-доступ учню на `days` днів БЕЗ черги до адміна (self-serve / реферал).
 
-    referred_by = id викладача (0 — органічний). Повертає until (ISO)."""
+    referred_by = id викладача (0 — органічний); group_id — клас (0 — без групи).
+    Повертає until (ISO)."""
     async with session_factory()() as s:
         u = await s.get(User, user_id)
         if u is None:
@@ -181,6 +191,8 @@ async def grant_trial(
             u.role = "student"
         if referred_by and not u.referred_by:  # не перезатираємо наявну атрибуцію
             u.referred_by = referred_by
+        if group_id:
+            u.group_id = group_id
         if exam_date:
             u.exam_date = exam_date
             u.exam_date_confirmed = confirmed
