@@ -343,13 +343,41 @@ def render_funnel(d: dict) -> str:
         ("💎 Оплатили", d["paid"]),
     ]
     lines = ["🔻 <b>Воронка активації</b>\n"]
-    prev = None
+    drops: list[tuple[int, str, str]] = []  # (конв%, звідки, куди) — для пошуку діри
+    prev_n: int | None = None
+    prev_label = ""
     for label, n in steps:
         pct = round(n / total * 100)
-        drop = f" (−{prev - n})" if prev is not None and prev > n else ""
-        lines.append(f"{label}: <b>{n}</b> · {pct}%{drop}")
-        prev = n
-    lines.append("\n<i>Де найбільший спад — там головна діра.</i>")
+        if prev_n is None:
+            lines.append(f"{label}: <b>{n}</b> · {pct}%")
+        else:
+            conv = round(n / max(1, prev_n) * 100)
+            lost = max(0, prev_n - n)
+            tail = f" <i>(конв. {conv}% від пункту вище" + (f", −{lost})</i>" if lost else ")</i>")
+            lines.append(f"{label}: <b>{n}</b> · {pct}%{tail}")
+            if prev_n > 0:
+                drops.append((conv, prev_label, label))
+        prev_n, prev_label = n, label
+    if drops and min(x[0] for x in drops) < 100:
+        conv, frm, to = min(drops, key=lambda x: x[0])
+        lines.append(f"\n👉 <b>Головна діра:</b> {frm} → {to} (конв. лише <b>{conv}%</b>). Дій тут першим.")
+    else:
+        lines.append("\n<i>Замало даних для висновку про діру.</i>")
+    return "\n".join(lines)
+
+
+def render_churn(report: dict[str, int]) -> str:
+    """Розподіл причин відмови (exit-survey) — куди бити оффером/ціною."""
+    from app.services.churn import reason_label
+
+    if not report:
+        return "🙅 <b>Причини відмов</b>\nПоки немає даних (ніхто не проходив exit-survey)."
+    total = sum(report.values())
+    lines = [f"🙅 <b>Причини відмов</b> (усього {total})\n"]
+    for k, n in sorted(report.items(), key=lambda x: x[1], reverse=True):
+        pct = round(n / max(1, total) * 100)
+        lines.append(f"{reason_label(k)}: <b>{n}</b> · {pct}%")
+    lines.append("\n<i>Найчастіша причина підказує, який save-offer/ціну підсилити.</i>")
     return "\n".join(lines)
 
 

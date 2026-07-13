@@ -15,7 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb, teacher_welcome_kb
 from app.config import settings
-from app.services import access, admin_stats, broadcast, events, resets, support, viewas
+from app.services import access, admin_stats, broadcast, churn, events, resets, support, viewas
 from app.services import state as user_state
 
 router = Router()
@@ -198,6 +198,7 @@ async def cb_analytics(cb: CallbackQuery) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="📈 Фічі (увага)", callback_data="ac:an:feat")
     kb.button(text="🔻 Воронка", callback_data="ac:an:funnel")
+    kb.button(text="🙅 Причини відмов", callback_data="ac:an:churn")
     kb.button(text="📉 Складність модулів", callback_data="ac:an:mods")
     kb.button(text="🛠 Хаб", callback_data="ac:hub")
     kb.adjust(1)
@@ -217,6 +218,8 @@ async def cb_analytics_view(cb: CallbackQuery) -> None:
         text = admin_stats.render_features(await events.feature_report())
     elif what == "funnel":
         text = admin_stats.render_funnel(await admin_stats.funnel())
+    elif what == "churn":
+        text = admin_stats.render_churn(await churn.reasons_report())
     else:  # mods
         text = admin_stats.render_mods(await admin_stats.module_difficulty())
     kb = InlineKeyboardBuilder()
