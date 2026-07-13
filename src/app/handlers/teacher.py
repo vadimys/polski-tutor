@@ -21,6 +21,7 @@ from app.bot.keyboards import cancel_kb, to_menu_kb
 from app.domain.models import MODULE_LABELS, Module
 from app.services import (
     access,
+    assignments,
     billing,
     broadcast,
     clock,
@@ -41,6 +42,11 @@ class NotifyClass(StatesGroup):
 
 class GroupName(StatesGroup):
     waiting = State()  # назва нової/переіменованої групи (mode/gid у data)
+
+
+class AssignNew(StatesGroup):
+    title = State()  # текст завдання (gid у data)
+    deadline = State()  # дедлайн (gid, title у data)
 
 
 def _activity(days_since: int) -> str:
@@ -134,6 +140,7 @@ async def _send_group_roster(message: Message, teacher_id: int, gid: int, bot_us
     body = "\n\n".join([_row(await _gather(sid), sid in paying) for sid in ids]) if ids else "<i>Поки порожньо.</i>"
     kb = InlineKeyboardBuilder()
     kb.button(text="🏆 Лідерборд", callback_data=f"teacher:board:{gid}")
+    kb.button(text="📝 Завдання", callback_data=f"teacher:asgn:{gid}")
     kb.button(text="📣 Написати групі", callback_data=f"teacher:gnotify:{gid}")
     if gid:
         kb.button(text="✏️ Перейменувати", callback_data=f"teacher:grename:{gid}")
@@ -186,6 +193,90 @@ async def cb_board(cb: CallbackQuery) -> None:
     kb = InlineKeyboardBuilder()
     kb.button(text="⬅️ Група", callback_data=f"teacher:grp:{gid}")
     await cb.message.answer(leaderboard.render(rows, title), reply_markup=kb.as_markup())
+
+
+async def _send_assignments(message: Message, teacher_id: int, gid: int) -> None:
+    if gid:
+        g = await groups.get(gid)
+        title = g["name"] if g and g["teacher_id"] == teacher_id else "Група"
+    else:
+        title = "Без групи"
+    rows = await assignments.for_group(teacher_id, gid)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="➕ Нове завдання", callback_data=f"teacher:asgnnew:{gid}")
+    for r in rows:
+        kb.button(text=f"🗑 {r['title'][:24]}", callback_data=f"teacher:asgndel:{gid}:{r['id']}")
+    kb.button(text="⬅️ Група", callback_data=f"teacher:grp:{gid}")
+    kb.adjust(1)
+    await message.answer(
+        assignments.render_teacher(rows, title, clock.today_local()), reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(F.data.startswith("teacher:asgn:"))
+async def cb_assignments(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await _send_assignments(cb.message, cb.from_user.id, int(cb.data.split(":")[2]))
+
+
+@router.callback_query(F.data.startswith("teacher:asgnnew:"))
+async def cb_assign_new(cb: CallbackQuery, state: FSMContext) -> None:
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await state.set_state(AssignNew.title)
+    await state.update_data(gid=int(cb.data.split(":")[2]))
+    await cb.answer()
+    await cb.message.answer(
+        "📝 Опиши завдання одним повідомленням (напр. «Пройти /sluchanie 2 рази»):",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(AssignNew.title, F.text, ~F.text.startswith("/"))
+async def on_assign_title(message: Message, state: FSMContext) -> None:
+    await state.update_data(title=(message.text or "").strip()[:200])
+    await state.set_state(AssignNew.deadline)
+    await message.answer(
+        "📅 Дедлайн: дата у форматі <b>ДД.ММ</b> (напр. 20.11) або <b>РРРР-ММ-ДД</b>.",
+        reply_markup=cancel_kb(),
+    )
+
+
+@router.message(AssignNew.deadline, F.text, ~F.text.startswith("/"))
+async def on_assign_deadline(message: Message, state: FSMContext) -> None:
+    today = clock.today_local()
+    deadline = assignments.parse_deadline(message.text or "", today)
+    if deadline is None:
+        await message.answer(
+            "🤔 Не зрозумів дату або вона в минулому. Приклад: <b>20.11</b> або <b>2026-11-20</b>.",
+            reply_markup=cancel_kb(),
+        )
+        return
+    data = await state.get_data()
+    await state.clear()
+    gid, title, tid = int(data.get("gid", 0)), str(data.get("title", "")), message.from_user.id
+    await assignments.create(tid, gid, title, deadline)
+    await message.answer(
+        f"✅ Завдання створено!\n<b>{html.escape(title)}</b>\n"
+        f"{assignments.deadline_label(deadline, today)}\n\n"
+        "Учні побачать його в меню «📝 Завдання» й отримають нагадування напередодні.",
+        reply_markup=to_menu_kb(),
+    )
+    await _send_assignments(message, tid, gid)
+
+
+@router.callback_query(F.data.startswith("teacher:asgndel:"))
+async def cb_assign_del(cb: CallbackQuery) -> None:
+    await cb.answer("Видалено")
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    _, _, gid, aid = cb.data.split(":")
+    a = await assignments.get(int(aid))
+    if a and a["teacher_id"] == cb.from_user.id:
+        await assignments.delete_one(int(aid))
+    await _send_assignments(cb.message, cb.from_user.id, int(gid))
 
 
 @router.callback_query(F.data == "teacher:newgrp")

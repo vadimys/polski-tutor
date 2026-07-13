@@ -68,6 +68,33 @@ class Group(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Assignment(Base):
+    """Завдання викладача з дедлайном. Таргет: group_id>0 → учні групи;
+    group_id=0 → учні викладача «без групи» (referred_by=teacher_id, group_id=0)."""
+
+    __tablename__ = "assignments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    teacher_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    group_id: Mapped[int] = mapped_column(BigInteger, default=0)  # 0 = «без групи»
+    title: Mapped[str] = mapped_column(String(200))
+    deadline: Mapped[str] = mapped_column(String(16), default="")  # ISO YYYY-MM-DD
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AssignmentDone(Base):
+    """Позначка «виконав» учнем (вручну). Унікальність (assignment_id,user_id) — у сервісі."""
+
+    __tablename__ = "assignment_done"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    assignment_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("assignments.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    done_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Payment(Base):
     """Лог оплат Telegram Stars (підписка учня) — для обліку й атрибуції викладачу."""
 

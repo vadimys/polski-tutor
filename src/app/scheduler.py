@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import logging
 from datetime import date, timedelta
 
@@ -18,7 +19,7 @@ from redis.asyncio import Redis
 from app.bot.keyboards import coach_kb, exam_result_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
-from app.services import access, clock, exam_dates, gdpr, goals, state
+from app.services import access, assignments, clock, exam_dates, gdpr, goals, state
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,27 @@ async def _exam_lifecycle(bot: Bot, today: date) -> None:
                 )
         except Exception:  # noqa: BLE001
             logger.exception("exam lifecycle failed uid=%s", uid)
+
+
+async def _assignment_reminders(bot: Bot, today: date) -> None:
+    """Раз на добу: нагадати учням про завдання з дедлайном завтра/сьогодні (лише невиконані)."""
+    phases = {
+        (today + timedelta(days=1)).isoformat(): ("завтра", "⏰ <b>Завтра дедлайн</b> завдання"),
+        today.isoformat(): ("today", "⏰ <b>Сьогодні останній день</b> для завдання"),
+    }
+    for iso, (tag, head) in phases.items():
+        for a in await assignments.due_on(iso):
+            for uid in await assignments.pending_students(a):
+                if not await _claim(f"asgn:rem:{a['id']}:{uid}:{tag}"):
+                    continue
+                try:
+                    await bot.send_message(
+                        uid,
+                        f"{head}:\n<b>{html.escape(a['title'])}</b>\n\n"
+                        "Відкрий меню «📝 Завдання», щоб позначити виконаним.",
+                    )
+                except Exception:  # noqa: BLE001
+                    logger.exception("assignment reminder failed uid=%s aid=%s", uid, a["id"])
 
 
 async def _seconds_until_next_hour() -> float:
@@ -151,8 +173,9 @@ async def daily_nudge_loop(bot: Bot) -> None:
                         logger.info("Retention: видалено %d denied-користувачів", purged)
                 except Exception:
                     logger.exception("retention purge failed")
-            if now.hour == _EXAM_HOUR:  # exam-lifecycle (дедуп усередині) — раз на добу
+            if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань — раз на добу
                 await _exam_lifecycle(bot, clock.today_local())
+                await _assignment_reminders(bot, clock.today_local())
         except asyncio.CancelledError:
             raise
         except Exception:

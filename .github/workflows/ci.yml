@@ -37,7 +37,7 @@ jobs:
           src/app/services/progress.py src/app/services/access.py src/app/services/state.py
           src/app/services/limits.py src/app/services/badges.py src/app/services/guidance.py
           src/app/services/freefill.py src/app/services/opencheck.py src/app/services/billing.py
-          src/app/services/admin_stats.py src/app/services/events.py src/app/services/resets.py src/app/services/support.py src/app/services/viewas.py src/app/services/broadcast.py src/app/services/groups.py src/app/services/leaderboard.py
+          src/app/services/admin_stats.py src/app/services/events.py src/app/services/resets.py src/app/services/support.py src/app/services/viewas.py src/app/services/broadcast.py src/app/services/groups.py src/app/services/leaderboard.py src/app/services/assignments.py
           src/app/db/base.py src/app/db/models.py src/app/health.py src/app/scheduler.py
 
       - name: Tests (pytest + coverage gate)

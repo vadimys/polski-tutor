@@ -21,6 +21,7 @@ from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
 from app.services import (
     access,
+    assignments,
     badges,
     clock,
     coach,
@@ -516,6 +517,43 @@ async def cb_my_board(cb: CallbackQuery) -> None:
         leaderboard.render(rows, g["name"] if g else "Клас", highlight_id=uid),
         reply_markup=to_menu_kb(),
     )
+
+
+# --- Завдання від викладача (для учня) ---
+
+
+async def _send_assignments(msg: Message, user_id: int) -> None:
+    rows = await assignments.for_student(user_id)
+    kb = InlineKeyboardBuilder()
+    for r in rows:
+        if not r["done"]:
+            kb.button(text=f"✅ {r['title'][:26]}", callback_data=f"asgn:done:{r['id']}")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await msg.answer(
+        assignments.render_student(rows, clock.today_local()), reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(F.data == "asgn:me")
+async def cb_assignments(cb: CallbackQuery) -> None:
+    await cb.answer()
+    uid = cb.from_user.id
+    st = await user_state.load(uid)
+    if viewas.role_for(await viewas.get(uid), st.role) == "teacher":
+        await cb.message.answer(
+            "👩‍🏫 Завдання для класу — у <b>/uczniowie</b> → група → «📝 Завдання».",
+            reply_markup=to_menu_kb(),
+        )
+        return
+    await _send_assignments(cb.message, uid)
+
+
+@router.callback_query(F.data.startswith("asgn:done:"))
+async def cb_assignment_done(cb: CallbackQuery) -> None:
+    await assignments.mark_done(int(cb.data.split(":")[2]), cb.from_user.id)
+    await cb.answer("✅ Позначено виконаним!")
+    await _send_assignments(cb.message, cb.from_user.id)
 
 
 # --- Ресет прогресу (почати навчання заново; акаунт і доступ лишаються) ---

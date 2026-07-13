@@ -174,6 +174,7 @@ def menu_kb() -> InlineKeyboardMarkup:
         ("🎓 Повний мок іспиту", "exam:open"),
         ("🧯 Мої помилки", "mistakes:open"),
         ("📅 Мій план", "plan:show"),
+        ("📝 Завдання", "asgn:me"),
         ("🏆 Рейтинг класу", "lb:me"),
         ("🆘 Підтримка / 💡 Ідея", "support:open"),
     ]
