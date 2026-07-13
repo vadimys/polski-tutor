@@ -47,6 +47,7 @@ from app.handlers import (
 )
 from app.health import start_health_server
 from app.scheduler import daily_nudge_loop
+from app.services import access
 
 logging.basicConfig(
     level=logging.INFO,
@@ -137,6 +138,7 @@ async def main() -> None:
     migrated = await migrate_from_redis()
     if migrated:
         logger.info("Мігровано %d користувачів Redis→Postgres", migrated)
+    await access.ensure_admin(settings.admin_id)  # нормалізувати рядок адміна (role=admin)
 
     await start_health_server()
     await bot.set_my_commands(COMMANDS)

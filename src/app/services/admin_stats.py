@@ -11,11 +11,13 @@ from datetime import timedelta
 
 from sqlalchemy import func, select
 
+from app.config import settings
 from app.db.base import session_factory
 from app.db.models import Payment, Session, User
 from app.services import clock, quest
 
 PAGE = 8  # користувачів на сторінку списку
+_AID = settings.admin_id  # адміна не рахуємо в статистику користувачів
 _ROLE = {"teacher": "👩‍🏫 викладач", "student": "🎓 учень", "admin": "🛠 адмін"}
 _MOD = {"sluchanie": "🎧", "czytanie": "📖", "gramatyka": "🔤", "pisanie": "✍️", "mowienie": "🗣"}
 
@@ -44,20 +46,29 @@ async def overview() -> dict:
     d7 = now - timedelta(days=7)
     d30 = now - timedelta(days=30)
     async with session_factory()() as s:
-        users = list((await s.execute(select(User))).scalars().all())
+        allu = list((await s.execute(select(User))).scalars().all())
         active7 = (
-            await s.execute(select(func.count(func.distinct(Session.user_id))).where(Session.created_at >= d7))
+            await s.execute(
+                select(func.count(func.distinct(Session.user_id)))
+                .where(Session.created_at >= d7, Session.user_id != _AID)
+            )
         ).scalar() or 0
         active30 = (
-            await s.execute(select(func.count(func.distinct(Session.user_id))).where(Session.created_at >= d30))
+            await s.execute(
+                select(func.count(func.distinct(Session.user_id)))
+                .where(Session.created_at >= d30, Session.user_id != _AID)
+            )
         ).scalar() or 0
         payers = (
-            await s.execute(select(func.count(func.distinct(Payment.user_id))))
+            await s.execute(select(func.count(func.distinct(Payment.user_id))).where(Payment.user_id != _AID))
         ).scalar() or 0
-        revenue = (await s.execute(select(func.coalesce(func.sum(Payment.stars), 0)))).scalar() or 0
+        revenue = (
+            await s.execute(select(func.coalesce(func.sum(Payment.stars), 0)).where(Payment.user_id != _AID))
+        ).scalar() or 0
 
+    users = [u for u in allu if u.id != _AID]  # реальні користувачі (без адміна)
     teachers = [u for u in users if u.role == "teacher"]
-    students = [u for u in users if u.role != "teacher"]
+    students = [u for u in users if u.role == "student"]
     referred = [u for u in students if u.referred_by]
     approved = [u for u in users if u.access_status == "approved"]
     measured = [u for u in students if u.readiness]
@@ -192,7 +203,7 @@ async def segments() -> dict:
     async with session_factory()() as s:
         users = list((await s.execute(select(User))).scalars().all())
     paying = await _paying_ids()
-    students = [u for u in users if u.role != "teacher"]
+    students = [u for u in users if u.role == "student" and u.id != _AID]
     organic = [u for u in students if not u.referred_by]
     referred = [u for u in students if u.referred_by]
 
@@ -274,15 +285,25 @@ def render_group(d: dict) -> str:
 async def funnel() -> dict:
     """Воронка активації: старт → доступ → placement → ≥1 вправа → оплата."""
     async with session_factory()() as s:
-        total = (await s.execute(select(func.count()).select_from(User))).scalar() or 0
+        total = (
+            await s.execute(select(func.count()).select_from(User).where(User.id != _AID))
+        ).scalar() or 0
         approved = (
-            await s.execute(select(func.count()).select_from(User).where(User.access_status == "approved"))
+            await s.execute(
+                select(func.count()).select_from(User).where(User.access_status == "approved", User.id != _AID)
+            )
         ).scalar() or 0
         placement = (
-            await s.execute(select(func.count()).select_from(User).where(User.placement_done.is_(True)))
+            await s.execute(
+                select(func.count()).select_from(User).where(User.placement_done.is_(True), User.id != _AID)
+            )
         ).scalar() or 0
-        did_ex = (await s.execute(select(func.count(func.distinct(Session.user_id))))).scalar() or 0
-        paid = (await s.execute(select(func.count(func.distinct(Payment.user_id))))).scalar() or 0
+        did_ex = (
+            await s.execute(select(func.count(func.distinct(Session.user_id))).where(Session.user_id != _AID))
+        ).scalar() or 0
+        paid = (
+            await s.execute(select(func.count(func.distinct(Payment.user_id))).where(Payment.user_id != _AID))
+        ).scalar() or 0
     return {
         "total": int(total), "approved": int(approved), "placement": int(placement),
         "did_ex": int(did_ex), "paid": int(paid),
@@ -295,7 +316,9 @@ async def module_difficulty() -> list[tuple[str, int, int]]:
         rows = list(
             (
                 await s.execute(
-                    select(Session.module, func.count(), func.avg(Session.score)).group_by(Session.module)
+                    select(Session.module, func.count(), func.avg(Session.score))
+                    .where(Session.user_id != _AID)
+                    .group_by(Session.module)
                 )
             ).all()
         )

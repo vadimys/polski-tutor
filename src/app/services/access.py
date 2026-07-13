@@ -81,6 +81,21 @@ def parse_referral(payload: str) -> int | None:
     return None
 
 
+async def ensure_admin(admin_id: int) -> None:
+    """Нормалізувати рядок адміна: role=admin + approved (щоб не показувавсь як
+    pending-учень і не потрапляв у статистику учнів). Викликається на старті."""
+    if not admin_id:
+        return
+    async with session_factory()() as s:
+        u = await s.get(User, admin_id)
+        if u is None:
+            u = User(id=admin_id)
+            s.add(u)
+        u.role = "admin"
+        u.access_status = "approved"
+        await s.commit()
+
+
 async def is_teacher(user_id: int) -> bool:
     """Чи це схвалений викладач (для валідації реферального посилання)."""
     async with session_factory()() as s:

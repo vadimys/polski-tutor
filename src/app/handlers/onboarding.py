@@ -94,7 +94,8 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
     uid = message.from_user.id
     inf = await access.info(uid)
     if uid == settings.admin_id:
-        await _approved_welcome(message, uid)
+        from app.handlers.admin import send_hub  # адмін → одразу панель керування
+        await send_hub(message)
     elif access.is_expired(inf, clock.today_local()):
         await message.answer(
             "⏳ <b>Твій безкоштовний період завершився.</b>\n"

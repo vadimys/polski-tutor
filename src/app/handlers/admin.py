@@ -34,14 +34,15 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb.button(text="🧑‍🎓 Сегменти", callback_data="ac:segments")
     kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
     kb.button(text="📈 Аналітика", callback_data="ac:analytics")
+    kb.button(text="🎓 Моє навчання", callback_data="ac:learn")
     kb.adjust(2)
     return kb
 
 
-async def _send_hub(message: Message) -> None:
+async def send_hub(message: Message) -> None:
     await message.answer(
-        "🛠 <b>Адмін-консоль</b>\nКерування ботом, користувачі та підтримка.\n"
-        "<i>Далі зʼявляться: аналітика використання, підтримка, тест-режими.</i>",
+        "🛠 <b>Адмін-консоль</b>\nКерування ботом, користувачі, підтримка, аналітика.\n"
+        "🎓 <b>Моє навчання</b> — тренуватись як звичайний учень.",
         reply_markup=_hub_kb().as_markup(),
     )
 
@@ -50,7 +51,7 @@ async def _send_hub(message: Message) -> None:
 async def cmd_admin(message: Message) -> None:
     if not _is_admin(message.from_user.id):
         return
-    await _send_hub(message)
+    await send_hub(message)
 
 
 @router.callback_query(F.data == "ac:hub")
@@ -59,7 +60,21 @@ async def cb_hub(cb: CallbackQuery) -> None:
         await cb.answer("Лише адмін.", show_alert=True)
         return
     await cb.answer()
-    await _send_hub(cb.message)
+    await send_hub(cb.message)
+
+
+@router.callback_query(F.data == "ac:learn")
+async def cb_learn(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    await cb.message.answer(
+        "🎓 <b>Режим навчання</b> — тут ти звичайний учень (прогрес зараховується).\n"
+        "Почни зі стартового тесту або відкрий меню 👇\n"
+        "<i>Повернутись у панель: /admin</i>",
+        reply_markup=approved_kb(),
+    )
 
 
 @router.callback_query(F.data == "ac:overview")
