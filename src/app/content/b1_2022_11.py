@@ -215,7 +215,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Sen jest absolutnie ___ czynnikiem prozdrowotnym.",
             ["najważniejszym", "ważnym", "ważniejszym"], 0, "«absolutnie ___» → найвищий → <b>najważniejszym</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: ani). ──
-    MCQItem("gramatyka", "Текст про письменника Miłoszewського. Встав сполучник (зайве слово — <i>ani</i>).",
+    MCQItem("gramatyka", "Текст про письменника Miłoszewського. Встав сполучник (зайве слово — <b>ani</b>).",
             "Gdyby pisał tylko wtedy, ___ ma ochotę, nie stworzyłby tekstu.",
             ["ani", "lub", "i", "ponieważ", "kiedy", "a"], 4, "час → <b>kiedy</b> (коли)."),
     MCQItem("gramatyka", "", "Siedzę przy komputerze sześć ___ osiem godzin.",

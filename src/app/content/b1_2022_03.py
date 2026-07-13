@@ -216,7 +216,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Warto go odwiedzić, aby dowiedzieć się ___ o dawnym życiu.",
             ["większe", "więcej", "większym"], 1, "dowiedzieć się ___ (більше) → <b>więcej</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: więc). ──
-    MCQItem("gramatyka", "Текст про Jarmark św. Dominika. Встав сполучник (зайве слово — <i>więc</i>).",
+    MCQItem("gramatyka", "Текст про Jarmark św. Dominika. Встав сполучник (зайве слово — <b>więc</b>).",
             "Jest głośno i ciekawie, ___ prawie wszędzie coś się dzieje.",
             ["a", "ponieważ", "żeby", "jednak", "lub", "więc"], 1, "причина → <b>ponieważ</b>."),
     MCQItem("gramatyka", "", "Jarmark cieszył się zainteresowaniem, ___ tradycję przerwała II wojna.",
@@ -250,7 +250,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Jeśli nie, ___ nam pokój w niedrogim hotelu.",
             ["zarezerwuj", "rezerwuj", "rezerwowałabyś"], 0, "наказ докон. до «ty» → <b>zarezerwuj</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: do). Оголошення про квартиру. ──
-    MCQItem("gramatyka", "Оголошення про продаж квартири. Встав прийменник (зайве слово — <i>do</i>).",
+    MCQItem("gramatyka", "Оголошення про продаж квартири. Встав прийменник (зайве слово — <b>do</b>).",
             "Kawalerka składa się ___ kuchni, łazienki i salonu.",
             ["na", "z", "przez", "do", "pod", "dla"], 1, "składać się z + родовий → <b>z</b>."),
     MCQItem("gramatyka", "", "Na dachu jest taras przeznaczony ___ wszystkich mieszkańców.",

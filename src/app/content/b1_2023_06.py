@@ -218,7 +218,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Czytniki ważą ___ od tabletów.",
             ["mniejsze", "mniej", "najmniejsze"], 1, "важать менше (od) → <b>mniej</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: więc). ──
-    MCQItem("gramatyka", "Текст про екологію. Встав сполучник (зайве слово — <i>więc</i>).",
+    MCQItem("gramatyka", "Текст про екологію. Встав сполучник (зайве слово — <b>więc</b>).",
             "Nie kupujmy produktów w promocji, ___ ich aktualnie nie potrzebujemy.",
             ["lub", "jeśli", "ponieważ", "więc", "a", "żeby"], 1, "умова → <b>jeśli</b>."),
     MCQItem("gramatyka", "", "Do pracy możemy jeździć komunikacją miejską ___ rowerem.",
@@ -252,7 +252,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Niech Paweł ___ nam, o czym mówiliśmy na lekcji.",
             ["przypomniałby", "przypomina", "przypomni"], 2, "«niech ___» докон. → <b>przypomni</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: przez). Текст про Італію. ──
-    MCQItem("gramatyka", "Текст про італійський клімат у Польщі. Встав прийменник (зайве — <i>przez</i>).",
+    MCQItem("gramatyka", "Текст про італійський клімат у Польщі. Встав прийменник (зайве — <b>przez</b>).",
             "Planowałam, że za tydzień będę ___ rodziny w Neapolu.",
             ["dla", "z", "przez", "u", "o", "na"], 3, "u + родовий (у родини) → <b>u</b>."),
     MCQItem("gramatyka", "", "Spędzam czas ___ książką.",

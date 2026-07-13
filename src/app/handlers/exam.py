@@ -34,6 +34,7 @@ from app.bot.keyboards import (
     exam_text_kb,
     to_menu_kb,
 )
+from app.bot.ui import emph
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
 from app.services import (
@@ -255,8 +256,8 @@ async def _send_step(message: Message, exam_id: str, seq: list[dict], pos: int) 
         await message.answer(f"{head}\n\n🎧 {html.escape(q.text)}", reply_markup=exam_kb(q.options, pos))
     elif step["t"] == "mcq":
         it = content.exam_items(exam_id, sec)[step["i"]]
-        ctx = f"<i>{html.escape(it.context)}</i>\n\n" if it.context else ""
-        await message.answer(f"{head}\n\n{ctx}{html.escape(it.question)}", reply_markup=exam_kb(it.options, pos))
+        ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
+        await message.answer(f"{head}\n\n{ctx}{emph(it.question)}", reply_markup=exam_kb(it.options, pos))
     elif step["t"] == "match":
         t = content.exam_match_tasks(exam_id)[step["ti"]]
         await message.answer(

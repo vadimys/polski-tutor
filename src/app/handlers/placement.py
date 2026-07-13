@@ -14,7 +14,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import quiz
 from app.bot.keyboards import lesson_kb, question_kb
-from app.bot.ui import bar
+from app.bot.ui import bar, emph
 from app.domain.models import MODULE_LABELS, Module
 from app.services import mistakes, mock, placement, progress
 from app.services import state as user_state  # aiogram інжектить FSM у параметр `state`
@@ -29,9 +29,9 @@ class Placement(StatesGroup):
 async def _send_question(message: Message, pairs: list, pos: int) -> None:
     section, idx = pairs[pos]
     it = mock.section_items(section)[idx]
-    ctx = f"<i>{html.escape(it.context)}</i>\n\n" if it.context else ""
+    ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
     await message.answer(
-        f"<b>Питання {pos + 1}/{len(pairs)}</b>\n\n{ctx}{html.escape(it.question)}",
+        f"<b>Питання {pos + 1}/{len(pairs)}</b>\n\n{ctx}{emph(it.question)}",
         reply_markup=question_kb(it.options, pos),
     )
 
@@ -129,8 +129,8 @@ async def _finalize(
         lines.append("\n<b>Розбір помилок:</b>")
         for it in wrong[:5]:
             lines.append(
-                f"• {html.escape(it.question)}\n  ✔️ <b>{html.escape(it.options[it.correct])}</b>"
-                f" — {html.escape(it.explain)}"
+                f"• {emph(it.question)}\n  ✔️ <b>{html.escape(it.options[it.correct])}</b>"
+                f" — {emph(it.explain)}"
             )
 
     # Сильний старт (читання+граматика ≥70%) → спонукаємо перевірити решту модулів

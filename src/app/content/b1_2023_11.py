@@ -219,7 +219,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Warto jak ___ zaplanować trasę.",
             ["dokładniej", "dokładnie", "najdokładniej"], 2, "«jak ___» → найвищий ступ. → <b>najdokładniej</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: dlaczego). ──
-    MCQItem("gramatyka", "Текст про планування майбутнього. Встав сполучник (зайве слово — <i>dlaczego</i>).",
+    MCQItem("gramatyka", "Текст про планування майбутнього. Встав сполучник (зайве слово — <b>dlaczego</b>).",
             "Nie umiem zaplanować przyszłości, ___ nikt nas w szkole nie uczył organizacji.",
             ["więc", "bo", "dlaczego", "ale", "że", "które"], 1, "причина → <b>bo</b>."),
     MCQItem("gramatyka", "", "Zajmuję się mnóstwem spraw, ___ nie zawsze są tego warte.",
@@ -253,7 +253,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "___ jej tylko trochę czasu do namysłu!",
             ["Dałbyś", "Daj", "Dawaj"], 1, "наказ докон. до «ty» → <b>Daj</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: przy). Текст про Targi Książki. ──
-    MCQItem("gramatyka", "Текст про Ярмарок книги. Встав прийменник (зайве слово — <i>przy</i>).",
+    MCQItem("gramatyka", "Текст про Ярмарок книги. Встав прийменник (зайве слово — <b>przy</b>).",
             "___ półkach stały poradniki, albumy i powieści po ukraińsku.",
             ["dla", "przed", "na", "przy", "wśród", "przez"], 2, "na + місцевий (на полицях) → <b>Na</b>."),
     MCQItem("gramatyka", "", "___ cztery dni odbywały się spotkania z autorami.",

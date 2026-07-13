@@ -201,7 +201,7 @@ _GRAMMAR: list[MCQItem] = [
     # ── Zad II: сполучники з рамки (luki z ramki, 1 зайвий) → MCQ-per-gap ──
     # Банк: że/oraz/ale/czyli/ani/więc (приклад «chociaż» вже використано; зайве — ani).
     MCQItem("gramatyka",
-            "Текст про «Niemy Chór». Встав сполучник із рамки (одне слово — зайве: <i>ani</i>).",
+            "Текст про «Niemy Chór». Встав сполучник із рамки (одне слово — зайве: <b>ani</b>).",
             "Studenci używają języka migowego, ___ języka osób niesłyszących.",
             ["że", "oraz", "ale", "czyli", "ani", "więc"], 3,
             "пояснення/уточнення («тобто») → <b>czyli</b>."),
@@ -266,7 +266,7 @@ _GRAMMAR: list[MCQItem] = [
     # ── Zad VIII: прийменники з рамки (luki z ramki, 1 зайвий: z) → MCQ-per-gap ──
     # Банк: do/w/nad/przed/z/na (приклад «w»). Текст: Piotr i Ola шукають домик на море.
     MCQItem("gramatyka",
-            "Текст: Piotr і Ola шукають дачний будиночок. Встав прийменник (зайве слово — <i>z</i>).",
+            "Текст: Piotr і Ola шукають дачний будиночок. Встав прийменник (зайве слово — <b>z</b>).",
             "Kilka miesięcy ___ wakacjami szukali domku.",
             ["do", "w", "nad", "przed", "z", "na"], 3,
             "przed + орудний (часу — «перед») → <b>przed</b> wakacjami."),

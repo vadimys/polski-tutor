@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 from contextlib import suppress
 
 from aiogram import F, Router
@@ -13,6 +12,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot import quiz
 from app.bot.keyboards import drill_kb, menu_kb_for, to_menu_kb
+from app.bot.ui import emph
 from app.domain.models import MODULE_LABELS, Module
 from app.services import drills, goals, mistakes, mock, pollquiz
 from app.services import state as user_state
@@ -32,9 +32,9 @@ def _target_module(st) -> Module:
 
 async def _send_q(message: Message, section: str, idxs: list[int], pos: int) -> None:
     it = mock.section_items(section)[idxs[pos]]
-    ctx = f"<i>{html.escape(it.context)}</i>\n\n" if it.context else ""
+    ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
     await message.answer(
-        f"<b>{pos + 1}/{len(idxs)}</b> · {MODULE_LABELS[Module(section)]}\n\n{ctx}{html.escape(it.question)}",
+        f"<b>{pos + 1}/{len(idxs)}</b> · {MODULE_LABELS[Module(section)]}\n\n{ctx}{emph(it.question)}",
         reply_markup=drill_kb(it.options, pos),
     )
 

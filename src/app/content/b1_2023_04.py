@@ -218,7 +218,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Zainteresowanie może być o 40 procent ___ niż w 2022 roku.",
             ["mniej", "mniejsze", "mniejsi"], 1, "вищий ступ. прикметника (zainteresowanie) → <b>mniejsze</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: chociaż). ──
-    MCQItem("gramatyka", "Текст про навчання. Встав сполучник (зайве слово — <i>chociaż</i>).",
+    MCQItem("gramatyka", "Текст про навчання. Встав сполучник (зайве слово — <b>chociaż</b>).",
             "Lekcji jest niemało i są za krótkie, ___ wszystkiego nauczyć się w szkole.",
             ["żeby", "chociaż", "oraz", "więc", "który", "gdy"], 0, "«za krótkie, ___» → <b>żeby</b> (замало, щоб)."),
     MCQItem("gramatyka", "", "Zadania są ważne, ___ uczniowie całe popołudnia spędzają nad książkami.",
@@ -252,7 +252,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Dzisiaj nie mogę. ___ sami.",
             ["Idźmy", "Idźcie", "Poszlibyście"], 1, "наказ до «wy» → <b>Idźcie</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: na). Текст про котів. ──
-    MCQItem("gramatyka", "Текст про котів. Встав прийменник (зайве слово — <i>na</i>).",
+    MCQItem("gramatyka", "Текст про котів. Встав прийменник (зайве слово — <b>na</b>).",
             "Koty ciągle chodzą ___ człowiekiem, chcą się bawić.",
             ["z", "dla", "na", "w", "za", "u"], 4, "chodzić za + орудний (ходять за) → <b>za</b>."),
     MCQItem("gramatyka", "", "Starajmy się, by zwierzę miało ___ domu wszystko, czego potrzebuje.",

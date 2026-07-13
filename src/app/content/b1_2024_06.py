@@ -219,7 +219,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Teraz gotuję warzywa dużo ___.",
             ["chętniej", "chętnie", "najchętniej"], 0, "dużo + вищий ступ. присл. → <b>chętniej</b>."),
     # ── Zad II: wskaźniki zespolenia з рамки (1 зайвий: więc) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст «місто чи село». Встав слово з рамки (зайве — <i>więc</i>).",
+    MCQItem("gramatyka", "Текст «місто чи село». Встав слово з рамки (зайве — <b>więc</b>).",
             "To jest pytanie, ___ często słyszymy w dyskusjach o stylu życia.",
             ["które", "a", "Jeśli", "lub", "niż", "więc"], 0, "означальне → <b>które</b> słyszymy."),
     MCQItem("gramatyka", "", "Można wymienić wiele zalet ___ także wad każdego z miejsc.",
@@ -254,7 +254,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "…ty i Basia ___ też kwiatami.",
             ["zajmujcie się", "zajęłybyście się", "zajmijcie się"], 2, "наказ докон. до «wy» → <b>zajmijcie się</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: na) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст про пікнік біля озера. Встав прийменник (зайве слово — <i>na</i>).",
+    MCQItem("gramatyka", "Текст про пікнік біля озера. Встав прийменник (зайве слово — <b>na</b>).",
             "___ dużego drzewa rozłożył kolorowe koce.",
             ["koło", "ze", "w", "przez", "z", "na"], 0, "koło + родовий (біля) → <b>koło</b> drzewa."),
     MCQItem("gramatyka", "", "Koledzy przynieśli ___ sobą smaczne przekąski.",

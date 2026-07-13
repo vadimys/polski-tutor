@@ -228,7 +228,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Ze wszystkich ___ żyją papugi, żółwie i węże.",
             ["najdłuższe", "dłużej", "najdłużej"], 2, "«ze wszystkich» → найвищий ступ. присл. → <b>najdłużej</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: lub) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст про харчові звички. Встав сполучник (зайве слово — <i>lub</i>).",
+    MCQItem("gramatyka", "Текст про харчові звички. Встав сполучник (зайве слово — <b>lub</b>).",
             "Naukowcy odkryli, ___ prawidłowe nawyki kształtują się od najmłodszych lat.",
             ["że", "a", "ale", "więc", "bo", "lub"], 0, "«odkryli, ___» → <b>że</b>."),
     MCQItem("gramatyka", "", "Dziecko uczy się, co jest zdrowe, ___ co nie.",
@@ -263,7 +263,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "…na pewno ___ do niego i poprosiła o pomoc.",
             ["zadzwoń", "dzwoniłabym", "zadzwoniłabym"], 2, "умовний докон., 1 ос. одн. жін. → <b>zadzwoniłabym</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: przy) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст про Музей моторизації. Встав прийменник (зайве слово — <i>przy</i>).",
+    MCQItem("gramatyka", "Текст про Музей моторизації. Встав прийменник (зайве слово — <b>przy</b>).",
             "Muzeum posiada ___ swojej kolekcji ponad trzysta pojazdów.",
             ["w", "na", "do", "przez", "z", "przy"], 0, "w + місцевий (у колекції) → <b>w</b>."),
     MCQItem("gramatyka", "", "Muzeum oferuje prelekcje ___ temat historii motoryzacji.",

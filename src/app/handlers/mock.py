@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 from contextlib import suppress
 
 from aiogram import F, Router
@@ -13,6 +12,7 @@ from aiogram.types import CallbackQuery, Message
 
 from app.bot import quiz
 from app.bot.keyboards import menu_kb_for, mock_kb, mock_menu_kb, to_menu_kb
+from app.bot.ui import emph
 from app.domain.models import Module
 from app.services import exam_scale, goals, mistakes, mock, progress
 from app.services import state as user_state
@@ -39,10 +39,10 @@ async def cmd_mock(message: Message) -> None:
 async def _send_item(message: Message, section: str, idx: int) -> None:
     items = mock.section_items(section)
     it = items[idx]
-    ctx = f"<i>{html.escape(it.context)}</i>\n\n" if it.context else ""
+    ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
     await message.answer(
         f"<b>{_SECTION_LABEL[section]} · {idx + 1}/{len(items)}</b>\n\n"
-        f"{ctx}{html.escape(it.question)}",
+        f"{ctx}{emph(it.question)}",
         reply_markup=mock_kb(it.options, idx),
     )
 

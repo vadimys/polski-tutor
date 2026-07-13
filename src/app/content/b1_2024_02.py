@@ -247,7 +247,7 @@ _GRAMMAR: list[MCQItem] = [
             ["popularnym", "popularniej", "popularnie"], 0, "jest + орудний (яким?) → <b>popularnym</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: dlaczego) → MCQ-per-gap ──
     MCQItem("gramatyka",
-            "Текст про проблеми зі сном. Встав сполучник (зайве слово — <i>dlaczego</i>).",
+            "Текст про проблеми зі сном. Встав сполучник (зайве слово — <b>dlaczego</b>).",
             "Budzisz się często w nocy, ___ rano jesteś zmęczony?",
             ["a", "lecz", "który", "jeśli", "lub", "dlaczego"], 0,
             "зіставлення («а вранці») → <b>a</b>."),
@@ -284,7 +284,7 @@ _GRAMMAR: list[MCQItem] = [
             ["Porozmawiaj", "Rozmawiaj", "Rozmawiałbyś"], 0, "наказ докон. (одна розмова) → <b>Porozmawiaj</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: bez) → MCQ-per-gap ──
     MCQItem("gramatyka",
-            "Текст про проєктування саду. Встав прийменник (зайве слово — <i>bez</i>).",
+            "Текст про проєктування саду. Встав прийменник (зайве слово — <b>bez</b>).",
             "Plany ogrodów to nie tylko rośliny ___ domu.",
             ["wokół", "z", "na", "w", "bez"], 0, "навколо дому → <b>wokół</b> (+ родовий)."),
     MCQItem("gramatyka", "", "Ogrody mają łączyć się ___ budynkiem i otoczeniem.",

@@ -222,7 +222,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Dorośli mają dużo ___ zdolność rozumienia reguł.",
             ["więcej", "większą", "wielką"], 1, "вищий ступ. прикметника (яку здатність) → <b>większą</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: dlatego) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст про читання в Європі. Встав сполучник (зайве слово — <i>dlatego</i>).",
+    MCQItem("gramatyka", "Текст про читання в Європі. Встав сполучник (зайве слово — <b>dlatego</b>).",
             "Eurostat przeprowadził badania, ___ się dowiedzieć, ile czasu ludzie czytają.",
             ["żeby", "lecz", "więc", "dlatego", "bo", "oraz"], 0, "мета → <b>żeby</b>."),
     MCQItem("gramatyka", "", "…nie dłużej niż 13 minut dziennie, ___ to naprawdę niewiele.",
@@ -256,7 +256,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "___ ci znaleźć jakiegoś sponsora.",
             ["Pomógłby", "Niech pomoże", "Pomóż"], 1, "спонукання 3 ос. → <b>Niech pomoże</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: od) → MCQ-per-gap ──
-    MCQItem("gramatyka", "Текст про осінній настрій. Встав прийменник (зайве слово — <i>od</i>).",
+    MCQItem("gramatyka", "Текст про осінній настрій. Встав прийменник (зайве слово — <b>od</b>).",
             "___ oknem pada deszcz, jest szaro i smutno.",
             ["po", "z", "od", "dla", "za", "na"], 4, "za + орудний (за вікном) → <b>za</b>."),
     MCQItem("gramatyka", "", "___ pierwsze warto udekorować dom kwiatami.",

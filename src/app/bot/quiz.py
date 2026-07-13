@@ -15,6 +15,8 @@ from contextlib import suppress
 
 from aiogram.types import CallbackQuery, ReactionTypeEmoji
 
+from app.bot.ui import emph
+
 
 def parse_answer(data: str) -> tuple[int, int] | None:
     """'<prefix>:ans:<qidx>:<opt>' → (qidx, opt); None, якщо формат не той (стара кнопка)."""
@@ -38,8 +40,8 @@ def verdict_card(question: str, chosen: int, correct: int, options: list[str], e
             f"🔵 Твій вибір: <b>{yours}</b> — ❌\n"
             f"✅ Poprawnie: <b>{html.escape(options[correct])}</b>"
         )
-    exp = f"\n💡 {html.escape(explain)}" if explain else ""
-    return f"{html.escape(question)}\n\n{body}{exp}"
+    exp = f"\n💡 {emph(explain)}" if explain else ""
+    return f"{emph(question)}\n\n{body}{exp}"
 
 
 async def show_choice(cb: CallbackQuery, opt_idx: int) -> None:

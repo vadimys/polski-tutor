@@ -217,7 +217,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Liczba ofiar śmiertelnych jest znacznie ___.",
             ["mniejsza", "mniej", "mało"], 0, "вищий ступ. прикметника (liczba) → <b>mniejsza</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: czyli). ──
-    MCQItem("gramatyka", "Текст про Тель-Авів. Встав сполучник (зайве слово — <i>czyli</i>).",
+    MCQItem("gramatyka", "Текст про Тель-Авів. Встав сполучник (зайве слово — <b>czyli</b>).",
             "Przyjeżdżają nie tylko po to, ___ opalać się na plaży…",
             ["czyli", "żeby", "dlatego", "że", "i", "ale"], 1, "мета → <b>żeby</b>."),
     MCQItem("gramatyka", "", "…opalać się ___ kąpać w morzu…",
@@ -251,7 +251,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Niech nasz przyjaciel ___ szczęśliwy!",
             ["poczuje się", "poczułby się", "czułby się"], 0, "«niech ___» докон. → <b>poczuje się</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: między). Текст про кам'яниці. ──
-    MCQItem("gramatyka", "Текст про квартири в кам'яницях. Встав прийменник (зайве слово — <i>między</i>).",
+    MCQItem("gramatyka", "Текст про квартири в кам'яницях. Встав прийменник (зайве слово — <b>między</b>).",
             "Wielu kolegów zdecydowało się na kupno mieszkania ___ kamienicy.",
             ["dla", "w", "przed", "z", "do", "między"], 1, "w + місцевий → <b>w</b> kamienicy."),
     MCQItem("gramatyka", "", "Często są to lokale ___ ciekawą historią.",

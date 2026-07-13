@@ -217,7 +217,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "Czerwona ___ działa na osoby, które się odchudzają.",
             ["korzystny", "korzystnie", "najkorzystniejsza"], 1, "прислівник (як діє?) → <b>korzystnie</b>."),
     # ── Zad II: сполучники з рамки (1 зайвий: więc). ──
-    MCQItem("gramatyka", "Текст про вік і здоров'я. Встав сполучник (зайве слово — <i>więc</i>).",
+    MCQItem("gramatyka", "Текст про вік і здоров'я. Встав сполучник (зайве слово — <b>więc</b>).",
             "Teraz zmieniła zdanie, ___ sama ma już tyle lat.",
             ["żeby", "że", "więc", "chociaż", "bo", "i"], 4, "причина → <b>bo</b>."),
     MCQItem("gramatyka", "", "Kobieta uważa, ___ wiek biologiczny nie jest ważny.",
@@ -251,7 +251,7 @@ _GRAMMAR: list[MCQItem] = [
     MCQItem("gramatyka", "", "„…i ___ swoich bliskich na aktywne wakacje”.",
             ["zapraszalibyście", "zaprosilibyście", "zaproście"], 2, "наказ докон. до «wy» → <b>zaproście</b>."),
     # ── Zad VIII: прийменники з рамки (1 зайвий: na). Текст про Каліфорнію. ──
-    MCQItem("gramatyka", "Текст про акторку в Каліфорнії. Встав прийменник (зайве слово — <i>na</i>).",
+    MCQItem("gramatyka", "Текст про акторку в Каліфорнії. Встав прийменник (зайве слово — <b>na</b>).",
             "Małgorzata zamieszkała ___ Kalifornii.",
             ["z", "w", "nad", "przez", "na", "za"], 1, "w + місцевий → <b>w</b> Kalifornii."),
     MCQItem("gramatyka", "", "Los Angeles leży ___ oceanem.",
