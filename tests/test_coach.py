@@ -37,3 +37,34 @@ def test_weakest_module_when_no_reviews():
 def test_action_has_reason():
     a = coach.choose(True, {m: 50 for m in _ALL}, _att(True), 0)
     assert a.reason and a.label
+
+
+def _weak(module: str, att_n: int) -> dict:
+    readiness = {m: 70 for m in _ALL}
+    readiness[module] = 20  # цей модуль — найслабший
+    att = _att(True)
+    att[module] = att_n
+    return {"readiness": readiness, "att": att}
+
+
+def test_czytanie_rotates_through_exam_formats():
+    # ротація за к-стю спроб: drill → зіставлення → МОК читання
+    cbs = []
+    for n in (9, 10, 11):  # 9%3=0, 10%3=1, 11%3=2
+        p = _weak(Module.CZYTANIE.value, n)
+        cbs.append(coach.choose(True, p["readiness"], p["att"], 0).cb)
+    assert cbs == ["drill:start", "match:open", "mock:czytanie"]
+
+
+def test_gramatyka_rotates_all_four_formats():
+    cbs = []
+    for n in (0, 1, 2, 3):
+        p = _weak(Module.GRAMATYKA.value, n)
+        cbs.append(coach.choose(True, p["readiness"], p["att"], 0).cb)
+    assert cbs == ["drill:start", "fill:open", "open:open", "mock:gramatyka"]
+
+
+def test_weakest_pisanie_single_format_stable():
+    # у письма один формат — ротація не ламає (завжди writing:start)
+    p = _weak(Module.PISANIE.value, 7)
+    assert coach.choose(True, p["readiness"], p["att"], 0).cb == "writing:start"
