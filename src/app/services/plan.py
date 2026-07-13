@@ -34,6 +34,7 @@ class StudyPlan:
     weak: list[Module]  # найслабші спершу
     daily_min: int = 60  # денна ціль учня (з /cel) — план ділить час пропорційно
     phases: list[Phase] = field(default_factory=list)
+    readiness: dict[str, int] = field(default_factory=dict)  # для віх-чекпойнтів
 
 
 def weak_order(readiness: dict[str, int]) -> list[Module]:
@@ -87,6 +88,33 @@ def _phases_free(top2: list[str]) -> list[Phase]:
     ]
 
 
+# віхи відносно дати: (тижнів до іспиту, підпис, поріг готовності всіх модулів або None=дія)
+_MILESTONES: list[tuple[int, str, int | None]] = [
+    (8, "🎯 Перший повний мок (/egzamin)", None),
+    (4, "📗 Усі модулі ≥40%", 40),
+    (2, "🚩 Усі модулі ≥50% (поріг іспиту!)", 50),
+    (1, "🌱 Тапер + логістика дня іспиту", None),
+]
+
+
+def _min_ready(readiness: dict[str, int]) -> int:
+    return min((readiness.get(m.value, 0) for m in Module), default=0)
+
+
+def milestones(weeks_left: int, readiness: dict[str, int]) -> list[str]:
+    """Чекпойнти відносно дати: майбутні → коли; активні → досягнуто/відстаєш."""
+    mn = _min_ready(readiness)
+    out: list[str] = []
+    for wk, label, thr in _MILESTONES:
+        if weeks_left > wk:
+            out.append(f"🔜 {label} — за {weeks_left - wk} тиж")
+        elif thr is None:
+            out.append(f"▶️ {label} — час робити")
+        else:
+            out.append(f"{'✅' if mn >= thr else '⚠️'} {label}")
+    return out
+
+
 def build(
     exam_date: str, confirmed: bool, readiness: dict[str, int], today: date, daily_min: int = 60
 ) -> StudyPlan:
@@ -99,8 +127,10 @@ def build(
             exam = today
         days = max(0, (exam - today).days)
         weeks = max(1, round(days / 7))
-        return StudyPlan(True, days, weeks, weak, daily_min, _phases_with_date(weeks, top2))
-    return StudyPlan(False, None, None, weak, daily_min, _phases_free(top2))
+        return StudyPlan(
+            True, days, weeks, weak, daily_min, _phases_with_date(weeks, top2), readiness
+        )
+    return StudyPlan(False, None, None, weak, daily_min, _phases_free(top2), readiness)
 
 
 def render(plan: StudyPlan) -> str:
@@ -113,6 +143,10 @@ def render(plan: StudyPlan) -> str:
     lines.append("<b>Фази:</b>")
     for p in plan.phases:
         lines.append(f"{p.title} <i>({p.span})</i>\n  {p.focus}")
+
+    if plan.has_date and plan.weeks_left is not None:
+        lines.append("\n<b>🏁 Віхи до іспиту:</b>")
+        lines += [f"  {m}" for m in milestones(plan.weeks_left, plan.readiness)]
 
     weak2 = ", ".join(MODULE_LABELS[m] for m in plan.weak[:2])
     lines.append(f"\n🔎 <b>Пріоритет зараз:</b> {weak2}")
