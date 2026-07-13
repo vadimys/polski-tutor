@@ -12,6 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from app.bot.keyboards import (
+    activation_kb,
     admin_extend_kb,
     admin_teacher_kb,
     approved_kb,
@@ -26,7 +27,7 @@ from app.bot.keyboards import (
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
-from app.services import access, churn, clock, exam_dates, groups, viewas, vocab
+from app.services import access, activation, churn, clock, exam_dates, groups, viewas, vocab
 
 router = Router()
 
@@ -81,11 +82,19 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
             "📅 Твій іспит уже позаду. <b>Як пройшло?</b>", reply_markup=exam_result_kb()
         )
         return
-    await message.answer(
-        f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
-        "Почнемо зі стартового тесту або обери в меню 👇",
-        reply_markup=approved_kb(),
-    )
+    steps = await activation.checklist(user_id)
+    if activation.all_done(steps):  # уже освоївся → звичайне меню
+        await message.answer(
+            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\nОбери дію в меню 👇",
+            reply_markup=approved_kb(),
+        )
+    else:  # веду до наступного кроку з видимим прогресом (one goal per session)
+        nxt = activation.next_step(steps)
+        await message.answer(
+            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\n\n"
+            f"{activation.render(steps)}\n\nПочнемо з наступного 👇",
+            reply_markup=activation_kb(nxt["cb"], nxt["short"]),
+        )
 
 
 async def _grant_referral(message: Message, uid: int, teacher_id: int, group_id: int, group_name: str) -> None:

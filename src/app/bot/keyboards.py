@@ -80,6 +80,15 @@ def extend_request_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def activation_kb(next_cb: str, next_label: str) -> InlineKeyboardMarkup:
+    """Перша сесія: один чіткий наступний крок (aha) + меню. Do, don't show."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text=f"▶️ {next_label}", callback_data=next_cb)
+    kb.button(text="📋 Меню", callback_data="menu:home")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def churn_survey_kb() -> InlineKeyboardMarkup:
     """Екран завершення trial: підписка (CTA) + exit-survey причин (churn-prevention).
     Причина → адресний save-offer (див. handlers.onboarding.cb_churn_reason)."""
