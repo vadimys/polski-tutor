@@ -28,6 +28,16 @@ def _overall(readiness: dict | None) -> int:
     return quest.overall_pct(readiness or {})
 
 
+def _name(u: User) -> str:
+    return f"@{u.username}" if u.username else f"id{u.id}"
+
+
+async def _paying_ids() -> set[int]:
+    async with session_factory()() as s:
+        rows = await s.execute(select(func.distinct(Payment.user_id)))
+        return {r[0] for r in rows.all()}
+
+
 async def overview() -> dict:
     today = clock.today_local()
     now = clock.now_local()
@@ -174,3 +184,87 @@ def render_user(d: dict) -> str:
         f"💎 Оплат: {d['pay_n']} ({d['pay_stars']}⭐)\n"
         f"Створено: {d['created_at']}"
     )
+
+
+# ── інкремент 2: сегменти + викладачі/групи ─────────────────────────────────
+async def segments() -> dict:
+    """Самостійні учні vs приведені викладачем + конверсія в оплату кожного сегмента."""
+    async with session_factory()() as s:
+        users = list((await s.execute(select(User))).scalars().all())
+    paying = await _paying_ids()
+    students = [u for u in users if u.role != "teacher"]
+    organic = [u for u in students if not u.referred_by]
+    referred = [u for u in students if u.referred_by]
+
+    def conv(grp: list[User]) -> tuple[int, int, int]:
+        pay = sum(1 for u in grp if u.id in paying)
+        return len(grp), pay, (round(pay / len(grp) * 100) if grp else 0)
+
+    o_t, o_p, o_c = conv(organic)
+    r_t, r_p, r_c = conv(referred)
+    return {
+        "organic_total": o_t, "organic_paying": o_p, "organic_conv": o_c,
+        "referred_total": r_t, "referred_paying": r_p, "referred_conv": r_c,
+    }
+
+
+async def teachers() -> list[dict]:
+    """Викладачі з к-стю учнів і платних (для списку груп)."""
+    async with session_factory()() as s:
+        users = list((await s.execute(select(User))).scalars().all())
+    paying = await _paying_ids()
+    tmap = {u.id: u for u in users if u.role == "teacher"}
+    groups: dict[int, list[User]] = {}
+    for u in users:
+        if u.referred_by in tmap:
+            groups.setdefault(u.referred_by, []).append(u)
+    out = [
+        {
+            "id": tid,
+            "name": _name(t),
+            "n_students": len(groups.get(tid, [])),
+            "n_paying": sum(1 for x in groups.get(tid, []) if x.id in paying),
+        }
+        for tid, t in tmap.items()
+    ]
+    return sorted(out, key=lambda d: d["n_students"], reverse=True)
+
+
+async def teacher_group(teacher_id: int) -> dict | None:
+    async with session_factory()() as s:
+        t = await s.get(User, teacher_id)
+        if t is None or t.role != "teacher":
+            return None
+        studs = list(
+            (await s.execute(select(User).where(User.referred_by == teacher_id))).scalars().all()
+        )
+    paying = await _paying_ids()
+    students = [
+        {
+            "id": u.id, "name": _name(u), "overall": _overall(u.readiness),
+            "status": u.access_status, "streak": u.streak, "paying": u.id in paying,
+        }
+        for u in sorted(studs, key=lambda x: _overall(x.readiness), reverse=True)
+    ]
+    return {"id": teacher_id, "name": _name(t), "students": students}
+
+
+def render_segments(d: dict) -> str:
+    return (
+        "🧑‍🎓 <b>Сегменти учнів</b>\n\n"
+        f"🙋 <b>Самостійні:</b> {d['organic_total']} · платних {d['organic_paying']} "
+        f"(конверсія <b>{d['organic_conv']}%</b>)\n"
+        f"👩‍🏫 <b>Від викладача:</b> {d['referred_total']} · платних {d['referred_paying']} "
+        f"(конверсія <b>{d['referred_conv']}%</b>)\n\n"
+        "<i>Порівняй конверсію: який канал ефективніший.</i>"
+    )
+
+
+def render_group(d: dict) -> str:
+    if not d["students"]:
+        return f"👩‍🏫 <b>{d['name']}</b>\nУ групі поки немає учнів."
+    lines = [f"👩‍🏫 <b>{d['name']}</b> — учнів: <b>{len(d['students'])}</b>\n"]
+    for st in d["students"]:
+        badge = " 💎" if st["paying"] else ""
+        lines.append(f"{'✅' if st['status'] == 'approved' else '⏳'} {st['name']} · 🏁{st['overall']}% · 🔥{st['streak']}{badge}")
+    return "\n".join(lines)

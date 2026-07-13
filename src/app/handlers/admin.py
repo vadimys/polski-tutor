@@ -31,17 +31,17 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="📊 Огляд", callback_data="ac:overview")
     kb.button(text="👥 Користувачі", callback_data="ac:users:0")
+    kb.button(text="🧑‍🎓 Сегменти", callback_data="ac:segments")
+    kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
     kb.adjust(2)
     return kb
 
 
 async def _send_hub(message: Message) -> None:
-    kb = _hub_kb()
-    kb.row()  # (наступні розділи — сегменти/аналітика/підтримка/режими — додаються інкрементами)
     await message.answer(
         "🛠 <b>Адмін-консоль</b>\nКерування ботом, користувачі та підтримка.\n"
-        "<i>Далі зʼявляться: сегменти, аналітика використання, підтримка, тест-режими.</i>",
-        reply_markup=kb.as_markup(),
+        "<i>Далі зʼявляться: аналітика використання, підтримка, тест-режими.</i>",
+        reply_markup=_hub_kb().as_markup(),
     )
 
 
@@ -100,6 +100,56 @@ async def cb_users(cb: CallbackQuery) -> None:
         f"👥 <b>Користувачі</b> {shown} з <b>{total}</b>\nОбери, щоб відкрити картку:",
         reply_markup=kb.as_markup(),
     )
+
+
+@router.callback_query(F.data == "ac:segments")
+async def cb_segments(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    d = await admin_stats.segments()
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    await cb.message.answer(admin_stats.render_segments(d), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "ac:teachers")
+async def cb_teachers(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    rows = await admin_stats.teachers()
+    kb = InlineKeyboardBuilder()
+    for t in rows:
+        kb.button(
+            text=f"👩‍🏫 {t['name']} · {t['n_students']} учнів · 💎{t['n_paying']}",
+            callback_data=f"ac:group:{t['id']}",
+        )
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    kb.adjust(1)
+    head = f"👩‍🏫 <b>Викладачі</b> — {len(rows)}\nОбери, щоб побачити групу:" if rows else "👩‍🏫 Викладачів поки немає."
+    await cb.message.answer(head, reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data.startswith("ac:group:"))
+async def cb_group(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    tid = int(cb.data.split(":")[2])
+    d = await admin_stats.teacher_group(tid)
+    if d is None:
+        await cb.message.answer("Викладача не знайдено.")
+        return
+    kb = InlineKeyboardBuilder()
+    for st in d["students"]:
+        kb.button(text=f"👤 {st['name']} · {st['overall']}%", callback_data=f"ac:user:{st['id']}")
+    kb.button(text="⬅️ Викладачі", callback_data="ac:teachers")
+    kb.adjust(1)
+    await cb.message.answer(admin_stats.render_group(d), reply_markup=kb.as_markup())
 
 
 @router.callback_query(F.data.startswith("ac:user:"))

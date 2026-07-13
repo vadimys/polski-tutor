@@ -38,6 +38,33 @@ def test_render_user_card():
     assert "placement ✅" in t
 
 
+def test_render_segments():
+    d = {
+        "organic_total": 30, "organic_paying": 3, "organic_conv": 10,
+        "referred_total": 8, "referred_paying": 4, "referred_conv": 50,
+    }
+    t = admin_stats.render_segments(d)
+    assert "Самостійні:</b> 30" in t and "конверсія <b>10%</b>" in t
+    assert "Від викладача:</b> 8" in t and "конверсія <b>50%</b>" in t
+
+
+def test_render_group():
+    d = {
+        "id": 9, "name": "@teacher", "students": [
+            {"id": 1, "name": "@a", "overall": 60, "status": "approved", "streak": 5, "paying": True},
+            {"id": 2, "name": "@b", "overall": 20, "status": "pending", "streak": 0, "paying": False},
+        ],
+    }
+    t = admin_stats.render_group(d)
+    assert "@teacher" in t and "учнів: <b>2</b>" in t
+    assert "@a" in t and "💎" in t and "🏁60%" in t
+    assert "⏳ @b" in t  # pending → годинник
+
+
+def test_render_group_empty():
+    assert "немає учнів" in admin_stats.render_group({"id": 1, "name": "@t", "students": []})
+
+
 def test_render_user_no_referrer_no_exam():
     d = {
         "id": 1, "name": "id1", "role": "teacher", "status": "approved", "until": "",
