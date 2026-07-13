@@ -15,7 +15,7 @@ from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
-from app.bot.keyboards import cancel_kb, menu_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, menu_kb, teacher_menu_kb, to_menu_kb
 from app.bot.ui import bar
 from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
@@ -41,16 +41,39 @@ from app.services import state as user_state
 
 router = Router()
 
-async def _menu_header(user_id: int) -> str:
-    """Жива шапка меню: рівень/XP/серія + ціль дня + похід + місія дня — для мотивації."""
+async def _teacher_header(user_id: int) -> str:
+    """Жива шапка меню викладача: пульс класу (учнів/груп) — а не учнівський прогрес."""
+    from app.services import groups
+
+    gs = await groups.list_for(user_id)
+    ung = await groups.ungrouped(user_id)
+    total = sum(g["n"] for g in gs) + len(ung)
+    if total:
+        pulse = f"👥 Твій клас: <b>{total}</b> учнів у <b>{len(gs)}</b> групах" + (
+            f" + {len(ung)} без групи" if ung else ""
+        )
+    else:
+        pulse = "👥 Поки немає учнів — поділись посиланням «🔗 Запросити учнів»."
+    return (
+        "👩‍🏫 <b>Меню викладача</b>\n\n"
+        f"{pulse}\n\n"
+        "Керуй класом, дивись матеріали й тести, запрошуй учнів 👇\n"
+        "<i>Вправи в «Матеріалах» — режим превʼю (не зараховуються).</i>"
+    )
+
+
+async def _send_menu(msg: Message, user_id: int) -> None:
+    """Меню за роллю: викладачу — його інструмент, учню — навчальний хаб."""
     st = await user_state.load(user_id)
     if viewas.role_for(await viewas.get(user_id), st.role) == "teacher":
-        return (
-            "👩‍🏫 <b>Меню викладача</b>\n\n"
-            "👥 Прогрес твого класу — <b>/uczniowie</b>\n"
-            "<i>Вправи нижче можеш проходити як превʼю — вони не зараховуються.</i>\n\n"
-            "Обери дію 👇"
-        )
+        await msg.answer(await _teacher_header(user_id), reply_markup=teacher_menu_kb())
+    else:
+        await msg.answer(await _menu_header(user_id), reply_markup=menu_kb())
+
+
+async def _menu_header(user_id: int) -> str:
+    """Жива шапка учнівського меню: рівень/XP/серія + ціль дня + похід + місія дня."""
+    st = await user_state.load(user_id)
     g = await goals.status(user_id)
     days = _user_days_left(await access.info(user_id))
     qp = quest.overall_pct(st.readiness or {})
@@ -92,13 +115,13 @@ def _user_days_left(inf) -> int | None:
 @router.message(Command("menu"))
 async def cmd_menu(message: Message, state: FSMContext) -> None:
     await state.clear()  # вихід із будь-якого активного завдання (без «протікання» стану)
-    await message.answer(await _menu_header(message.from_user.id), reply_markup=menu_kb())
+    await _send_menu(message, message.from_user.id)
 
 
 @router.callback_query(F.data == "menu:home")
 async def cb_menu(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
-    await cb.message.answer(await _menu_header(cb.from_user.id), reply_markup=menu_kb())
+    await _send_menu(cb.message, cb.from_user.id)
     await cb.answer()
 
 

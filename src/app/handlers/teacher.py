@@ -17,7 +17,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import cancel_kb, to_menu_kb
+from app.bot.keyboards import cancel_kb, teacher_materials_kb, to_menu_kb
+from app.content import all_exams, exam_fill_tasks, exam_open_tasks, exam_sections
 from app.domain.models import MODULE_LABELS, Module
 from app.services import (
     access,
@@ -167,6 +168,104 @@ async def cb_class(cb: CallbackQuery) -> None:
         return
     me = await cb.bot.get_me()
     await _send_overview(cb.message, cb.from_user.id, me.username or "")
+
+
+_SEC_EMOJI = {"sluchanie": "🎧", "czytanie": "📖", "gramatyka": "🔤"}
+
+
+@router.callback_query(F.data == "teacher:materials")
+async def cb_materials(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    await cb.message.answer(
+        "📚 <b>Матеріали та тести</b>\n\n"
+        "Тут — увесь контент, який отримують учні. Переглядай будь-яку вправу в режимі "
+        "<b>превʼю</b> (не зараховується), щоб знати формат і демонструвати учням.\n"
+        "«🎓 Каталог» показує всі офіційні тести — зручно вибрати, що призначити групі.",
+        reply_markup=teacher_materials_kb(),
+    )
+
+
+@router.callback_query(F.data == "teacher:catalog")
+async def cb_catalog(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    exams = all_exams()
+    lines = [
+        f"🎓 <b>Офіційні тести Держкомісії ({len(exams)})</b>",
+        "Реальні минулі іспити + пробні. Учням корисно тренуватись на всіх.\n",
+    ]
+    for e in exams:
+        secs = "".join(_SEC_EMOJI[s] for s in exam_sections(e.id)) or "—"
+        extra = []
+        if exam_fill_tasks(e.id):
+            extra.append("форми")
+        if exam_open_tasks(e.id):
+            extra.append("трансф.")
+        tail = (" · " + ", ".join(extra)) if extra else ""
+        lines.append(f"• <b>{e.label}</b> · {secs} · {len(e.items)} питань{tail}")
+    lines.append(
+        "\n💡 Признач групі конкретний тест через «📝 Завдання» (напр. «Пройти мок "
+        f"{exams[0].label}»). Сам мок — кнопка «🎓 Повний мок (превʼю)»."
+    )
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🎓 Відкрити повний мок", callback_data="exam:open")
+    kb.button(text="⬅️ Матеріали", callback_data="teacher:materials")
+    kb.adjust(1)
+    await cb.message.answer("\n".join(lines), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "teacher:invite")
+async def cb_invite(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    tid = cb.from_user.id
+    me = await cb.bot.get_me()
+    uname = me.username or ""
+    gs = await groups.list_for(tid)
+    lines = [
+        "🔗 <b>Запросити учнів</b>\n",
+        "Учень, що зайде за твоїм посиланням, автоматично закріпиться за тобою: "
+        "ти бачиш його прогрес, а він отримує знижку на підписку.\n",
+        f"Загальне посилання (без групи):\n<code>https://t.me/{uname}?start=t{tid}</code>",
+    ]
+    if gs:
+        lines.append("\nАбо одразу в групу (join-лінк):")
+        for g in gs:
+            lines.append(f"• {html.escape(g['name'])}: <code>https://t.me/{uname}?start=g{g['id']}</code>")
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👥 Керувати групами", callback_data="teacher:class")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await cb.message.answer("\n".join(lines), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "teacher:revenue")
+async def cb_revenue(cb: CallbackQuery) -> None:
+    await cb.answer()
+    if not await _guard_teacher(cb.message, cb.from_user.id):
+        return
+    tid = cb.from_user.id
+    paying = await billing.paying_student_ids(tid)
+    stars = await billing.total_stars_from_referrals(tid)
+    gs = await groups.list_for(tid)
+    total = sum(g["n"] for g in gs) + len(await groups.ungrouped(tid))
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👥 Мій клас", callback_data="teacher:class")
+    kb.button(text="⬅️ Меню", callback_data="menu:home")
+    kb.adjust(1)
+    await cb.message.answer(
+        "💎 <b>Оплати твоїх учнів</b>\n\n"
+        f"👥 Учнів усього: <b>{total}</b>\n"
+        f"💎 З активною підпискою: <b>{len(paying)}</b>\n"
+        f"⭐ Сумарно Stars від них: <b>{stars}</b>\n\n"
+        "<i>Це основа для revenue-share. Умови й виплати — узгоджуються з адміністратором "
+        "(кнопка «🆘 Підтримка / звʼязок»).</i>",
+        reply_markup=kb.as_markup(),
+    )
 
 
 @router.callback_query(F.data.startswith("teacher:grp:"))

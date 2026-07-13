@@ -184,6 +184,45 @@ def menu_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def teacher_menu_kb() -> InlineKeyboardMarkup:
+    """Меню викладача — живе й функціональне САМЕ для викладача: клас, матеріали,
+    запрошення учнів, оплати. Без учнівського (тест рівня, урок дня, план, місії, SRS)."""
+    kb = InlineKeyboardBuilder()
+    kb.row(InlineKeyboardButton(text="👥 Мій клас", callback_data="teacher:class"))  # головний CTA
+    kb.row(InlineKeyboardButton(text="📚 Матеріали та тести", callback_data="teacher:materials"))
+    kb.row(
+        InlineKeyboardButton(text="🔗 Запросити учнів", callback_data="teacher:invite"),
+        InlineKeyboardButton(text="💎 Оплати учнів", callback_data="teacher:revenue"),
+    )
+    kb.row(InlineKeyboardButton(text="🆘 Підтримка / звʼязок", callback_data="support:open"))
+    return kb.as_markup()
+
+
+def teacher_materials_kb() -> InlineKeyboardMarkup:
+    """Матеріали для викладача: каталог тестів + перегляд усіх типів вправ як превʼю
+    (учнівський контент, щоб знати/демонструвати/призначати; готовність не рухається)."""
+    kb = InlineKeyboardBuilder()
+    kb.row(InlineKeyboardButton(text="🎓 Каталог офіційних тестів", callback_data="teacher:catalog"))
+    kb.row(InlineKeyboardButton(text="🎓 Повний мок (превʼю)", callback_data="exam:open"))
+    preview = [
+        ("🎧 Аудіювання", "listening:start"),
+        ("🎯 Тренування", "drill:start"),
+        ("🧩 Зіставлення", "match:open"),
+        ("🔗 Аудіо-зіставл.", "amatch:open"),
+        ("✏️ Впиши форму", "fill:open"),
+        ("🔄 Трансформації", "open:open"),
+        ("✍️ Письмо", "writing:start"),
+        ("🗣 Мовлення", "speaking:start"),
+        ("🖼 Опис фото", "speaking:photo"),
+        ("📚 Словник", "lex:open"),
+        ("📋 Офіційний МОК", "mock:open"),
+    ]
+    for i in range(0, len(preview), 2):
+        kb.row(*(InlineKeyboardButton(text=t, callback_data=c) for t, c in preview[i : i + 2]))
+    kb.row(InlineKeyboardButton(text="⬅️ Меню викладача", callback_data="menu:home"))
+    return kb.as_markup()
+
+
 def drill_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     """Варіанти відповіді для тренування (з індексом питання)."""
     return _mcq_kb(options, qidx, "dr:ans", "dr:stop")
