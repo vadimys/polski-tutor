@@ -70,8 +70,46 @@ def test_parse_answer_rejects_bad():
 def test_verdict_card_correct():
     out = quiz.verdict_card("Pytanie?", 1, 1, ["a", "b", "c"], "бо так")
     assert "Dobrze" in out and "бо так" in out and "Pytanie?" in out
+    assert "Твій вибір" in out and "b" in out  # обрана відповідь показана
 
 
 def test_verdict_card_wrong_shows_answer():
     out = quiz.verdict_card("Pytanie?", 0, 2, ["a", "b", "c"], "")
     assert "Poprawnie" in out and "c" in out
+    assert "Твій вибір" in out and "a" in out  # і обрана, і правильна
+
+
+class _Btn:
+    def __init__(self, text):
+        self.text = text
+
+
+class _Markup:
+    def __init__(self, options):
+        self.inline_keyboard = [[_Btn(o)] for o in options] + [[_Btn("⏹ Завершити")]]
+
+
+class _MsgWithKb:
+    def __init__(self, options):
+        self.html_text = "Питання 1/5"
+        self.reply_markup = _Markup(options)
+        self.edited_text = None
+        self.markup = "unset"
+
+    async def edit_text(self, text, reply_markup="keep"):
+        self.edited_text = text
+        self.markup = reply_markup
+
+
+class _CbKb:
+    def __init__(self, options):
+        self.message = _MsgWithKb(options)
+
+
+@pytest.mark.asyncio
+async def test_show_choice_marks_selection_and_clears_kb():
+    cb = _CbKb(["Wisła", "Odra", "Bug"])
+    await quiz.show_choice(cb, 1)  # обрано «Odra»
+    assert "Твій вибір" in cb.message.edited_text and "Odra" in cb.message.edited_text
+    assert "Питання 1/5" in cb.message.edited_text  # текст питання збережено
+    assert cb.message.markup is None  # клавіатуру прибрано

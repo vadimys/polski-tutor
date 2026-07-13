@@ -26,6 +26,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
+from app.bot import quiz
 from app.bot.keyboards import (
     exam_audiomatch_kb,
     exam_kb,
@@ -318,8 +319,7 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     answers[str(pos)] = int(parts[3])
     await state.update_data(answers=answers)
     await cb.answer()
-    with suppress(Exception):
-        await cb.message.edit_reply_markup(reply_markup=None)
+    await quiz.show_choice(cb, int(parts[3]))  # режим іспиту без вердикту, але вибір видно
     await _advance(cb.message, cb.from_user.id, state)
 
 

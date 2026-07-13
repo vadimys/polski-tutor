@@ -28,13 +28,31 @@ def parse_answer(data: str) -> tuple[int, int] | None:
 
 
 def verdict_card(question: str, chosen: int, correct: int, options: list[str], explain: str) -> str:
-    """Текст питання, що перетворюється на «розібрану картку» після відповіді."""
+    """Текст питання, що перетворюється на «розібрану картку» після відповіді.
+    Завжди показує ОБРАНУ відповідь (щоб учень бачив свій вибір), тоді вердикт."""
+    yours = html.escape(options[chosen]) if 0 <= chosen < len(options) else "—"
     if chosen == correct:
-        verdict = "✔️ <b>Dobrze!</b>"
+        body = f"🔵 Твій вибір: <b>{yours}</b> — ✔️ <b>Dobrze!</b>"
     else:
-        verdict = f"❌ Poprawnie: <b>{html.escape(options[correct])}</b>"
+        body = (
+            f"🔵 Твій вибір: <b>{yours}</b> — ❌\n"
+            f"✅ Poprawnie: <b>{html.escape(options[correct])}</b>"
+        )
     exp = f"\n💡 {html.escape(explain)}" if explain else ""
-    return f"{html.escape(question)}\n\n{verdict}{exp}"
+    return f"{html.escape(question)}\n\n{body}{exp}"
+
+
+async def show_choice(cb: CallbackQuery, opt_idx: int) -> None:
+    """Показати ОБРАНУ відповідь у флоу БЕЗ вердикту (стартовий тест / повний мок) і
+    прибрати клавіатуру. Текст опції беремо з кнопки повідомлення — універсально."""
+    chosen = ""
+    mk = getattr(cb.message, "reply_markup", None)
+    if mk and mk.inline_keyboard and 0 <= opt_idx < len(mk.inline_keyboard) and mk.inline_keyboard[opt_idx]:
+        chosen = mk.inline_keyboard[opt_idx][0].text
+    with suppress(Exception):
+        base = cb.message.html_text or ""
+        tail = f"\n\n🔵 Твій вибір: <b>{html.escape(chosen)}</b>" if chosen else ""
+        await cb.message.edit_text(base + tail, reply_markup=None)
 
 
 async def read_answer(cb: CallbackQuery, current_pos: int) -> int | None:

@@ -85,8 +85,7 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
     pos += 1
     await state.update_data(pos=pos, chosen=chosen)
     await cb.answer()
-    with suppress(Exception):  # прибрати клавіатуру (діагностика — без миттєвого вердикту)
-        await cb.message.edit_reply_markup(reply_markup=None)
+    await quiz.show_choice(cb, choice)  # діагностика без вердикту, але вибір видно
 
     if pos < len(pairs):
         await _send_question(cb.message, pairs, pos)

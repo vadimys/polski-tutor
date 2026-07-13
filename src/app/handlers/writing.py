@@ -50,7 +50,8 @@ async def _give_set(message: Message, state: FSMContext) -> None:
     kb.adjust(1)
     await message.answer(
         guidance.writing_instruction(ws.a.genre, a_req, ws.a.words, ws.b.genre, b_req, ws.b.words)
-        + "\n\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням.",
+        + "\n\n💡 Порада: вимкни автовиправлення/T9 — воно псує польські слова."
+        + "\n✍️ Спершу напиши польською <b>завдання a</b> одним повідомленням.",
         reply_markup=kb.as_markup(),
     )
 
