@@ -15,6 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from app.config import settings
 from app.integrations import tts
 from app.services import clock, lexicon, tts_say, vocab
 
@@ -25,6 +26,14 @@ _OV_PAGE = 12  # слів на сторінку огляду
 
 class Lexicon(StatesGroup):
     browsing = State()  # флешкарти
+
+
+class LexEdit(StatesGroup):
+    waiting = State()  # адмін вводить виправлений переклад (topic/sub/pl/idx у data)
+
+
+def _is_admin(chat_id: int) -> bool:
+    return bool(settings.admin_id) and chat_id == settings.admin_id
 
 
 # ---------- теми ----------
@@ -199,6 +208,9 @@ async def _render_card(msg: Message, state: FSMContext, reveal: bool, fresh: boo
         body += "\n\n<b>➕ Додай у словник</b>, щоб повторити пізніше, або <b>➡️ Далі</b>."
         kb.button(text="➕ У мій словник", callback_data="lex:add")
         kb.button(text="➡️ Далі", callback_data="lex:next")
+        if _is_admin(msg.chat.id):  # адмін-редагування AI-перекладу прямо з картки
+            kb.button(text="✏️ Виправити", callback_data="lex:edit")
+            kb.button(text="🗑 Прибрати", callback_data="lex:del")
     else:
         body = (
             f"🇵🇱 <b>{html.escape(w['pl'])}</b>\n\n"
@@ -255,6 +267,69 @@ async def cb_add(cb: CallbackQuery, state: FSMContext) -> None:
     added = await vocab.add(cb.from_user.id, w["pl"], w["ua"], clock.today_local())
     await cb.answer("Додано в словник ✅" if added else "Вже у твоєму словнику 🙂")
     await _advance(cb, state)
+
+
+# ---------- адмін: виправлення / видалення слова (правки AI-перекладу) ----------
+
+
+@router.callback_query(Lexicon.browsing, F.data == "lex:edit")
+async def cb_edit(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише для адміна", show_alert=True)
+        return
+    data = await state.get_data()
+    w = data["words"][data["idx"]]
+    await state.set_state(LexEdit.waiting)
+    await state.update_data(edit_pl=w["pl"])  # решта (topic/sub/words/idx) лишається в data
+    await cb.answer()
+    await cb.message.answer(
+        f"✏️ Виправлення «<b>{html.escape(w['pl'])}</b>» (зараз: {html.escape(w['ua'])}).\n"
+        "Надішли новий переклад. Можна з прикладом через <code>|</code>:\n"
+        "<code>переклад | приклад польською</code>\n<i>/anuluj — скасувати.</i>"
+    )
+
+
+@router.message(LexEdit.waiting, F.text, ~F.text.startswith("/"))
+async def on_edit_text(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    topic, sub, pl = data["topic"], data["sub"], data["edit_pl"]
+    parts = [p.strip() for p in (message.text or "").split("|", 1)]
+    ua = parts[0]
+    example = parts[1] if len(parts) == 2 else None
+    ok = await lexicon.edit_word(topic, sub, pl, ua, example)
+    if ok:  # оновити й знімок у FSM, щоб картка одразу показала нове
+        words = data["words"]
+        for wd in words:
+            if wd["pl"] == pl:
+                wd["ua"] = ua
+                if example is not None:
+                    wd["example"] = example
+                break
+        await state.update_data(words=words)
+    await state.set_state(Lexicon.browsing)
+    await message.answer("✅ Виправлено." if ok else "😔 Слово не знайдено в кеші.")
+    await _render_card(message, state, reveal=True, fresh=True)
+
+
+@router.callback_query(Lexicon.browsing, F.data == "lex:del")
+async def cb_del(cb: CallbackQuery, state: FSMContext) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише для адміна", show_alert=True)
+        return
+    data = await state.get_data()
+    idx, words = data["idx"], data["words"]
+    w = words[idx]
+    await lexicon.remove_word(data["topic"], data["sub"], w["pl"])
+    words.pop(idx)
+    await cb.answer("🗑 Прибрано")
+    if not words:
+        await state.clear()
+        with _suppress():
+            await cb.message.edit_text("Слів у підтемі не лишилось.", reply_markup=_back_kb(
+                f"lex:t:{data['topic']}", "⬅️ Підтеми"))
+        return
+    await state.update_data(words=words, idx=min(idx, len(words) - 1))
+    await _render_card(cb.message, state, reveal=False)
 
 
 # ---------- пошук ----------

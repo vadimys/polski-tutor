@@ -233,6 +233,45 @@ async def cached_words(topic_key: str, sub_key: str) -> list[Word] | None:
     return [Word(**w) for w in json.loads(raw)] if raw else None
 
 
+def _apply_edit(arr: list[dict], pl: str, ua: str, example: str | None) -> bool:
+    """Чисте редагування списку слів (для тесту). True, якщо слово знайдено й змінено."""
+    for o in arr:
+        if o.get("pl") == pl:
+            if ua:
+                o["ua"] = ua
+            if example is not None:
+                o["example"] = example
+            return True
+    return False
+
+
+def _apply_remove(arr: list[dict], pl: str) -> list[dict]:
+    return [o for o in arr if o.get("pl") != pl]
+
+
+async def edit_word(topic_key: str, sub_key: str, pl: str, ua: str, example: str | None = None) -> bool:
+    """Виправити переклад/приклад слова у кеші підтеми (адмін). Зберігається для всіх."""
+    key = _key(topic_key, sub_key)
+    raw = await _r().get(key)
+    if not raw:
+        return False
+    arr = json.loads(raw)
+    if not _apply_edit(arr, pl, ua, example):
+        return False
+    await _r().set(key, json.dumps(arr, ensure_ascii=False), ex=_TTL)
+    return True
+
+
+async def remove_word(topic_key: str, sub_key: str, pl: str) -> bool:
+    """Прибрати слово з кешу підтеми (адмін). Зберігається для всіх."""
+    key = _key(topic_key, sub_key)
+    raw = await _r().get(key)
+    if not raw:
+        return False
+    await _r().set(key, json.dumps(_apply_remove(json.loads(raw), pl), ensure_ascii=False), ex=_TTL)
+    return True
+
+
 async def search(query: str, limit: int = 20) -> list[tuple[Word, str, str]]:
     """Пошук слова серед УЖЕ згенерованих (кешованих) підтем — по pl або ua (підрядок).
     Повертає [(Word, topic_key, sub_key)]. Регістронезалежно."""
