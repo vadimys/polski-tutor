@@ -63,6 +63,11 @@ async def members(group_id: int) -> list[int]:
         return [r[0] for r in rows.all()]
 
 
+async def total_students(teacher_id: int) -> int:
+    """Усього учнів викладача (у групах + без групи) — один helper проти дублювання."""
+    return sum(g["n"] for g in await list_for(teacher_id)) + len(await ungrouped(teacher_id))
+
+
 async def ungrouped(teacher_id: int) -> list[int]:
     """Учні викладача без групи (зайшли за загальним лінком t<teacher>)."""
     async with session_factory()() as s:

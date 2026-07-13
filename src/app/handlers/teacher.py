@@ -8,6 +8,7 @@ sessions, що й у учня (progress.compute); учень погодився 
 
 from __future__ import annotations
 
+import asyncio
 import html
 
 from aiogram import F, Router
@@ -152,7 +153,11 @@ async def _send_group_roster(message: Message, teacher_id: int, gid: int, bot_us
         title = "👤 <b>Без групи</b>"
         link = f"https://t.me/{bot_username}?start=t{teacher_id}"
     paying = await billing.paying_student_ids(teacher_id)
-    body = "\n\n".join([_row(await _gather(sid), sid in paying) for sid in ids]) if ids else "<i>Поки порожньо.</i>"
+    if ids:  # паралельно (уникаємо N+1 послідовних раундтрипів на великому класі)
+        gathered = await asyncio.gather(*(_gather(sid) for sid in ids))
+        body = "\n\n".join(_row(d, sid in paying) for d, sid in zip(gathered, ids, strict=True))
+    else:
+        body = "<i>Поки порожньо.</i>"
     kb = InlineKeyboardBuilder()
     kb.button(text="🏆 Лідерборд", callback_data=f"teacher:board:{gid}")
     kb.button(text="📝 Завдання", callback_data=f"teacher:asgn:{gid}")
@@ -265,8 +270,7 @@ async def cb_revenue(cb: CallbackQuery) -> None:
     tid = cb.from_user.id
     paying = await billing.paying_student_ids(tid)
     stars = await billing.total_stars_from_referrals(tid)
-    gs = await groups.list_for(tid)
-    total = sum(g["n"] for g in gs) + len(await groups.ungrouped(tid))
+    total = await groups.total_students(tid)
     kb = InlineKeyboardBuilder()
     kb.button(text="👥 Мій клас", callback_data="teacher:class")
     kb.button(text="⬅️ Меню", callback_data="menu:home")

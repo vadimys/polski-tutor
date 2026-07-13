@@ -30,9 +30,11 @@ async def allow_ai(user_id: int) -> bool:
     if settings.admin_id and user_id == settings.admin_id:
         return True
     r = _r()
-    n = await r.incr(_key(user_id))
-    if n == 1:
-        await r.expire(_key(user_id), 90_000)  # ~25 год — самоскидання щодоби
+    key = _key(user_id)
+    # гарантований TTL атомарно (навіть якщо процес упаде між incr і expire —
+    # інакше лічильник міг лишитись вічним і назавжди заблокувати AI користувачу)
+    await r.set(key, 0, ex=90_000, nx=True)  # ~25 год — самоскидання щодоби
+    n = await r.incr(key)
     return n <= settings.ai_daily_limit
 
 

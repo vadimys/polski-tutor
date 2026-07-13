@@ -30,7 +30,8 @@ async def board(ids: list[int]) -> list[dict]:
         }
         for u in users
     ]
-    rows.sort(key=lambda r: (r["streak"], r["overall"]), reverse=True)
+    # tiebreaker -id → детермінований порядок при рівних (ранги не «стрибають»)
+    rows.sort(key=lambda r: (r["streak"], r["overall"], -r["id"]), reverse=True)
     for i, r in enumerate(rows):
         r["rank"] = i + 1
     return rows
