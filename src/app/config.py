@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     sub_year_stars: int = 2000  # річна (~44% дешевше за 12×міс — стандартний річний дисконт)
     sub_year_days: int = 365
     referral_discount_pct: int = 20  # знижка для учнів, приведених викладачем
+    winback_extend_days: int = 3  # разова реактивація (churn save-offer «не встиг спробувати»)
 
     # Mini App (WebApp-панель): публічний HTTPS-URL через cloudflared-тунель.
     # Порожній → кнопку «Панель» не показуємо (бот повністю працює й без тунеля).

@@ -80,6 +80,20 @@ def extend_request_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def churn_survey_kb() -> InlineKeyboardMarkup:
+    """Екран завершення trial: підписка (CTA) + exit-survey причин (churn-prevention).
+    Причина → адресний save-offer (див. handlers.onboarding.cb_churn_reason)."""
+    from app.services.churn import REASONS
+
+    kb = InlineKeyboardBuilder()
+    kb.button(text="💎 Оформити підписку", callback_data="pay:start")
+    for key, label in REASONS:
+        kb.button(text=label, callback_data=f"churn:reason:{key}")
+    kb.button(text="✍️ Написати адміну", callback_data="onb:contact")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 def support_category_kb() -> InlineKeyboardMarkup:
     """Тип звернення до підтримки."""
     kb = InlineKeyboardBuilder()

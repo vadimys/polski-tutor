@@ -15,6 +15,7 @@ from app.bot.keyboards import (
     admin_extend_kb,
     admin_teacher_kb,
     approved_kb,
+    churn_survey_kb,
     contact_admin_kb,
     exam_dates_kb,
     exam_result_kb,
@@ -25,7 +26,7 @@ from app.bot.keyboards import (
 )
 from app.config import settings
 from app.handlers.privacy import PRIVACY_SHORT
-from app.services import access, clock, exam_dates, groups, viewas, vocab
+from app.services import access, churn, clock, exam_dates, groups, viewas, vocab
 
 router = Router()
 
@@ -159,6 +160,53 @@ async def _expired_paywall(uid: int, inf) -> str:  # noqa: ANN001
     return "\n".join(lines)
 
 
+@router.callback_query(F.data.startswith("churn:reason:"))
+async def cb_churn_reason(cb: CallbackQuery) -> None:
+    """Exit-survey: причина відмови → адресний save-offer (skill churn-prevention)."""
+    await cb.answer()
+    uid = cb.from_user.id
+    reason = cb.data.split(":")[2]
+    await churn.record_reason(reason)
+
+    # «не встиг» → разова реактивація +N днів (пауза/продовження — найкращий оффер для low-usage)
+    if reason == "notime" and await churn.reoffer_available(uid):
+        until = await access.extend_days(uid, settings.winback_extend_days)
+        await churn.mark_reoffered(uid)
+        await cb.message.answer(
+            f"🎁 <b>Ще {settings.winback_extend_days} дні безкоштовно</b> — щоб ти встиг відчути "
+            f"користь. Доступ відкрито до <b>{until}</b>. Тисни /menu і продовжуй 👇\n"
+            "<i>Далі — підписка, щоб довести підготовку до складеного B1.</i>",
+            reply_markup=to_menu_kb(),
+        )
+        return
+
+    if reason == "price":  # → якір на річний план (не глибока знижка — не привчаємо кидати)
+        text = (
+            "💸 Розумію. Дивись: <b>річний</b> план — "
+            f"<b>{settings.sub_year_stars}⭐</b> проти ~{settings.sub_stars * 12}⭐ за 12 місяців "
+            f"окремо (≈{settings.sub_year_stars // 12}⭐/міс). Менше за одну каву на місяць — "
+            "за підготовку до державного іспиту."
+        )
+    elif reason == "unsure":  # → реасюр цінності + запросити фідбек
+        text = (
+            "🤔 Чесно: бот тренує всі <b>5 модулів</b> іспиту на <b>офіційних</b> завданнях "
+            "Держкомісії й дає AI-фідбек письма та мовлення за держ-критеріями — це найближче "
+            "до реального іспиту, що є. Напиши «Написати адміну», чого бракує, — врахую."
+        )
+    elif reason == "noneed":  # → грейсфул, без тиску (respect the no)
+        await cb.message.answer(
+            "Дякую за чесність! 🙌 Твій прогрес збережено — повертайся будь-коли (/start). "
+            "Успіхів на іспиті! 🍀"
+        )
+        return
+    else:  # «не встиг», але реактивацію вже використано
+        text = (
+            "Ти вже пробував бота в ділі 💪 Щоб не втратити прогрес — оформи підписку "
+            "й дійдемо до складеного B1 разом."
+        )
+    await cb.message.answer(text, reply_markup=extend_request_kb())
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, command: CommandObject) -> None:
     await state.clear()
@@ -171,7 +219,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
             from app.handlers.admin import send_hub  # адмін → одразу панель керування
             await send_hub(message)
     elif access.is_expired(inf, clock.today_local()):
-        await message.answer(await _expired_paywall(uid, inf), reply_markup=extend_request_kb())
+        await message.answer(await _expired_paywall(uid, inf), reply_markup=churn_survey_kb())
     elif inf.status == "approved":
         await _approved_welcome(message, uid)
     elif inf.status == "pending":

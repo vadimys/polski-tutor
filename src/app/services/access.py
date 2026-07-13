@@ -204,6 +204,21 @@ async def grant_trial(
         return u.access_until
 
 
+async def extend_days(user_id: int, days: int) -> str:
+    """Разове реактиваційне продовження доступу на `days` від сьогодні (churn save-offer).
+    Не чіпає роль/реферала/дату іспиту. Повертає новий until (ISO) або '' якщо юзера немає."""
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None:
+            return ""
+        until = (clock.today_local() + timedelta(days=days)).isoformat()
+        u.access_status = "approved"
+        u.access_until = max(u.access_until, until)  # НЕ вкорочуємо, якщо раптом є довший
+        u.decided_at = clock.now_local().isoformat(timespec="minutes")
+        await s.commit()
+        return u.access_until
+
+
 async def students_of(teacher_id: int) -> list[int]:
     """Id учнів, приведених цим викладачем (для майбутнього дашборду)."""
     async with session_factory()() as s:

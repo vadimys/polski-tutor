@@ -216,3 +216,16 @@ async def test_cascade_delete_teacher_removes_groups_and_assignments(db):
         await s.commit()
     assert await _count(db, Group, teacher_id=110) == 0
     assert await _count(db, Assignment, teacher_id=110) == 0
+
+
+async def test_extend_days_reactivates_without_touching_attribution(db):
+    from datetime import timedelta
+
+    from app.services import access, clock
+
+    await _add(db, User(id=300, role="student", referred_by=5, access_status="approved", access_until="2020-01-01"))
+    until = await access.extend_days(300, 3)
+    assert until == (clock.today_local() + timedelta(days=3)).isoformat()
+    async with db() as s:
+        u = await s.get(User, 300)
+    assert u.access_status == "approved" and u.referred_by == 5  # реферала/роль не чіпаємо

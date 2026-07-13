@@ -16,7 +16,7 @@ from datetime import date, timedelta
 from aiogram import Bot
 from redis.asyncio import Redis
 
-from app.bot.keyboards import coach_kb, exam_result_kb
+from app.bot.keyboards import coach_kb, exam_result_kb, extend_request_kb
 from app.config import settings
 from app.domain.models import MODULE_LABELS
 from app.services import access, assignments, clock, exam_dates, gdpr, goals, state
@@ -103,6 +103,38 @@ async def _assignment_reminders(bot: Bot, today: date) -> None:
                     logger.exception("assignment reminder failed uid=%s aid=%s", uid, a["id"])
 
 
+_WINBACK_DAYS = (3, 14)  # через скільки днів після завершення доступу слати win-back
+
+
+def _winback_text(inf, today: date) -> str:  # noqa: ANN001
+    d = exam_dates.days_left(inf.exam_date, today) if inf.confirmed and inf.exam_date else None
+    tail = f" До іспиту B1 ще <b>{d} днів</b> — усе ще можна встигнути." if d is not None and d >= 0 else ""
+    return (
+        f"👋 <b>Скучили за тобою!</b> Твій прогрес у боті збережено.{tail}\n\n"
+        f"Продовжимо підготовку? Повний доступ до всіх 5 модулів — від <b>{settings.sub_stars}⭐</b>."
+    )
+
+
+async def _winback(bot: Bot, today: date) -> None:
+    """Win-back згаслим учням (через 3 і 14 днів після завершення доступу, раз на етап)."""
+    for uid in await state.all_user_ids():
+        if uid == settings.admin_id:
+            continue
+        inf = await access.info(uid)
+        if inf.role != "student" or inf.status != "approved" or not inf.until:
+            continue
+        for d in _WINBACK_DAYS:
+            if inf.until == (today - timedelta(days=d)).isoformat():
+                if await _claim(f"winback:{uid}:{d}"):
+                    try:
+                        await bot.send_message(
+                            uid, _winback_text(inf, today), reply_markup=extend_request_kb()
+                        )
+                    except Exception:  # noqa: BLE001
+                        logger.exception("winback failed uid=%s", uid)
+                break
+
+
 async def _seconds_until_next_hour() -> float:
     now = clock.now_local()
     target = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
@@ -170,9 +202,10 @@ async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
                 logger.info("Retention: видалено %d denied-користувачів", purged)
         except Exception:
             logger.exception("retention purge failed")
-    if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань — раз на добу
+    if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань + win-back — раз на добу
         await _exam_lifecycle(bot, clock.today_local())
         await _assignment_reminders(bot, clock.today_local())
+        await _winback(bot, clock.today_local())
     return purged_on
 
 
