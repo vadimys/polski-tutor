@@ -116,7 +116,7 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
         s.add(Session(user_id=user_id, module=module_value, score=pct))
         await s.commit()
 
-    from app.services import goals, progress  # відкладений імпорт — уникаємо циклів
+    from app.services import assignments, goals, progress  # відкладений імпорт — уникаємо циклів
 
     stats = await progress.compute(user_id)  # чесна готовність із повної історії
     async with session_factory()() as s:
@@ -125,3 +125,4 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
             u.readiness = progress.pcts(stats)
             await s.commit()
     await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію
+    await assignments.on_session(user_id)  # авто-залік завдань, чий модуль-ціль виконано

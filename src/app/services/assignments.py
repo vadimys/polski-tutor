@@ -11,10 +11,11 @@ from __future__ import annotations
 import html
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 
 from app.db.base import session_factory
-from app.db.models import Assignment, AssignmentDone, User
+from app.db.models import Assignment, AssignmentDone, Session, User
+from app.domain.models import MODULE_LABELS, Module
 
 
 def parse_deadline(text: str, today: date) -> str | None:
@@ -42,6 +43,16 @@ def parse_deadline(text: str, today: date) -> str | None:
     return d.isoformat()
 
 
+def module_short(module: str) -> str:
+    """Коротка людяна назва модуля-цілі (для підпису завдання)."""
+    if not module:
+        return ""
+    try:
+        return MODULE_LABELS[Module(module)].split("(")[0].strip()
+    except (ValueError, KeyError):
+        return module
+
+
 def deadline_label(iso: str, today: date) -> str:
     """Людський підпис дедлайну для учня (терміновість наочна)."""
     try:
@@ -60,10 +71,17 @@ def deadline_label(iso: str, today: date) -> str:
 # --- запис / зчитування ---
 
 
-async def create(teacher_id: int, group_id: int, title: str, deadline: str) -> int:
+async def create(
+    teacher_id: int, group_id: int, title: str, deadline: str, module: str = "", target: int = 1
+) -> int:
     async with session_factory()() as s:
         a = Assignment(
-            teacher_id=teacher_id, group_id=group_id, title=title[:200].strip(), deadline=deadline
+            teacher_id=teacher_id,
+            group_id=group_id,
+            title=title[:200].strip(),
+            deadline=deadline,
+            module=module,
+            target=max(1, target),
         )
         s.add(a)
         await s.commit()
@@ -82,6 +100,8 @@ async def get(assignment_id: int) -> dict | None:
             "group_id": a.group_id,
             "title": a.title,
             "deadline": a.deadline,
+            "module": a.module,
+            "target": a.target,
         }
 
 
@@ -127,6 +147,7 @@ async def for_group(teacher_id: int, group_id: int) -> list[dict]:
             "id": a.id,
             "title": a.title,
             "deadline": a.deadline,
+            "module": a.module,
             "done": int(done_counts.get(a.id, 0)),
             "total": total,
         }
@@ -134,17 +155,21 @@ async def for_group(teacher_id: int, group_id: int) -> list[dict]:
     ]
 
 
+def _student_cond(u: User):  # noqa: ANN202 — SQLAlchemy expr
+    """Умова «завдання таргетить цього учня» (за групою або як «без групи»). None — самонавчання."""
+    if u.group_id:
+        return Assignment.group_id == u.group_id
+    if u.referred_by:
+        return and_(Assignment.teacher_id == u.referred_by, Assignment.group_id == 0)
+    return None
+
+
 async def for_student(user_id: int) -> list[dict]:
     """Завдання, що таргетять цього учня (за групою або як «без групи» учня викладача)."""
     async with session_factory()() as s:
         u = await s.get(User, user_id)
-        if u is None:
-            return []
-        if u.group_id:
-            cond = Assignment.group_id == u.group_id
-        elif u.referred_by:
-            cond = (Assignment.teacher_id == u.referred_by) & (Assignment.group_id == 0)
-        else:
+        cond = _student_cond(u) if u else None
+        if cond is None:
             return []
         rows = list(
             (
@@ -159,8 +184,62 @@ async def for_student(user_id: int) -> list[dict]:
             ).scalars().all()
         )
     return [
-        {"id": a.id, "title": a.title, "deadline": a.deadline, "done": a.id in done} for a in rows
+        {
+            "id": a.id,
+            "title": a.title,
+            "deadline": a.deadline,
+            "module": a.module,
+            "done": a.id in done,
+        }
+        for a in rows
     ]
+
+
+async def on_session(user_id: int) -> list[str]:
+    """Після виконаної вправи: авто-залік завдань, чий модуль-ціль учень виконав
+    ≥ target разів ПІСЛЯ створення завдання. Повертає назви щойно зарахованих."""
+    newly: list[str] = []
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        cond = _student_cond(u) if u else None
+        if cond is None:
+            return []
+        rows = list(
+            (
+                await s.execute(
+                    select(Assignment).where(and_(cond, Assignment.module != ""))
+                )
+            ).scalars().all()
+        )
+        if not rows:
+            return []
+        done = set(
+            (
+                await s.execute(
+                    select(AssignmentDone.assignment_id).where(AssignmentDone.user_id == user_id)
+                )
+            ).scalars().all()
+        )
+        for a in rows:
+            if a.id in done:
+                continue
+            cnt = (
+                await s.execute(
+                    select(func.count()).select_from(Session).where(
+                        and_(
+                            Session.user_id == user_id,
+                            Session.module == a.module,
+                            Session.created_at >= a.created_at,
+                        )
+                    )
+                )
+            ).scalar() or 0
+            if cnt >= a.target:
+                s.add(AssignmentDone(assignment_id=a.id, user_id=user_id))
+                newly.append(a.title)
+        if newly:
+            await s.commit()
+    return newly
 
 
 async def mark_done(assignment_id: int, user_id: int) -> None:
@@ -226,7 +305,12 @@ def render_student(rows: list[dict], today: date) -> str:
     lines = ["📝 <b>Завдання від викладача</b>\n"]
     for r in rows:
         tick = "✅ " if r["done"] else "◻️ "
-        lines.append(f"{tick}<b>{html.escape(r['title'])}</b>\n   {deadline_label(r['deadline'], today)}")
+        auto = ""
+        if r.get("module") and not r["done"]:
+            auto = f"\n   🤖 зарахується само, щойно виконаєш: <b>{module_short(r['module'])}</b>"
+        lines.append(
+            f"{tick}<b>{html.escape(r['title'])}</b>\n   {deadline_label(r['deadline'], today)}{auto}"
+        )
     return "\n".join(lines)
 
 
@@ -237,8 +321,9 @@ def render_teacher(rows: list[dict], title: str, today: date) -> str:
     lines = [head, ""]
     for r in rows:
         done_all = "✅" if r["total"] and r["done"] >= r["total"] else "👥"
+        auto = f" · 🤖 {module_short(r['module'])}" if r.get("module") else ""
         lines.append(
-            f"• <b>{html.escape(r['title'])}</b>\n"
+            f"• <b>{html.escape(r['title'])}</b>{auto}\n"
             f"   {deadline_label(r['deadline'], today)} · {done_all} виконали {r['done']}/{r['total']}"
         )
     return "\n".join(lines)

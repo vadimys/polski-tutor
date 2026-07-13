@@ -48,6 +48,7 @@ class GroupName(StatesGroup):
 class AssignNew(StatesGroup):
     title = State()  # текст завдання (gid у data)
     deadline = State()  # дедлайн (gid, title у data)
+    module = State()  # цільовий модуль для авто-заліку (gid, title, deadline у data)
 
 
 def _activity(days_since: int) -> str:
@@ -353,17 +354,43 @@ async def on_assign_deadline(message: Message, state: FSMContext) -> None:
             reply_markup=cancel_kb(),
         )
         return
+    await state.update_data(deadline=deadline)
+    await state.set_state(AssignNew.module)
+    kb = InlineKeyboardBuilder()
+    for m in Module:
+        kb.button(text=MODULE_LABELS[m], callback_data=f"teacher:asgnmod:{m.value}")
+    kb.button(text="✋ Без авто-заліку (учень позначить сам)", callback_data="teacher:asgnmod:none")
+    kb.adjust(1)
+    await message.answer(
+        "🤖 <b>Авто-залік:</b> обери модуль — завдання зарахується САМО, щойно учень "
+        "виконає вправу цього модуля. Або без авто (учень позначить вручну).",
+        reply_markup=kb.as_markup(),
+    )
+
+
+@router.callback_query(AssignNew.module, F.data.startswith("teacher:asgnmod:"))
+async def cb_assign_module(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    raw = cb.data.split(":")[2]
+    module = "" if raw == "none" else raw
     data = await state.get_data()
     await state.clear()
-    gid, title, tid = int(data.get("gid", 0)), str(data.get("title", "")), message.from_user.id
-    await assignments.create(tid, gid, title, deadline)
-    await message.answer(
+    gid, title = int(data.get("gid", 0)), str(data.get("title", ""))
+    deadline, tid = str(data.get("deadline", "")), cb.from_user.id
+    await assignments.create(tid, gid, title, deadline, module=module)
+    today = clock.today_local()
+    auto = (
+        f"🤖 Зарахується авто, щойно учень виконає: <b>{assignments.module_short(module)}</b>."
+        if module
+        else "✋ Учень позначить виконаним вручну."
+    )
+    await cb.message.answer(
         f"✅ Завдання створено!\n<b>{html.escape(title)}</b>\n"
-        f"{assignments.deadline_label(deadline, today)}\n\n"
+        f"{assignments.deadline_label(deadline, today)}\n{auto}\n\n"
         "Учні побачать його в меню «📝 Завдання» й отримають нагадування напередодні.",
         reply_markup=to_menu_kb(),
     )
-    await _send_assignments(message, tid, gid)
+    await _send_assignments(cb.message, tid, gid)
 
 
 @router.callback_query(F.data.startswith("teacher:asgndel:"))

@@ -79,6 +79,8 @@ class Assignment(Base):
     group_id: Mapped[int] = mapped_column(BigInteger, default=0)  # 0 = «без групи»
     title: Mapped[str] = mapped_column(String(200))
     deadline: Mapped[str] = mapped_column(String(16), default="")  # ISO YYYY-MM-DD
+    module: Mapped[str] = mapped_column(String(16), default="")  # цільовий модуль (авто-залік); "" = вручну
+    target: Mapped[int] = mapped_column(Integer, default=1)  # скільки вправ модуля для заліку
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -45,3 +45,24 @@ def test_render_teacher():
     t = a.render_teacher(rows, "Ранкова B1", TODAY)
     assert "Ранкова B1" in t and "виконали 3/5" in t
     assert "Створи перше" in a.render_teacher([], "Клас", TODAY)
+
+
+def test_module_short():
+    assert a.module_short("sluchanie").startswith("🎧")
+    assert "Pisanie" in a.module_short("pisanie")
+    assert a.module_short("") == ""
+    assert a.module_short("bogus") == "bogus"
+
+
+def test_render_student_auto_hint():
+    rows = [{"id": 1, "title": "Аудіо", "deadline": "2026-07-20", "module": "sluchanie", "done": False}]
+    t = a.render_student(rows, TODAY)
+    assert "🤖 зарахується само" in t and "Słuchanie" in t
+    # виконане — без підказки авто
+    rows[0]["done"] = True
+    assert "🤖" not in a.render_student(rows, TODAY)
+
+
+def test_render_teacher_shows_module():
+    rows = [{"id": 1, "title": "Аудіо", "deadline": "2026-07-20", "module": "sluchanie", "done": 1, "total": 3}]
+    assert "🤖" in a.render_teacher(rows, "Клас", TODAY)
