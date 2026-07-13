@@ -11,7 +11,7 @@ from sqlalchemy import delete, select
 
 from app.config import settings
 from app.db.base import session_factory
-from app.db.models import Session, User
+from app.db.models import AssignmentDone, Session, User
 from app.domain.models import UserState
 
 
@@ -76,6 +76,8 @@ async def reset_progress(user_id: int) -> None:
     доступ і дату іспиту. Словник (SRS) скидається окремо через vocab.reset."""
     async with session_factory()() as s:
         await s.execute(delete(Session).where(Session.user_id == user_id))
+        # мітки виконання завдань — теж прогрес; чистимо, щоб авто-залік не «залипав»
+        await s.execute(delete(AssignmentDone).where(AssignmentDone.user_id == user_id))
         u = await s.get(User, user_id)
         if u is not None:
             u.readiness = {}
@@ -90,7 +92,7 @@ async def full_reset(user_id: int) -> None:
     """Повний wipe навчання (старт із нуля): сесії+готовність+рівень+стрік+placement (PG),
     гейміфікація (XP/бейджі/лічильники), колода помилок, прапорці моків, повторення слів.
     Зберігає акаунт/доступ/роль/дату іспиту."""
-    await reset_progress(user_id)  # sessions + рівень/готовність/стрік/placement
+    await reset_progress(user_id)  # sessions + AssignmentDone + рівень/готовність/стрік/placement
     from app.services import goals, mistakes, progress, vocab  # відкладено — уникаємо циклів
 
     await goals.reset(user_id)
@@ -106,17 +108,24 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
     Готовність більше НЕ ковзне середнє — рахується з усієї історії сесій
     (обсяг + різні дні + свіжість), див. progress.compute.
     """
+    from app.services import assignments, goals, progress, viewas  # відкладено — уникаємо циклів
+
+    mode = await viewas.get(user_id)
     async with session_factory()() as s:
         u = await s.get(User, user_id)
-        if u is not None and u.role == "teacher":
-            return  # превʼю-режим: практика викладача НЕ рухає готовність/XP/місії/серію
+        real_role = u.role if u is not None else "student"
+        # превʼю-режим (роль teacher АБО адмін у view-as=teacher): практика НЕ рухає
+        # готовність/XP/місії/серію — і чесно повідомляємо про це після вправи
+        if viewas.role_for(mode, real_role) == "teacher":
+            await goals.push_celebration(
+                user_id, "🔎 <i>Превʼю-режим: цей результат НЕ зараховується у твій прогрес.</i>"
+            )
+            return
         if u is None:
             u = User(id=user_id, lesson_hour=settings.lesson_hour)
             s.add(u)
         s.add(Session(user_id=user_id, module=module_value, score=pct))
         await s.commit()
-
-    from app.services import assignments, goals, progress  # відкладений імпорт — уникаємо циклів
 
     stats = await progress.compute(user_id)  # чесна готовність із повної історії
     async with session_factory()() as s:
@@ -125,4 +134,8 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
             u.readiness = progress.pcts(stats)
             await s.commit()
     await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію
-    await assignments.on_session(user_id)  # авто-залік завдань, чий модуль-ціль виконано
+    done = await assignments.on_session(user_id)  # авто-залік завдань, чий модуль-ціль виконано
+    if done:  # реальна нотифікація учня (буфер святкування — хендлер покаже після вправи)
+        await goals.push_celebration(
+            user_id, "🤖 <b>Завдання зараховано автоматично:</b> " + ", ".join(done)
+        )

@@ -44,11 +44,12 @@ async def list_for(teacher_id: int) -> list[dict]:
                 )
             ).scalars().all()
         )
+        # рахуємо за group_id (узгоджено з members()), а не за referred_by — одне джерело істини
         counts = dict(
             (
                 await s.execute(
                     select(User.group_id, func.count())
-                    .where(User.referred_by == teacher_id)
+                    .where(User.group_id.in_([g.id for g in groups] or [0]))
                     .group_by(User.group_id)
                 )
             ).all()

@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -63,7 +73,9 @@ class Group(Base):
     __tablename__ = "groups"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    teacher_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    teacher_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     name: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -75,8 +87,10 @@ class Assignment(Base):
     __tablename__ = "assignments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    teacher_id: Mapped[int] = mapped_column(BigInteger, index=True)
-    group_id: Mapped[int] = mapped_column(BigInteger, default=0)  # 0 = «без групи»
+    teacher_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    group_id: Mapped[int] = mapped_column(BigInteger, default=0)  # 0 = «без групи» (sentinel, без FK)
     title: Mapped[str] = mapped_column(String(200))
     deadline: Mapped[str] = mapped_column(String(16), default="")  # ISO YYYY-MM-DD
     module: Mapped[str] = mapped_column(String(16), default="")  # цільовий модуль (авто-залік); "" = вручну
@@ -88,12 +102,15 @@ class AssignmentDone(Base):
     """Позначка «виконав» учнем (вручну). Унікальність (assignment_id,user_id) — у сервісі."""
 
     __tablename__ = "assignment_done"
+    __table_args__ = (UniqueConstraint("assignment_id", "user_id", name="uq_assignment_done"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     assignment_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("assignments.id", ondelete="CASCADE"), index=True
     )
-    user_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     done_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -106,6 +123,7 @@ class Payment(Base):
     user_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
+    teacher_id: Mapped[int] = mapped_column(BigInteger, default=0, index=True)  # реферер на МОМЕНТ оплати
     stars: Mapped[int] = mapped_column(Integer)  # сума у Stars (XTR)
     days: Mapped[int] = mapped_column(Integer)  # на скільки днів продовжено
     charge_id: Mapped[str] = mapped_column(String(128), default="")  # telegram_payment_charge_id

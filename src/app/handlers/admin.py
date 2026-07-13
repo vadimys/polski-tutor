@@ -13,7 +13,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import approved_kb, contact_admin_kb
+from app.bot.keyboards import approved_kb, contact_admin_kb, teacher_welcome_kb
 from app.config import settings
 from app.services import access, admin_stats, broadcast, events, resets, support, viewas
 from app.services import state as user_state
@@ -299,18 +299,20 @@ async def cb_decision(cb: CallbackQuery) -> None:
                 "Учень, який зайде за ним, одразу отримає безкоштовний доступ на "
                 f"<b>{settings.trial_days} днів</b>, а ти бачитимеш його прогрес у "
                 "<b>/uczniowie</b> (твій клас). Ділись посиланням зі своїм класом! 🚀",
-                reply_markup=approved_kb(),
+                reply_markup=teacher_welcome_kb(),
             )
         except Exception:  # noqa: BLE001
             pass
     elif action == "extend":
         until = await access.approve(uid)  # продовження: повне вікно (6 міс / до іспиту)
+        inf = await access.info(uid)
+        kb = teacher_welcome_kb() if inf.role == "teacher" else approved_kb()
         await cb.message.edit_text(f"{cb.message.html_text}\n\n🔓 Продовжено (до {until}).")
         try:
             await cb.bot.send_message(
                 uid,
                 f"🔓 <b>Доступ продовжено</b> до <b>{until}</b>! Продовжуймо підготовку 👇",
-                reply_markup=approved_kb(),
+                reply_markup=kb,
             )
         except Exception:  # noqa: BLE001
             pass

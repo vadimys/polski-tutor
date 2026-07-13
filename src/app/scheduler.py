@@ -155,27 +155,37 @@ async def _nudge_due(bot: Bot, hour: int, today: str) -> int:
     return sent
 
 
+async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
+    """Робота однієї години: персональні нудж(і) + (раз/добу) ретеншн і exam/завдання."""
+    now = clock.now_local()
+    today = clock.today_local().isoformat()
+    sent = await _nudge_due(bot, now.hour, today)
+    if sent:
+        logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
+    if now.hour == _PURGE_HOUR and purged_on != today:  # ретеншн — раз на добу
+        purged_on = today
+        try:
+            purged = await gdpr.purge_stale(clock.today_local())
+            if purged:
+                logger.info("Retention: видалено %d denied-користувачів", purged)
+        except Exception:
+            logger.exception("retention purge failed")
+    if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань — раз на добу
+        await _exam_lifecycle(bot, clock.today_local())
+        await _assignment_reminders(bot, clock.today_local())
+    return purged_on
+
+
 async def daily_nudge_loop(bot: Bot) -> None:
     purged_on: str | None = None
+    try:  # катч-ап поточної години при старті: рестарт у межах години не «з'їдає» роботу
+        purged_on = await _run_hour(bot, purged_on)
+    except Exception:
+        logger.exception("initial hour run failed")
     while True:
         try:
             await asyncio.sleep(await _seconds_until_next_hour())
-            now = clock.now_local()
-            today = clock.today_local().isoformat()
-            sent = await _nudge_due(bot, now.hour, today)
-            if sent:
-                logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
-            if now.hour == _PURGE_HOUR and purged_on != today:  # ретеншн — раз на добу
-                purged_on = today
-                try:
-                    purged = await gdpr.purge_stale(clock.today_local())
-                    if purged:
-                        logger.info("Retention: видалено %d denied-користувачів", purged)
-                except Exception:
-                    logger.exception("retention purge failed")
-            if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань — раз на добу
-                await _exam_lifecycle(bot, clock.today_local())
-                await _assignment_reminders(bot, clock.today_local())
+            purged_on = await _run_hour(bot, purged_on)
         except asyncio.CancelledError:
             raise
         except Exception:

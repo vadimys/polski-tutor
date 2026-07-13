@@ -184,6 +184,15 @@ def menu_kb() -> InlineKeyboardMarkup:
     return kb.as_markup()
 
 
+def teacher_welcome_kb() -> InlineKeyboardMarkup:
+    """Після схвалення/продовження викладача — його дії (клас, матеріали), НЕ учнівські."""
+    kb = InlineKeyboardBuilder()
+    kb.button(text="👥 Мій клас", callback_data="teacher:class")
+    kb.button(text="📚 Матеріали та тести", callback_data="teacher:materials")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
 async def menu_kb_for(user_id: int) -> InlineKeyboardMarkup:
     """Меню за роллю: викладачу (у т.ч. view-as) — його інструмент, інакше учнівський хаб.
     Використовується у фіналах вправ, щоб превʼю-вправа не викидала викладача в учнівське меню."""

@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.db.base import session_factory
@@ -60,8 +61,19 @@ async def apply_subscription(user_id: int, days: int, stars: int, charge_id: str
         until = _extended_until(u.access_until, clock.today_local(), days)
         u.access_status = "approved"
         u.access_until = until
-        s.add(Payment(user_id=user_id, stars=stars, days=days, charge_id=charge_id))
-        await s.commit()
+        # teacher_id фіксуємо на МОМЕНТ оплати (атрибуція revenue-share не «пливе»,
+        # якщо учень згодом перейде до іншого викладача)
+        s.add(
+            Payment(
+                user_id=user_id, teacher_id=u.referred_by, stars=stars, days=days, charge_id=charge_id
+            )
+        )
+        try:
+            await s.commit()
+        except IntegrityError:  # гонка: цей charge_id уже зафіксовано (partial UNIQUE)
+            await s.rollback()
+            u2 = await s.get(User, user_id)
+            return u2.access_until if u2 else ""
         return until
 
 
@@ -73,22 +85,16 @@ async def referrer_of(user_id: int) -> int:
 
 
 async def paying_student_ids(teacher_id: int) -> set[int]:
-    """Учні цього викладача, що мають ≥1 оплату (для дашборду/revenue share)."""
+    """Учні, чиї оплати атрибутовані цьому викладачу на момент оплати (revenue share)."""
     async with session_factory()() as s:
-        rows = await s.execute(
-            select(Payment.user_id)
-            .join(User, User.id == Payment.user_id)
-            .where(User.referred_by == teacher_id)
-        )
+        rows = await s.execute(select(Payment.user_id).where(Payment.teacher_id == teacher_id))
         return {r[0] for r in rows.all()}
 
 
 async def total_stars_from_referrals(teacher_id: int) -> int:
-    """Сумарно Stars від приведених учнів (основа для revenue share)."""
+    """Сумарно Stars, атрибутованих цьому викладачу (незмінно після переходу учня)."""
     async with session_factory()() as s:
         val = await s.execute(
-            select(func.coalesce(func.sum(Payment.stars), 0))
-            .join(User, User.id == Payment.user_id)
-            .where(User.referred_by == teacher_id)
+            select(func.coalesce(func.sum(Payment.stars), 0)).where(Payment.teacher_id == teacher_id)
         )
         return int(val.scalar() or 0)

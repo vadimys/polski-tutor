@@ -283,6 +283,16 @@ async def record_module(user_id: int, module_value: str, score: int | None = Non
     return await add(user_id, MODULE_MIN.get(module_value, 5), xp, kind=module_value)
 
 
+async def push_celebration(user_id: int, text: str) -> None:
+    """Додати рядок до відкладеного святкування (не перезаписуючи наявне — напр.
+    авто-залік завдання поверх level-up). Хендлер покаже все після вправи."""
+    r = _r()
+    key = f"polski:celeb:{user_id}"
+    prev = await r.get(key)
+    prev = (prev.decode() if isinstance(prev, bytes) else prev) if prev else ""
+    await r.set(key, (prev + "\n" + text) if prev else text, ex=180)
+
+
 async def pop_celebration(user_id: int) -> str | None:
     """Забрати відкладене святкування (level-up / ціль виконано), якщо є. Одноразово."""
     r = _r()

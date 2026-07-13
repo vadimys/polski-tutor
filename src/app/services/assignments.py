@@ -120,7 +120,10 @@ async def _target_ids(teacher_id: int, group_id: int) -> list[int]:
 
 
 async def for_group(teacher_id: int, group_id: int) -> list[dict]:
-    """Завдання групи (найближчий дедлайн спершу) з лічильником виконання X/N."""
+    """Завдання групи (найближчий дедлайн спершу) з лічильником виконання X/N.
+    `done` рахуємо ЛИШЕ серед поточних учнів-таргетів (щоб X не перевищив N після
+    того, як учень вийшов із групи, лишивши свою мітку виконання)."""
+    target_ids = await _target_ids(teacher_id, group_id)
     async with session_factory()() as s:
         rows = list(
             (
@@ -136,12 +139,15 @@ async def for_group(teacher_id: int, group_id: int) -> list[dict]:
             (
                 await s.execute(
                     select(AssignmentDone.assignment_id, func.count())
-                    .where(AssignmentDone.assignment_id.in_(ids))
+                    .where(
+                        AssignmentDone.assignment_id.in_(ids),
+                        AssignmentDone.user_id.in_(target_ids or [0]),
+                    )
                     .group_by(AssignmentDone.assignment_id)
                 )
             ).all()
         )
-    total = len(await _target_ids(teacher_id, group_id))
+    total = len(target_ids)
     return [
         {
             "id": a.id,
