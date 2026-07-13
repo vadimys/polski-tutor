@@ -268,3 +268,83 @@ def render_group(d: dict) -> str:
         badge = " 💎" if st["paying"] else ""
         lines.append(f"{'✅' if st['status'] == 'approved' else '⏳'} {st['name']} · 🏁{st['overall']}% · 🔥{st['streak']}{badge}")
     return "\n".join(lines)
+
+
+# ── інкремент 3: воронка + складність модулів + топ/анти-топ фіч ─────────────
+async def funnel() -> dict:
+    """Воронка активації: старт → доступ → placement → ≥1 вправа → оплата."""
+    async with session_factory()() as s:
+        total = (await s.execute(select(func.count()).select_from(User))).scalar() or 0
+        approved = (
+            await s.execute(select(func.count()).select_from(User).where(User.access_status == "approved"))
+        ).scalar() or 0
+        placement = (
+            await s.execute(select(func.count()).select_from(User).where(User.placement_done.is_(True)))
+        ).scalar() or 0
+        did_ex = (await s.execute(select(func.count(func.distinct(Session.user_id))))).scalar() or 0
+        paid = (await s.execute(select(func.count(func.distinct(Payment.user_id))))).scalar() or 0
+    return {
+        "total": int(total), "approved": int(approved), "placement": int(placement),
+        "did_ex": int(did_ex), "paid": int(paid),
+    }
+
+
+async def module_difficulty() -> list[tuple[str, int, int]]:
+    """[(module, n_sessions, avg_score)] — сортовано за avg зростанням (найважче спершу)."""
+    async with session_factory()() as s:
+        rows = list(
+            (
+                await s.execute(
+                    select(Session.module, func.count(), func.avg(Session.score)).group_by(Session.module)
+                )
+            ).all()
+        )
+    out = [(m, int(n), round(float(avg or 0))) for m, n, avg in rows]
+    return sorted(out, key=lambda x: x[2])
+
+
+def render_funnel(d: dict) -> str:
+    total = max(1, d["total"])
+    steps = [
+        ("🚀 Старт (усього)", d["total"]),
+        ("🟢 Отримали доступ", d["approved"]),
+        ("📝 Пройшли placement", d["placement"]),
+        ("🏋️ Зробили ≥1 вправу", d["did_ex"]),
+        ("💎 Оплатили", d["paid"]),
+    ]
+    lines = ["🔻 <b>Воронка активації</b>\n"]
+    prev = None
+    for label, n in steps:
+        pct = round(n / total * 100)
+        drop = f" (−{prev - n})" if prev is not None and prev > n else ""
+        lines.append(f"{label}: <b>{n}</b> · {pct}%{drop}")
+        prev = n
+    lines.append("\n<i>Де найбільший спад — там головна діра.</i>")
+    return "\n".join(lines)
+
+
+def render_mods(rows: list[tuple[str, int, int]]) -> str:
+    if not rows:
+        return "📉 Даних по модулях ще немає."
+    lines = ["📉 <b>Складність модулів</b> (сер. бал; найважче спершу)\n"]
+    for m, n, avg in rows:
+        e = _MOD.get(m, "•")
+        lines.append(f"{e} {m}: <b>{avg}%</b> · {n} вправ")
+    lines.append("\n<i>Низький бал = де учні провалюються найчастіше.</i>")
+    return "\n".join(lines)
+
+
+def render_features(rows: list[tuple[str, int, int]]) -> str:
+    if not rows:
+        return "📈 Ще немає даних про використання (трекінг щойно ввімкнено)."
+    top = rows[:8]
+    bottom = rows[8:][-5:] if len(rows) > 8 else []
+    lines = ["📈 <b>Використання фіч</b> (звернень · унікальних)\n", "<b>Найпопулярніші:</b>"]
+    for feat, hits, uniq in top:
+        lines.append(f"• {feat}: <b>{hits}</b> · 👤{uniq}")
+    if bottom:
+        lines.append("\n<b>Найрідше вживані:</b>")
+        for feat, hits, uniq in bottom:
+            lines.append(f"• {feat}: {hits} · 👤{uniq}")
+    lines.append("\n<i>На що звертають увагу більше/менше.</i>")
+    return "\n".join(lines)

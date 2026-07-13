@@ -13,6 +13,7 @@ from aiogram.types import BotCommand
 
 from app.bot.access_mw import AccessMiddleware
 from app.bot.debounce_mw import DebounceMiddleware
+from app.bot.event_mw import EventMiddleware
 from app.bot.say_cleanup_mw import SayCleanupMiddleware
 from app.config import settings
 from app.db.migrate_legacy import migrate_from_redis
@@ -110,6 +111,8 @@ async def main() -> None:
     dp.errors.register(errors.on_error)  # глобальний обробник помилок → алерт адміну
     dp.callback_query.middleware(DebounceMiddleware())  # гасити випадковий подвійний тап
     dp.callback_query.middleware(SayCleanupMiddleware())  # прибирати застаріле голосове вимови
+    dp.message.middleware(EventMiddleware())  # трекінг використання фіч (аналітика)
+    dp.callback_query.middleware(EventMiddleware())
 
     # Поза гейтом: онбординг (/start, запит доступу), адмін (схвалення), довідка
     dp.include_router(onboarding.router)

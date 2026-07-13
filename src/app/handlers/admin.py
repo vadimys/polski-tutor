@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb
 from app.config import settings
-from app.services import access, admin_stats
+from app.services import access, admin_stats, events
 
 router = Router()
 
@@ -33,6 +33,7 @@ def _hub_kb() -> InlineKeyboardBuilder:
     kb.button(text="👥 Користувачі", callback_data="ac:users:0")
     kb.button(text="🧑‍🎓 Сегменти", callback_data="ac:segments")
     kb.button(text="👩‍🏫 Викладачі", callback_data="ac:teachers")
+    kb.button(text="📈 Аналітика", callback_data="ac:analytics")
     kb.adjust(2)
     return kb
 
@@ -150,6 +151,41 @@ async def cb_group(cb: CallbackQuery) -> None:
     kb.button(text="⬅️ Викладачі", callback_data="ac:teachers")
     kb.adjust(1)
     await cb.message.answer(admin_stats.render_group(d), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "ac:analytics")
+async def cb_analytics(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    kb = InlineKeyboardBuilder()
+    kb.button(text="📈 Фічі (увага)", callback_data="ac:an:feat")
+    kb.button(text="🔻 Воронка", callback_data="ac:an:funnel")
+    kb.button(text="📉 Складність модулів", callback_data="ac:an:mods")
+    kb.button(text="🛠 Хаб", callback_data="ac:hub")
+    kb.adjust(1)
+    await cb.message.answer(
+        "📈 <b>Аналітика використання</b>\nЩо обрати:", reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(F.data.startswith("ac:an:"))
+async def cb_analytics_view(cb: CallbackQuery) -> None:
+    if not _is_admin(cb.from_user.id):
+        await cb.answer("Лише адмін.", show_alert=True)
+        return
+    await cb.answer()
+    what = cb.data.split(":")[2]
+    if what == "feat":
+        text = admin_stats.render_features(await events.feature_report())
+    elif what == "funnel":
+        text = admin_stats.render_funnel(await admin_stats.funnel())
+    else:  # mods
+        text = admin_stats.render_mods(await admin_stats.module_difficulty())
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Аналітика", callback_data="ac:analytics")
+    await cb.message.answer(text, reply_markup=kb.as_markup())
 
 
 @router.callback_query(F.data.startswith("ac:user:"))
