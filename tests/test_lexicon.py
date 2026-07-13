@@ -51,3 +51,16 @@ def test_apply_edit_keeps_example_when_none():
 def test_apply_remove():
     arr = [{"pl": "a", "ua": "1"}, {"pl": "b", "ua": "2"}]
     assert [o["pl"] for o in lexicon._apply_remove(arr, "a")] == ["b"]
+
+
+def test_parse_fixes_and_merge():
+    raw = '```json\n[{"pl":"banan","example":"Banan jest bogaty w potas."},{"pl":"dom","example":"To jest dom."}]\n```'
+    fixes = lexicon._parse_fixes(raw)
+    assert fixes["banan"].startswith("Banan jest bogaty")
+    arr = [
+        {"pl": "banan", "ua": "банан", "example": "Banana jest bogata w potas.", "level": 1},
+        {"pl": "dom", "ua": "дім", "example": "To jest dom.", "level": 1},
+    ]
+    changed = lexicon._merge_fixed(arr, fixes)
+    assert changed == 1  # лише banan змінився; dom уже такий самий
+    assert arr[0]["example"] == "Banan jest bogaty w potas."

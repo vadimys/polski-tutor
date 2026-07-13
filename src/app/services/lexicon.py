@@ -227,6 +227,69 @@ async def words_for(topic_key: str, sub_key: str) -> list[Word]:
     return words
 
 
+def _fix_prompt(pairs: list[tuple[str, str]]) -> str:
+    items = "\n".join(f'{i + 1}. {pl} || {ex}' for i, (pl, ex) in enumerate(pairs))
+    return (
+        "Ти — редактор-полоніст. Нижче пари «польське_слово || приклад-речення».\n"
+        "Виправ У РЕЧЕННЯХ ЛИШЕ граматичні помилки (узгодження роду/числа/відмінка, "
+        "форми дієслів, прийменники). ЗБЕРЕЖИ зміст і ОБОВ'ЯЗКОВО залиш у реченні те саме "
+        "цільове слово (у будь-якій правильній формі). Якщо речення вже правильне — лишай як є.\n"
+        'Поверни СТРОГО JSON-масив {"pl","example"} у ТОМУ Ж порядку. Тільки валідний JSON.\n\n'
+        + items
+    )
+
+
+def _parse_fixes(raw: str) -> dict[str, str]:
+    """[{'pl','example'}] → {pl: example}. Толерантний до ```-огортання."""
+    s = raw.strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```[a-zA-Z]*\s*", "", s).rstrip("`").strip()
+    i, j = s.find("["), s.rfind("]")
+    if i < 0 or j < 0:
+        return {}
+    try:
+        arr = json.loads(s[i : j + 1])
+    except (ValueError, TypeError):
+        return {}
+    out: dict[str, str] = {}
+    for o in arr:
+        if isinstance(o, dict) and o.get("pl") and o.get("example"):
+            out[str(o["pl"]).strip()] = str(o["example"]).strip()
+    return out
+
+
+def _merge_fixed(arr: list[dict], fixes: dict[str, str]) -> int:
+    """Оновити example за pl лише коли справді змінилось. Повертає к-сть змін."""
+    changed = 0
+    for o in arr:
+        new = fixes.get(str(o.get("pl", "")))
+        if new and new != o.get("example"):
+            o["example"] = new
+            changed += 1
+    return changed
+
+
+async def fix_examples(topic_key: str, sub_key: str) -> int:
+    """Прогнати приклади підтеми крізь сильну модель — виправити граматику (одноразовий
+    догляд за контентом). Повертає к-сть виправлених прикладів."""
+    key = _key(topic_key, sub_key)
+    raw = await _r().get(key)
+    if not raw or not ai.enabled():
+        return 0
+    arr = json.loads(raw)
+    pairs = [(o["pl"], o["example"]) for o in arr if o.get("pl") and o.get("example")]
+    if not pairs:
+        return 0
+    fixed = _parse_fixes(
+        await ai.ask("Ти редагуєш польські навчальні речення.", _fix_prompt(pairs),
+                     strong=True, max_tokens=2600)
+    )
+    changed = _merge_fixed(arr, fixed)
+    if changed:
+        await _r().set(key, json.dumps(arr, ensure_ascii=False), ex=_TTL)
+    return changed
+
+
 async def cached_words(topic_key: str, sub_key: str) -> list[Word] | None:
     """Слова підтеми ТІЛЬКИ з кешу (без генерації) — для прогресу в меню. None, якщо ще нема."""
     raw = await _r().get(_key(topic_key, sub_key))
