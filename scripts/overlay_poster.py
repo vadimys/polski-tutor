@@ -26,15 +26,14 @@ _INK = (24, 30, 44)
 
 W, H = 1080, 1350
 LM = 90
-HEAD = ["Готуйся до", "іспиту B1"]
+HEAD = "Готуйся до іспиту B1"
 SUB = (
     "Помічник для підготовки до державного іспиту B1: "
     "щодня потроху всі 5 частин, українською, "
     "з перевіркою письма й розмови."
 )
-INVITE = "Цікаво? Приєднуйся, перші 14 днів безкоштовно."
+INVITE = "Цікаво? Заходь і спробуй."
 HANDLE = "@polski_b1_coach_bot"
-GOODLUCK = "Усім удачі!"
 
 
 def _cover(im: Image.Image) -> Image.Image:
@@ -122,7 +121,7 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     _scrim(img)
     d = ImageDraw.Draw(img)
     maxw = W - 2 * LM
-    f_head = _fit(max(HEAD, key=len), 84, 60, maxw)
+    f_head = _fit(HEAD, 82, 44, maxw)  # автопідгін під один рядок
     lh = int(f_head.size * 1.12)
     f_sub = ImageFont.truetype(_REG, 34)
     f_cta = ImageFont.truetype(_BOLD, 33)
@@ -133,11 +132,10 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     img.paste(logo, (LM, 58), logo)
     _tg(img, W - LM - 46, 110, 46)
 
-    # теплий заголовок (без формального кикера/хука)
-    y = 190
-    for line in HEAD:
-        d.text((LM, y), line, font=f_head, fill=_WHITE)
-        y += lh
+    # заголовок в один рядок
+    y = 206
+    d.text((LM, y), HEAD, font=f_head, fill=_WHITE)
+    y += lh
     d.rounded_rectangle([LM, y + 6, LM + 150, y + 14], radius=4, fill=_RED)
 
     # людський абзац від першої особи (не реклама)
@@ -152,20 +150,16 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     y += 54
     d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
 
-    # QR на кремовій картці
-    qs = 410
+    # QR на кремовій картці (завершує постер; тепле «Усім удачі!» — у тексті поста)
+    qs = 440
     qr = _make_qr(qs)
-    pad = 38
+    pad = 40
     cw2 = qs + pad * 2
     cx0 = (W - cw2) // 2
-    cy0 = y + 66
+    cy0 = y + 60
     card_h = qs + pad * 2
     d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=44, fill=_CREAM)
     img.alpha_composite(qr, ((W - qs) // 2, cy0 + pad))
-
-    # тепле підписання під QR
-    gb = d.textbbox((0, 0), GOODLUCK, font=f_cta)
-    d.text(((W - (gb[2] - gb[0])) / 2, cy0 + card_h + 16), GOODLUCK, font=f_cta, fill=_AMBER)
 
     out = ROOT / out_name
     img.convert("RGB").save(out, quality=92)
