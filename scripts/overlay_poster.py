@@ -77,7 +77,12 @@ def _check(d, x, y, s) -> None:
     d.line([(x, y + s * 0.55), (x + s * 0.38, y + s * 0.9), (x + s, y)], fill=_AMBER, width=6, joint="curve")
 
 
-BOT_URL = "https://t.me/polski_b1_coach_bot"
+import os
+
+# t.me впав на рівні реєстру (serverHold, 07.2026) → веб-лінки мертві.
+# Дефолт — прямий app-лінк tg:// (відкриває Telegram напряму). Через env QR_URL
+# можна згенерувати t.me-версію про запас (коли домен повернуть).
+BOT_URL = os.environ.get("QR_URL", "tg://resolve?domain=polski_b1_coach_bot")
 _CREAM = (245, 240, 230)
 
 
