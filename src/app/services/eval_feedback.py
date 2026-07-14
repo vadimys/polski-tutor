@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 
 from app.integrations import ai
@@ -49,9 +48,25 @@ _JUDGE_SYSTEM = (
     "• error_accuracy — чи вказані помилки справді помилки й виправлення коректні;\n"
     "• score_consistency — чи виставлені бали узгоджені з переліченими помилками;\n"
     "• usefulness — чи конкретний і дієвий фідбек для учня.\n"
-    "Відповідь — СТРОГО JSON: {\"rubric_adherence\":N,\"error_accuracy\":N,"
-    "\"score_consistency\":N,\"usefulness\":N,\"evidence\":\"...\",\"issues\":[\"...\"]}"
+    "Дай по кожному критерію бал 1-5, докази (evidence) й перелік проблем (issues)."
 )
+
+# structured output — надійніший за регекс-витяг JSON з тексту
+_JUDGE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "rubric_adherence": {"type": "integer"},
+        "error_accuracy": {"type": "integer"},
+        "score_consistency": {"type": "integer"},
+        "usefulness": {"type": "integer"},
+        "evidence": {"type": "string"},
+        "issues": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": [
+        "rubric_adherence", "error_accuracy", "score_consistency", "usefulness", "evidence", "issues",
+    ],
+    "additionalProperties": False,
+}
 
 
 def _judge_prompt(task: str, answer: str, feedback: str, scores: tuple[int, int, int] | None) -> str:
@@ -64,24 +79,14 @@ def _judge_prompt(task: str, answer: str, feedback: str, scores: tuple[int, int,
     )
 
 
-def parse_verdict(raw: str) -> dict | None:
-    """Витягти JSON-вердикт із відповіді judge (толерантно до обгортки)."""
-    m = re.search(r"\{.*\}", raw or "", re.DOTALL)
-    if not m:
-        return None
-    try:
-        return json.loads(m.group(0))
-    except (ValueError, TypeError):
-        return None
-
-
 async def judge(task: str, answer: str, feedback: str, scores: tuple[int, int, int] | None) -> dict | None:
-    """LLM-as-judge на ІНШІЙ моделі (cheap), ніж генератор (strong). None якщо AI вимкнено."""
-    out = await ai.ask(
-        _JUDGE_SYSTEM, _judge_prompt(task, answer, feedback, scores), max_tokens=700,
-        cache=True, label="eval",
+    """LLM-as-judge на ІНШІЙ моделі (cheap), ніж генератор (strong) → self-enhancement bias↓.
+    Structured output гарантує форму вердикту. None якщо AI вимкнено/збій."""
+    out = await ai.ask_json(
+        _JUDGE_SYSTEM, _judge_prompt(task, answer, feedback, scores), _JUDGE_SCHEMA,
+        max_tokens=700, cache=True, label="eval",
     )
-    return parse_verdict(out) if out else None
+    return out if isinstance(out, dict) else None
 
 
 def render_calibration(rows: list[dict]) -> str:

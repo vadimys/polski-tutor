@@ -15,7 +15,6 @@ import random
 from dataclasses import dataclass
 
 from app.integrations import ai
-from app.services.feedback import parse_official_pisanie, strip_official_line
 
 logger = logging.getLogger(__name__)
 
@@ -163,8 +162,22 @@ _SYSTEM = (
     "• <b>Помилки</b> — 4-6 конкретних: «було → стало» + коротке пояснення.\n"
     "• <b>Порада</b> — 1-2 фрази, що підтягнути.\n"
     "• <b>Зразок</b> — як можна було краще (польською), стисло.\n"
-    "ОСТАННІЙ рядок — СТРОГО: WYNIK: wykonanie=N środki=N poprawność=N (кожне ціле 0-10)."
+    "Поверни поля: feedback (весь цей фідбек українською за структурою вище) та бали "
+    "wykonanie / środki / poprawność (кожен ціле 0-10)."
 )
+
+# structured output — бали як окремі поля, не регекс по «WYNIK:»
+_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "feedback": {"type": "string"},
+        "wykonanie": {"type": "integer"},
+        "srodki": {"type": "integer"},
+        "poprawnosc": {"type": "integer"},
+    },
+    "required": ["feedback", "wykonanie", "srodki", "poprawnosc"],
+    "additionalProperties": False,
+}
 
 
 def _prompt(ws: WritingSet, text_a: str, text_b: str) -> str:
@@ -181,14 +194,23 @@ def _prompt(ws: WritingSet, text_a: str, text_b: str) -> str:
     )
 
 
+def _scores(data: dict) -> tuple[int, int, int] | None:
+    try:
+        w, s, p = data["wykonanie"], data["srodki"], data["poprawnosc"]
+        return max(0, min(int(w), 10)), max(0, min(int(s), 10)), max(0, min(int(p), 10))
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple[int, int, int] | None]:
     """(фідбек, (wykonanie, środki, poprawność)|None). '' якщо AI недоступний."""
-    out = await ai.ask(
-        _SYSTEM, _prompt(ws, text_a, text_b), strong=True, max_tokens=1900, cache=True, label="pisanie"
+    data = await ai.ask_json(
+        _SYSTEM, _prompt(ws, text_a, text_b), _SCHEMA,
+        strong=True, max_tokens=1900, cache=True, label="pisanie",
     )
-    if not out:
+    if not isinstance(data, dict):
         return "", None
-    fb, scores = strip_official_line(out), parse_official_pisanie(out)
+    fb, scores = str(data.get("feedback", "")).strip(), _scores(data)
     from app.services.eval_feedback import contract_issues  # відкладено — уникаємо циклів
 
     issues = contract_issues(fb, scores)

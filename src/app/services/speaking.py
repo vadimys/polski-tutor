@@ -14,7 +14,6 @@ import random
 from dataclasses import dataclass
 
 from app.integrations import ai
-from app.services.feedback import parse_official_mowienie, strip_official_line
 
 
 @dataclass
@@ -141,9 +140,22 @@ def _system(task: SpeakTask) -> str:
         "• <b>Виконання завдання</b> — що вдалося, чого бракує для повного балу.\n"
         "• <b>Помилки</b> — 3-5: «було → стало» + пояснення.\n"
         "• <b>Корисні фрази</b> — 1-2 природні польські звороти для цього типу завдання.\n"
-        f"ОСТАННІЙ рядок — СТРОГО: WYNIK: wykonanie=N gramatyka=N słownictwo=N "
-        f"(wykonanie 0-{task.max_wykonanie}, решта 0-8)."
+        "Поверни поля: feedback (весь фідбек українською за структурою вище) та бали "
+        f"wykonanie (0-{task.max_wykonanie}), gramatyka (0-8), slownictwo (0-8)."
     )
+
+
+_SPEAK_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "feedback": {"type": "string"},
+        "wykonanie": {"type": "integer"},
+        "gramatyka": {"type": "integer"},
+        "slownictwo": {"type": "integer"},
+    },
+    "required": ["feedback", "wykonanie", "gramatyka", "slownictwo"],
+    "additionalProperties": False,
+}
 
 
 def _prompt(task: SpeakTask, transcript: str) -> str:
@@ -161,9 +173,17 @@ def readiness_pct(task: SpeakTask, wykonanie: int, gramatyka: int, slownictwo: i
 
 
 async def feedback(task: SpeakTask, transcript: str) -> tuple[str, tuple[int, int, int] | None]:
-    out = await ai.ask(
-        _system(task), _prompt(task, transcript), strong=True, max_tokens=1500, label="mowienie"
+    data = await ai.ask_json(
+        _system(task), _prompt(task, transcript), _SPEAK_SCHEMA,
+        strong=True, max_tokens=1500, label="mowienie",
     )
-    if not out:
+    if not isinstance(data, dict):
         return "", None
-    return strip_official_line(out), parse_official_mowienie(out)
+    fb = str(data.get("feedback", "")).strip()
+    try:  # сирі бали; клемпінг — у readiness_pct
+        scores: tuple[int, int, int] | None = (
+            int(data["wykonanie"]), int(data["gramatyka"]), int(data["slownictwo"])
+        )
+    except (KeyError, TypeError, ValueError):
+        scores = None
+    return fb, scores

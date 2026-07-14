@@ -16,13 +16,6 @@ def test_contract_catches_violations():
     assert any("українською" in i for i in ef.contract_issues("Pomylki Porada Zrazok tylko po polsku", (5, 5, 5)))
 
 
-def test_parse_verdict_tolerant():
-    raw = 'Ось вердикт: {"rubric_adherence":4,"error_accuracy":3,"score_consistency":5,"usefulness":4,"evidence":"...","issues":[]} кінець'
-    v = ef.parse_verdict(raw)
-    assert v and v["rubric_adherence"] == 4
-    assert ef.parse_verdict("без json") is None
-
-
 def test_render_calibration_flags_mismatch():
     rows = [
         {"level": "слабка", "scores": (7, 6, 6), "expect_pass": False, "got_pass": True, "contract": [], "verdict": None},
