@@ -34,7 +34,7 @@ BENEFITS = [
     "Перевірка письма й розмови з AI-тренером",
 ]
 CTA1 = "Скануй QR-код або знайди бот у Telegram:"
-HANDLE = "@polski_b1_coach_bot"
+HANDLE = "@polski_b1_Coach_bot"
 CTA2 = "  і почни вчитися безкоштовно"
 
 
@@ -77,7 +77,7 @@ def _check(d, x, y, s) -> None:
     d.line([(x, y + s * 0.55), (x + s * 0.38, y + s * 0.9), (x + s, y)], fill=_AMBER, width=6, joint="curve")
 
 
-BOT_URL = "https://t.me/polski_b1_coach_bot"
+BOT_URL = "https://t.me/polski_b1_Coach_bot"
 _CREAM = (245, 240, 230)
 
 
