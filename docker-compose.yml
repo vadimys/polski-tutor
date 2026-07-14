@@ -57,6 +57,27 @@ services:
       retries: 3
       start_period: 30s
 
+  # Автобекап Postgres: щоденний pg_dump із ротацією (7 днів / 4 тижні / 6 міс) у ./backups.
+  # Декларативно, окремим контейнером; відновлення — див. RUNBOOK.md.
+  postgres-backup:
+    image: prodrigestivill/postgres-backup-local:16
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: polski
+      POSTGRES_USER: polski
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-polski}
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+    volumes:
+      - ./backups:/backups
+
   # Публічний HTTPS для Mini App: named tunnel (Cloudflare Zero Trust) → bot:8080.
   # Public hostname (напр. polski.zelika.pl → http://bot:8080) налаштовується в
   # Cloudflare; сюди лише TUNNEL_TOKEN з .env. Профіль «tunnel» — щоб не стартувати

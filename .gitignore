@@ -35,3 +35,6 @@ bg_*.jpg
 
 # netdata: реальний конфіг алертів із секретами — поза git
 monitoring/netdata/health_alarm_notify.conf
+
+# дампи БД — поза git
+backups/
