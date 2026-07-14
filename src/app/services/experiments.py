@@ -40,6 +40,13 @@ def _r() -> Redis:
     return _redis
 
 
+def key_prefix(test_key: str) -> str:
+    """Redis-префікс тесту з версією = к-сть варіантів. Зміна складу варіантів → нові
+    ключі (стара розбивка не змішується з новою, воронка не бреше)."""
+    n = len(TESTS[test_key]["variants"]) if test_key in TESTS else 2
+    return f"ab:{test_key}:v{n}"
+
+
 def _bucket(test_key: str, user_id: int, n: int) -> int:
     """Детермінований бакет 0..n-1 (стабільний на користувача й перезапуск)."""
     h = hashlib.sha256(f"{test_key}:{user_id}".encode()).hexdigest()
@@ -54,25 +61,27 @@ def variant(test_key: str, user_id: int) -> int:
 async def expose(test_key: str, user_id: int) -> int:
     """Зафіксувати показ варіанту (унікальний користувач) і повернути його індекс."""
     v = variant(test_key, user_id)
-    await _r().sadd(f"ab:{test_key}:exp:{v}", str(user_id))
+    await _r().sadd(f"{key_prefix(test_key)}:exp:{v}", str(user_id))
     return v
 
 
 async def convert(test_key: str, user_id: int) -> None:
     """Зафіксувати конверсію — лише якщо користувач реально бачив цей варіант."""
     v = variant(test_key, user_id)
-    if await _r().sismember(f"ab:{test_key}:exp:{v}", str(user_id)):
-        await _r().sadd(f"ab:{test_key}:conv:{v}", str(user_id))
+    pref = key_prefix(test_key)
+    if await _r().sismember(f"{pref}:exp:{v}", str(user_id)):
+        await _r().sadd(f"{pref}:conv:{v}", str(user_id))
 
 
 async def report(test_key: str) -> list[dict]:
     t = TESTS.get(test_key)
     if not t:
         return []
+    pref = key_prefix(test_key)
     out: list[dict] = []
     for i, name in enumerate(t["variants"]):
-        exposed = int(await _r().scard(f"ab:{test_key}:exp:{i}") or 0)
-        converted = int(await _r().scard(f"ab:{test_key}:conv:{i}") or 0)
+        exposed = int(await _r().scard(f"{pref}:exp:{i}") or 0)
+        converted = int(await _r().scard(f"{pref}:conv:{i}") or 0)
         out.append(
             {
                 "variant": i,

@@ -228,13 +228,15 @@ async def cb_churn_reason(cb: CallbackQuery) -> None:
     """Exit-survey: причина відмови → адресний save-offer (skill churn-prevention)."""
     await cb.answer()
     uid = cb.from_user.id
+    # захист: survey лише для тих, у кого доступ реально сплив (callback підроблюваний)
+    if not access.is_expired(await access.info(uid), clock.today_local()):
+        return
     reason = cb.data.split(":")[2]
     await churn.record_reason(reason)
 
-    # «не встиг» → разова реактивація +N днів (пауза/продовження — найкращий оффер для low-usage)
-    if reason == "notime" and await churn.reoffer_available(uid):
+    # «не встиг» → разова реактивація +N днів (атомарний claim проти подвійного кліку)
+    if reason == "notime" and await churn.claim_reoffer(uid):
         until = await access.extend_days(uid, settings.winback_extend_days)
-        await churn.mark_reoffered(uid)
         await cb.message.answer(
             f"🎁 <b>Ще {settings.winback_extend_days} дні безкоштовно</b> — щоб ти встиг відчути "
             f"користь. Доступ відкрито до <b>{until}</b>. Тисни /menu і продовжуй 👇\n"
@@ -281,6 +283,13 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
         else:
             from app.handlers.admin import send_hub  # адмін → одразу панель керування
             await send_hub(message)
+    elif access.is_expired(inf, clock.today_local()) and inf.role == "teacher":
+        # викладачам доступ безкоштовний — НЕ показуємо учнівський paywall/churn-survey
+        await message.answer(
+            "👩‍🏫 <b>Термін твого викладацького доступу минув.</b>\n"
+            "Напиши адміну, щоб продовжити — доступ для викладачів безкоштовний.",
+            reply_markup=contact_admin_kb(),
+        )
     elif access.is_expired(inf, clock.today_local()):
         v = await experiments.expose("paywall_expiry", uid)  # A/B копії paywall
         await message.answer(await _expired_paywall(uid, inf, v), reply_markup=churn_survey_kb())

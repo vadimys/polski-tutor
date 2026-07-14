@@ -123,15 +123,21 @@ async def _winback(bot: Bot, today: date) -> None:
         inf = await access.info(uid)
         if inf.role != "student" or inf.status != "approved" or not inf.until:
             continue
-        for d in _WINBACK_DAYS:
-            if inf.until == (today - timedelta(days=d)).isoformat():
-                if await _claim(f"winback:{uid}:{d}"):
-                    try:
-                        await bot.send_message(
-                            uid, _winback_text(inf, today), reply_markup=extend_request_kb()
-                        )
-                    except Exception:  # noqa: BLE001
-                        logger.exception("winback failed uid=%s", uid)
+        try:
+            days_since = (today - date.fromisoformat(inf.until)).days
+        except ValueError:
+            continue
+        # за різницею дат (не точною рівністю) — пропуск доби бота не губить когорту.
+        # Перебираємо етапи ЗА ЗРОСТАННЯМ, шлемо перший ще не «зайнятий» (_claim) —
+        # так обидва дотики (3 і 14 днів) спрацюють по черзі, без дублю в один прохід.
+        for d in sorted(_WINBACK_DAYS):
+            if days_since >= d and await _claim(f"winback:{uid}:{d}"):
+                try:
+                    await bot.send_message(
+                        uid, _winback_text(inf, today), reply_markup=extend_request_kb()
+                    )
+                except Exception:  # noqa: BLE001
+                    logger.exception("winback failed uid=%s", uid)
                 break
 
 

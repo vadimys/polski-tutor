@@ -51,18 +51,37 @@ async def export_data(user_id: int) -> str:
 
 
 async def _delete_redis(user_id: int) -> None:
-    """Прибрати Redis-сліди користувача: словник/AI/нудж/FSM + гейміфікація + тікети."""
-    from app.services import goals, support
+    """Прибрати ВСІ Redis-сліди користувача (ст.17): словник/AI/нудж/FSM + гейміфікація +
+    тікети + реферали + churn + A/B-членство + запит на reset."""
+    from app.services import experiments, goals, support
 
     await goals.reset(user_id)  # polski:min/act/goalmet/celeb/xp/goal/freeze/streak
     await support.delete_user_tickets(user_id)
 
     from redis.asyncio import Redis
 
+    uid = str(user_id)
     r = Redis.from_url(settings.redis_url, decode_responses=True)
     try:
-        await r.delete(f"polski:vocab:{user_id}")
+        # реферали: спершу зняти себе з множин запрошувача, тоді власні ключі
+        referrer = str(await r.get(f"ref:by:{user_id}") or "")
+        if referrer:
+            await r.srem(f"ref:inv:{referrer}", uid)
+            await r.srem(f"ref:rewok:{referrer}", uid)
+        await r.delete(
+            f"polski:vocab:{user_id}",
+            f"ref:by:{user_id}",
+            f"ref:inv:{user_id}",
+            f"ref:rewok:{user_id}",
+            f"polski:churn:reoffered:{user_id}",
+        )
         await r.srem("polski:users", user_id)
+        await r.hdel("reset:reqs", uid)
+        for test_key in experiments.TESTS:  # членство у A/B-множинах (версіоновані ключі)
+            pref = experiments.key_prefix(test_key)
+            for i in range(len(experiments.TESTS[test_key]["variants"])):
+                await r.srem(f"{pref}:exp:{i}", uid)
+                await r.srem(f"{pref}:conv:{i}", uid)
         for pattern in (f"polski:ai:{user_id}:*", f"polski:nudge:{user_id}:*", f"fsm:*:{user_id}:*"):
             async for key in r.scan_iter(pattern):
                 await r.delete(key)

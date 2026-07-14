@@ -36,3 +36,9 @@ def test_build_prompt_contains_grounding():
           "models": ["A interesuje się B."], "answer": "A interesuje się B."}]
     )
     assert "Офіційний зразок" in p and "interesuje się" in p and "Відповідь студента" in p
+
+
+def test_writing_raw_scores_not_clamped():
+    from app.services import writing
+    assert writing._raw_scores({"wykonanie": 15, "srodki": 5, "poprawnosc": -2}) == (15, 5, -2)
+    assert writing._raw_scores({"wykonanie": "x", "srodki": 5, "poprawnosc": 5}) is None

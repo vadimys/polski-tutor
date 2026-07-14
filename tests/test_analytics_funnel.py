@@ -20,3 +20,9 @@ def test_render_churn_distribution_and_empty():
     assert "немає даних" in admin_stats.render_churn({})
     t = admin_stats.render_churn({"price": 3, "notime": 1})
     assert "усього 4" in t and "💸 Дорого" in t and "75%" in t
+
+
+def test_funnel_small_sample_no_hole_claim():
+    d = {"total": 5, "approved": 5, "placement": 1, "did_ex": 1, "paid": 0}
+    t = admin_stats.render_funnel(d)
+    assert "Замало даних" in t and "Головна діра" not in t

@@ -32,3 +32,9 @@ def test_render_declares_leader_when_enough_data():
     ]
     t = ab.render_report("paywall_expiry", rows)
     assert "Лідирує" in t and "B" in t
+
+
+def test_key_prefix_versioned_by_variant_count():
+    # версія в ключі = к-сть варіантів → зміна складу не змішує стару розбивку
+    assert ab.key_prefix("paywall_expiry").endswith(":v2")
+    assert ab.key_prefix("невідомий").endswith(":v2")  # дефолт 2

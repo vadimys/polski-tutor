@@ -125,12 +125,14 @@ async def on_paid(message: Message) -> None:
         reply_markup=approved_kb(),
     )
     logger.info("payment ok uid=%s stars=%s until=%s", uid, stars, until)
-    await experiments.convert("paywall_expiry", uid)  # A/B: конверсія trial→оплата
-    # word-of-mouth: якщо оплатив запрошений друг — винагородити запрошувача
-    referrer = await referrals.on_subscription(uid)
-    if referrer:
-        r_until = await access.extend_days(referrer, settings.referral_reward_days)
-        with suppress(Exception):
+    # побічні дії ПІСЛЯ активації — best-effort: збій тут НЕ має ламати грошовий шлях
+    # (інакше учень уже побачив «✅ оплачено», а далі — «щось пішло не так»)
+    with suppress(Exception):
+        await experiments.convert("paywall_expiry", uid)  # A/B: конверсія trial→оплата
+        # word-of-mouth: якщо оплатив запрошений друг — винагородити запрошувача
+        referrer = await referrals.on_subscription(uid)
+        if referrer:
+            r_until = await access.extend_days(referrer, settings.referral_reward_days)
             await message.bot.send_message(
                 referrer,
                 f"🎉 Друг, якого ти запросив, оформив підписку! Тобі <b>+"

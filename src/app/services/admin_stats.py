@@ -358,11 +358,14 @@ def render_funnel(d: dict) -> str:
             if prev_n > 0:
                 drops.append((conv, prev_label, label))
         prev_n, prev_label = n, label
-    if drops and min(x[0] for x in drops) < 100:
+    _FUNNEL_MIN = 20  # не робимо висновків про «діру» на малій вибірці (шум)
+    if d["total"] < _FUNNEL_MIN:
+        lines.append(f"\n<i>Замало даних (потрібно ≥{_FUNNEL_MIN} стартів) для висновку про діру.</i>")
+    elif drops and min(x[0] for x in drops) < 100:
         conv, frm, to = min(drops, key=lambda x: x[0])
         lines.append(f"\n👉 <b>Головна діра:</b> {frm} → {to} (конв. лише <b>{conv}%</b>). Дій тут першим.")
     else:
-        lines.append("\n<i>Замало даних для висновку про діру.</i>")
+        lines.append("\n<i>Воронка без явної діри.</i>")
     return "\n".join(lines)
 
 

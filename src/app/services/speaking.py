@@ -168,7 +168,12 @@ def _prompt(task: SpeakTask, transcript: str) -> str:
 
 def readiness_pct(task: SpeakTask, wykonanie: int, gramatyka: int, slownictwo: int) -> int:
     """Відсоток за доступними з транскрипту критеріями (wykonanie + gramatyka + słownictwo)."""
-    got = min(wykonanie, task.max_wykonanie) + min(gramatyka, 8) + min(slownictwo, 8)
+    # клемп і знизу (0), і зверху — модель може повернути відʼємний/завищений бал
+    got = (
+        max(0, min(wykonanie, task.max_wykonanie))
+        + max(0, min(gramatyka, 8))
+        + max(0, min(slownictwo, 8))
+    )
     return round(got / (task.max_wykonanie + 16) * 100)
 
 

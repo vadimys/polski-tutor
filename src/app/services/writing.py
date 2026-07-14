@@ -194,10 +194,10 @@ def _prompt(ws: WritingSet, text_a: str, text_b: str) -> str:
     )
 
 
-def _scores(data: dict) -> tuple[int, int, int] | None:
+def _raw_scores(data: dict) -> tuple[int, int, int] | None:
+    """Сирі бали (без клемпу) — щоб contract_issues бачив вихід за 0-10 (дрейф моделі)."""
     try:
-        w, s, p = data["wykonanie"], data["srodki"], data["poprawnosc"]
-        return max(0, min(int(w), 10)), max(0, min(int(s), 10)), max(0, min(int(p), 10))
+        return int(data["wykonanie"]), int(data["srodki"]), int(data["poprawnosc"])
     except (KeyError, TypeError, ValueError):
         return None
 
@@ -210,10 +210,12 @@ async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple
     )
     if not isinstance(data, dict):
         return "", None
-    fb, scores = str(data.get("feedback", "")).strip(), _scores(data)
+    fb = str(data.get("feedback", "")).strip()
+    raw = _raw_scores(data)
     from app.services.eval_feedback import contract_issues  # відкладено — уникаємо циклів
 
-    issues = contract_issues(fb, scores)
-    if issues:  # моніторинг якості: злам формату/рубрики видно в логах (не блокує учня)
+    issues = contract_issues(fb, raw)  # СИРІ бали → видно завищення/заниження (дрейф)
+    if issues:  # моніторинг якості: злам формату/рубрики/дрейф видно в логах (не блокує учня)
         logger.warning("writing feedback contract issues %s (set=%s)", issues, ws.id)
-    return fb, scores
+    scores = tuple(max(0, min(x, 10)) for x in raw) if raw else None  # клемп для показу/готовності
+    return fb, scores  # type: ignore[return-value]

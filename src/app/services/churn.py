@@ -46,10 +46,7 @@ async def reasons_report() -> dict[str, int]:
     return {str(k): int(v) for k, v in raw.items()}
 
 
-async def reoffer_available(user_id: int) -> bool:
-    """Чи ще НЕ використано разову реактивацію (+N днів)."""
-    return not await _r().exists(f"polski:churn:reoffered:{user_id}")
-
-
-async def mark_reoffered(user_id: int) -> None:
-    await _r().set(f"polski:churn:reoffered:{user_id}", "1")  # без TTL — рівно один раз
+async def claim_reoffer(user_id: int) -> bool:
+    """Атомарно «зайняти» разову реактивацію: True лише ПЕРШОМУ (SET NX — проти гонки
+    подвійного кліку). Без TTL — рівно один раз на акаунт."""
+    return bool(await _r().set(f"polski:churn:reoffered:{user_id}", "1", nx=True))
