@@ -246,7 +246,9 @@ async def _generate(user_id: int, st) -> dict:
     if ai.enabled() and await limits.allow_ai(user_id):
         # 2500 — запас над реальними ~1300–1600 токенами уроку (кирилиця дорога),
         # щоб JSON не обривався по max_tokens і не падав у fallback.
-        raw = await ai.ask(_SYSTEM, _prompt(module, st.level), strong=True, max_tokens=2500)
+        raw = await ai.ask(
+            _SYSTEM, _prompt(module, st.level), strong=True, max_tokens=2500, cache=True, label="lekcja"
+        )
         if raw:
             lesson = _parse_lesson(raw, module)
             if lesson is None:

@@ -183,7 +183,9 @@ def _prompt(ws: WritingSet, text_a: str, text_b: str) -> str:
 
 async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple[int, int, int] | None]:
     """(фідбек, (wykonanie, środki, poprawność)|None). '' якщо AI недоступний."""
-    out = await ai.ask(_SYSTEM, _prompt(ws, text_a, text_b), strong=True, max_tokens=1900)
+    out = await ai.ask(
+        _SYSTEM, _prompt(ws, text_a, text_b), strong=True, max_tokens=1900, cache=True, label="pisanie"
+    )
     if not out:
         return "", None
     fb, scores = strip_official_line(out), parse_official_pisanie(out)

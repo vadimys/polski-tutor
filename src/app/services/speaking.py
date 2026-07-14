@@ -161,7 +161,9 @@ def readiness_pct(task: SpeakTask, wykonanie: int, gramatyka: int, slownictwo: i
 
 
 async def feedback(task: SpeakTask, transcript: str) -> tuple[str, tuple[int, int, int] | None]:
-    out = await ai.ask(_system(task), _prompt(task, transcript), strong=True, max_tokens=1500)
+    out = await ai.ask(
+        _system(task), _prompt(task, transcript), strong=True, max_tokens=1500, label="mowienie"
+    )
     if not out:
         return "", None
     return strip_official_line(out), parse_official_mowienie(out)

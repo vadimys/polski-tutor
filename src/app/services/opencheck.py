@@ -65,7 +65,9 @@ async def grade(items: list[dict]) -> list[dict] | None:
     """
     if not ai.enabled() or not items:
         return None
-    raw = await ai.ask(_SYSTEM, _build_prompt(items), strong=True, max_tokens=1000)
+    raw = await ai.ask(
+        _SYSTEM, _build_prompt(items), strong=True, max_tokens=1000, cache=True, label="open"
+    )
     if not raw:
         return None
     parsed = _parse(raw, len(items))

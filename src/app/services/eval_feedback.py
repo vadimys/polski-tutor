@@ -77,7 +77,10 @@ def parse_verdict(raw: str) -> dict | None:
 
 async def judge(task: str, answer: str, feedback: str, scores: tuple[int, int, int] | None) -> dict | None:
     """LLM-as-judge на ІНШІЙ моделі (cheap), ніж генератор (strong). None якщо AI вимкнено."""
-    out = await ai.ask(_JUDGE_SYSTEM, _judge_prompt(task, answer, feedback, scores), max_tokens=700)
+    out = await ai.ask(
+        _JUDGE_SYSTEM, _judge_prompt(task, answer, feedback, scores), max_tokens=700,
+        cache=True, label="eval",
+    )
     return parse_verdict(out) if out else None
 
 

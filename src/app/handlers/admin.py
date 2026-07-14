@@ -226,6 +226,7 @@ async def cb_analytics(cb: CallbackQuery) -> None:
     kb.button(text="🔻 Воронка", callback_data="ac:an:funnel")
     kb.button(text="🙅 Причини відмов", callback_data="ac:an:churn")
     kb.button(text="🧪 A/B тести", callback_data="ac:an:abtest")
+    kb.button(text="💰 AI-витрати", callback_data="ac:an:aicost")
     kb.button(text="📉 Складність модулів", callback_data="ac:an:mods")
     kb.button(text="🛠 Хаб", callback_data="ac:hub")
     kb.adjust(1)
@@ -253,6 +254,10 @@ async def cb_analytics_view(cb: CallbackQuery) -> None:
             for key in experiments.TESTS
         ]
         text = "\n\n".join(blocks) if blocks else "🧪 Немає активних тестів."
+    elif what == "aicost":
+        from app.services import aicost
+
+        text = aicost.render_report(await aicost.report())
     else:  # mods
         text = admin_stats.render_mods(await admin_stats.module_difficulty())
     kb = InlineKeyboardBuilder()

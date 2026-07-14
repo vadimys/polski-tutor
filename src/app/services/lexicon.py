@@ -220,6 +220,7 @@ async def words_for(topic_key: str, sub_key: str) -> list[Word]:
         _prompt(topic_label(topic_key), sub_label(topic_key, sub_key)),
         strong=False,
         max_tokens=2200,
+        label="lexicon",
     )
     words = _parse(raw)
     if words:
@@ -282,7 +283,7 @@ async def fix_examples(topic_key: str, sub_key: str) -> int:
         return 0
     fixed = _parse_fixes(
         await ai.ask("Ти редагуєш польські навчальні речення.", _fix_prompt(pairs),
-                     strong=True, max_tokens=2600)
+                     strong=True, max_tokens=2600, label="lexicon")
     )
     changed = _merge_fixed(arr, fixed)
     if changed:
