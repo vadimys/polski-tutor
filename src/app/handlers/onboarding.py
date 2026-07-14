@@ -125,7 +125,9 @@ async def _grant_referral(message: Message, uid: int, teacher_id: int, group_id:
     await message.answer(
         f"Cześć! 👋 Тебе запросив викладач{grp} — тобі відкрито <b>безкоштовний доступ на "
         f"{settings.trial_days} днів</b> (до <b>{until}</b>).\n"
-        "<i>Твій викладач бачитиме твій прогрес, щоб допомагати.</i>\n\n"
+        "<i>Твій викладач бачитиме твій прогрес, щоб допомагати.</i>\n"
+        f"<i>Далі, щоб продовжити, — підписка {settings.sub_stars} ⭐ / {settings.sub_days} дн. "
+        f"Нічого не спишеться автоматично.</i>\n\n"
         "Почнемо зі стартового тесту 👇",
         reply_markup=approved_kb(),
     )
@@ -162,7 +164,9 @@ async def _grant_friend(message: Message, uid: int, referrer: int) -> None:
     await referrals.record_invite(uid, referrer)
     await message.answer(
         f"Cześć! 👋 Тебе запросив друг — тобі відкрито <b>безкоштовний доступ на "
-        f"{settings.trial_days} днів</b> (до <b>{until}</b>).\n\nПочнемо зі стартового тесту 👇",
+        f"{settings.trial_days} днів</b> (до <b>{until}</b>).\n"
+        f"<i>Далі, щоб продовжити, — підписка {settings.sub_stars} ⭐ / {settings.sub_days} дн. "
+        f"Нічого не спишеться автоматично.</i>\n\nПочнемо зі стартового тесту 👇",
         reply_markup=approved_kb(),
     )
     with suppress(Exception):  # підбадьорити запрошувача (petля живіша)
@@ -481,7 +485,10 @@ async def cb_send(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await cb.message.answer(
         f"🚀 <b>Доступ відкрито — {settings.organic_trial_days} днів безкоштовно!</b> "
-        f"(до <b>{until}</b>)\nПочнемо зі стартового тесту 👇",
+        f"(до <b>{until}</b>)\n"
+        f"<i>Далі, щоб продовжити, — підписка {settings.sub_stars} ⭐ / {settings.sub_days} дн. "
+        f"Нічого не спишеться автоматично.</i>\n"
+        "Почнемо зі стартового тесту 👇",
         reply_markup=approved_kb(),
     )
     if settings.admin_id:  # інформуємо (без схвалення — доступ уже відкрито)
