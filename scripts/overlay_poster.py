@@ -77,15 +77,29 @@ def _check(d, x, y, s) -> None:
     d.line([(x, y + s * 0.55), (x + s * 0.38, y + s * 0.9), (x + s, y)], fill=_AMBER, width=6, joint="curve")
 
 
-def _extract_qr() -> Image.Image:
-    """QR (золотий) з офіційної картки на ПРОЗОРОМУ фоні: білий → alpha 0."""
-    card = Image.open(ROOT / "t_me-polski_b1_Coach_bot_1.jpg").convert("RGB")
-    cw, ch = card.size
-    qr = card.crop((int(cw * 0.15), int(ch * 0.345), int(cw * 0.85), int(ch * 0.63)))
-    gray = qr.convert("L")
-    alpha = gray.point(lambda p: 0 if p > 232 else (255 if p < 205 else int((232 - p) / 27 * 255)))
-    qr = qr.convert("RGBA")
-    qr.putalpha(alpha)
+BOT_URL = "https://t.me/polski_b1_coach_bot"
+_CREAM = (245, 240, 230)
+
+
+def _make_qr(size: int) -> Image.Image:
+    """Власний чистий QR на BOT_URL: темні модулі на кремовому + лого B1 у центрі.
+
+    Генеруємо самі (не кроп зі стилізованої картки) → гарантовано сканується.
+    Висока корекція помилок (H) дозволяє центральне лого без втрати читабельності.
+    """
+    import qrcode
+    from qrcode.constants import ERROR_CORRECT_H
+
+    q = qrcode.QRCode(error_correction=ERROR_CORRECT_H, box_size=16, border=2)
+    q.add_data(BOT_URL)
+    q.make(fit=True)
+    qr = q.make_image(fill_color=(26, 36, 52), back_color=_CREAM).convert("RGBA").resize((size, size))
+    lg = int(size * 0.22)
+    logo = Image.open(ROOT / "logo_b1_circle.png").convert("RGBA").resize((lg, lg))
+    c = (size - lg) // 2
+    r = lg // 2 + int(size * 0.025)
+    ImageDraw.Draw(qr).ellipse([size // 2 - r, size // 2 - r, size // 2 + r, size // 2 + r], fill=_CREAM)
+    qr.paste(logo, (c, c), logo)
     return qr
 
 
@@ -128,18 +142,15 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
     d.text((LM + f_handle.getlength(HANDLE), y + 2), CTA2, font=f_cta, fill=_AMBER)
 
-    # прозорий золотий QR на м'якій темній підкладці (у тон теми, не біла картка)
-    qr = _extract_qr()
+    # власний QR на кремовій картці (світле тло + темні модулі = гарантований скан)
     qs = 440
-    qr = qr.resize((qs, int(qr.size[1] * qs / qr.size[0])))
-    pad = 44
+    qr = _make_qr(qs)
+    pad = 40
     cw2 = qs + pad * 2
     cx0 = (W - cw2) // 2
     cy0 = y + 70
-    card_h = qr.size[1] + pad * 2
-    panel = Image.new("RGBA", (cw2, card_h), (0, 0, 0, 0))
-    ImageDraw.Draw(panel).rounded_rectangle([0, 0, cw2, card_h], radius=48, fill=(10, 16, 30, 168))
-    img.alpha_composite(panel, (cx0, cy0))
+    card_h = qs + pad * 2
+    d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=44, fill=_CREAM)
     img.alpha_composite(qr, ((W - qs) // 2, cy0 + pad))
 
     out = ROOT / out_name
