@@ -33,7 +33,7 @@ SUB = (
     "з перевіркою письма й розмови."
 )
 INVITE = "Цікаво? Заходь і спробуй..."
-INSTR1 = "Шукай у Telegram бот"
+INSTR1 = "Шукай у Telegram бот "  # хендл домальовуємо в тому ж рядку
 HANDLE = "@polski_b1_coach_bot"
 INSTR2 = "або скануй QR-код нижче  ↓"
 
@@ -151,10 +151,9 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     y += 16
     d.text((LM, y), INVITE, font=f_cta, fill=_AMBER)
     y += 52
-    d.text((LM, y), INSTR1, font=f_note, fill=(224, 230, 240))
-    y += 40
-    d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
-    y += 50
+    d.text((LM, y), INSTR1, font=f_note, fill=(224, 230, 240))  # «Шукай у Telegram бот »
+    d.text((LM + f_note.getlength(INSTR1), y - 3), HANDLE, font=f_handle, fill=_WHITE)  # + хендл поруч
+    y += 52
     d.text((LM, y), INSTR2, font=f_note, fill=(224, 230, 240))
     y += 42
 
