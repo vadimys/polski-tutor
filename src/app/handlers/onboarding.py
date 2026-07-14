@@ -30,6 +30,7 @@ from app.handlers.privacy import PRIVACY_SHORT
 from app.services import (
     access,
     activation,
+    attribution,
     churn,
     clock,
     exam_dates,
@@ -284,6 +285,9 @@ async def cb_churn_reason(cb: CallbackQuery) -> None:
 async def cmd_start(message: Message, state: FSMContext, command: CommandObject) -> None:
     await state.clear()
     uid = message.from_user.id
+    payload = (command.args or "").strip()
+    if payload:  # мітка кампанії (?start=fb_wielun…) — first-touch, no-op для рефералів/адміна
+        await attribution.record(uid, payload)
     inf = await access.info(uid)
     if uid == settings.admin_id:
         if await viewas.get(uid):  # у режимі перегляду — рендеримо досвід обраної ролі

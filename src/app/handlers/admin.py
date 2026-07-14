@@ -232,6 +232,7 @@ async def cb_analytics(cb: CallbackQuery) -> None:
     kb.button(text="🧪 A/B тести", callback_data="ac:an:abtest")
     kb.button(text="💰 AI-витрати", callback_data="ac:an:aicost")
     kb.button(text="📉 Складність модулів", callback_data="ac:an:mods")
+    kb.button(text="📡 Джерела трафіку", callback_data="ac:an:src")
     kb.button(text="🛠 Хаб", callback_data="ac:hub")
     kb.adjust(1)
     await cb.message.answer(
@@ -262,6 +263,10 @@ async def cb_analytics_view(cb: CallbackQuery) -> None:
         from app.services import aicost
 
         text = aicost.render_report(await aicost.report())
+    elif what == "src":
+        from app.services import attribution
+
+        text = admin_stats.render_sources(await attribution.report())
     else:  # mods
         text = admin_stats.render_mods(await admin_stats.module_difficulty())
     kb = InlineKeyboardBuilder()

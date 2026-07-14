@@ -187,6 +187,21 @@ def render_overview(d: dict) -> str:
     )
 
 
+def render_sources(rows: list[tuple[str, int]]) -> str:
+    if not rows:
+        return (
+            "📡 <b>Джерела трафіку</b>\n\nЩе немає позначених переходів.\n"
+            "<i>Постав мітку в лінк: <code>?start=fb_wielun</code> "
+            "(або <code>tg://resolve?domain=…&amp;start=fb_wielun</code>).</i>"
+        )
+    total = sum(n for _, n in rows)
+    lines = "\n".join(f"  • <code>{s}</code> — <b>{n}</b>" for s, n in rows)
+    return (
+        f"📡 <b>Джерела трафіку</b> · всього позначених <b>{total}</b>\n\n{lines}\n\n"
+        "<i>First-touch, унікальні користувачі. Органіка/реферали сюди не входять.</i>"
+    )
+
+
 def render_user(d: dict) -> str:
     ready = " ".join(f"{e}{d['readiness'].get(k, 0)}%" for k, e in _MOD.items())
     ref = f"id{d['referred_by']}" if d["referred_by"] else "—"
