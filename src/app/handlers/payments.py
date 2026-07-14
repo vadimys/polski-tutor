@@ -76,6 +76,39 @@ async def cmd_subscribe(message: Message) -> None:
     await _offer(message, message.from_user.id)
 
 
+@router.message(Command("testpay"))
+async def cmd_testpay(message: Message) -> None:
+    """Адмін-перевірка платіжного флоу: інвойс на 1⭐ (той самий шлях, що й бойовий).
+    Після оплати повернути через /refund <charge_id>."""
+    if message.from_user.id != settings.admin_id:
+        return
+    await message.answer_invoice(
+        title="ТЕСТ оплати (1 ⭐)",
+        description="Технічна перевірка платіжного флоу. Після оплати можна повернути через /refund.",
+        payload="sub:m",
+        currency="XTR",
+        prices=[LabeledPrice(label="тест — 1 зірка", amount=1)],
+    )
+
+
+@router.message(Command("refund"))
+async def cmd_refund(message: Message) -> None:
+    """Адмін: повернути Stars-платіж за charge_id (собі — для тесту, або підтримка)."""
+    if message.from_user.id != settings.admin_id:
+        return
+    parts = (message.text or "").split()
+    if len(parts) < 2:
+        await message.answer("Використання: <code>/refund &lt;charge_id&gt;</code> — поверне Stars тобі.")
+        return
+    try:
+        await message.bot.refund_star_payment(
+            user_id=message.from_user.id, telegram_payment_charge_id=parts[1]
+        )
+        await message.answer("✅ Stars повернено.")
+    except Exception as e:  # noqa: BLE001
+        await message.answer(f"❌ Не вдалося: <code>{type(e).__name__}: {str(e)[:200]}</code>")
+
+
 @router.callback_query(F.data == "pay:start")
 async def cb_subscribe(cb: CallbackQuery) -> None:
     await cb.answer()
@@ -155,7 +188,9 @@ async def on_paid(message: Message) -> None:
     if settings.admin_id:
         try:
             await message.bot.send_message(
-                settings.admin_id, f"💰 Оплата: uid <code>{uid}</code> · {stars} ⭐ · до {until}"
+                settings.admin_id,
+                f"💰 Оплата: uid <code>{uid}</code> · {stars} ⭐ · до {until}\n"
+                f"charge <code>{charge}</code>  (повернути: /refund {charge})",
             )
         except Exception:  # noqa: BLE001
             pass
