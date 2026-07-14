@@ -78,9 +78,15 @@ def _check(d, x, y, s) -> None:
 
 
 def _extract_qr() -> Image.Image:
-    card = Image.open(ROOT / "t_me-polski_b1_Coach_bot.jpg").convert("RGB")
+    """QR (золотий) з офіційної картки на ПРОЗОРОМУ фоні: білий → alpha 0."""
+    card = Image.open(ROOT / "t_me-polski_b1_Coach_bot_1.jpg").convert("RGB")
     cw, ch = card.size
-    return card.crop((int(cw * 0.15), int(ch * 0.345), int(cw * 0.85), int(ch * 0.63)))
+    qr = card.crop((int(cw * 0.15), int(ch * 0.345), int(cw * 0.85), int(ch * 0.63)))
+    gray = qr.convert("L")
+    alpha = gray.point(lambda p: 0 if p > 232 else (255 if p < 205 else int((232 - p) / 27 * 255)))
+    qr = qr.convert("RGBA")
+    qr.putalpha(alpha)
+    return qr
 
 
 def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
@@ -122,17 +128,19 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
     d.text((LM + f_handle.getlength(HANDLE), y + 2), CTA2, font=f_cta, fill=_AMBER)
 
-    # біла картка ТІЛЬКИ з QR (без хендла й значка Telegram)
+    # прозорий золотий QR на м'якій темній підкладці (у тон теми, не біла картка)
     qr = _extract_qr()
-    qs = 420
+    qs = 440
     qr = qr.resize((qs, int(qr.size[1] * qs / qr.size[0])))
-    pad = 46
+    pad = 44
     cw2 = qs + pad * 2
     cx0 = (W - cw2) // 2
-    cy0 = y + 74
+    cy0 = y + 70
     card_h = qr.size[1] + pad * 2
-    d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=40, fill=_WHITE)
-    img.paste(qr, ((W - qs) // 2, cy0 + pad))
+    panel = Image.new("RGBA", (cw2, card_h), (0, 0, 0, 0))
+    ImageDraw.Draw(panel).rounded_rectangle([0, 0, cw2, card_h], radius=48, fill=(10, 16, 30, 168))
+    img.alpha_composite(panel, (cx0, cy0))
+    img.alpha_composite(qr, ((W - qs) // 2, cy0 + pad))
 
     out = ROOT / out_name
     img.convert("RGB").save(out, quality=92)
