@@ -32,8 +32,10 @@ SUB = (
     "щодня потроху всі 5 частин, українською, "
     "з перевіркою письма й розмови."
 )
-INVITE = "Цікаво? Заходь і спробуй."
+INVITE = "Цікаво? Заходь і спробуй..."
+INSTR1 = "Шукай у Telegram бот"
 HANDLE = "@polski_b1_coach_bot"
+INSTR2 = "або скануй QR-код нижче  ↓"
 
 
 def _cover(im: Image.Image) -> Image.Image:
@@ -125,7 +127,8 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     lh = int(f_head.size * 1.12)
     f_sub = ImageFont.truetype(_REG, 34)
     f_cta = ImageFont.truetype(_BOLD, 33)
-    f_handle = ImageFont.truetype(_BOLD, 38)
+    f_note = ImageFont.truetype(_REG, 30)
+    f_handle = ImageFont.truetype(_BOLD, 36)
 
     # лого (верх-ліво) + Telegram-лого (верх-право)
     logo = Image.open(ROOT / "logo_b1_circle.png").convert("RGBA").resize((104, 104))
@@ -144,19 +147,24 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
         d.text((LM, y), line, font=f_sub, fill=(238, 242, 250))
         y += 46
 
-    # запрошення + хендл
+    # запрошення + як знайти (пошук за назвою або QR)
     y += 16
     d.text((LM, y), INVITE, font=f_cta, fill=_AMBER)
-    y += 54
+    y += 52
+    d.text((LM, y), INSTR1, font=f_note, fill=(224, 230, 240))
+    y += 40
     d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
+    y += 50
+    d.text((LM, y), INSTR2, font=f_note, fill=(224, 230, 240))
+    y += 42
 
     # QR на кремовій картці (завершує постер; тепле «Усім удачі!» — у тексті поста)
-    qs = 440
+    qs = 420
     qr = _make_qr(qs)
     pad = 40
     cw2 = qs + pad * 2
     cx0 = (W - cw2) // 2
-    cy0 = y + 60
+    cy0 = y + 22
     card_h = qs + pad * 2
     d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=44, fill=_CREAM)
     img.alpha_composite(qr, ((W - qs) // 2, cy0 + pad))
