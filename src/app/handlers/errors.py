@@ -6,10 +6,30 @@ import logging
 
 from aiogram import Bot
 from aiogram.types import ErrorEvent
+from redis.asyncio import Redis
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+_redis: Redis | None = None
+
+
+def _r() -> Redis:
+    global _redis
+    if _redis is None:
+        _redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _redis
+
+
+async def _should_alert(kind: str) -> bool:
+    """Антиспам: 1 алерт на тип помилки за alert_throttle_secs. Redis лежить → алертимо."""
+    try:
+        return bool(
+            await _r().set(f"alert:err:{kind}", "1", nx=True, ex=settings.alert_throttle_secs)
+        )
+    except Exception:  # noqa: BLE001
+        return True
 
 
 def _uid(event: ErrorEvent) -> int | None:
@@ -27,8 +47,8 @@ async def on_error(event: ErrorEvent, bot: Bot) -> bool:
     uid = _uid(event)
     logger.exception("Unhandled error (uid=%s): %s", uid, exc)
 
-    # алерт адміну (без витоку стектрейсу користувачу)
-    if settings.admin_id:
+    # алерт адміну (без витоку стектрейсу користувачу) — з тротлінгом проти спаму під напливом
+    if settings.admin_id and await _should_alert(type(exc).__name__):
         try:
             await bot.send_message(
                 settings.admin_id,

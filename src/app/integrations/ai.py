@@ -17,6 +17,17 @@ logger = logging.getLogger(__name__)
 _client = None
 _MAX_ATTEMPTS = 3  # 1 спроба + 2 повтори на транзієнтних помилках (429/5xx/timeout)
 
+_sem: asyncio.Semaphore | None = None
+
+
+def _semaphore() -> asyncio.Semaphore:
+    """Глобальна стеля одночасних запитів до Anthropic (захист від шторму 429/вартості
+    під напливом). Ліниво — щоб привʼязатися до активного event loop."""
+    global _sem
+    if _sem is None:
+        _sem = asyncio.Semaphore(settings.ai_max_concurrency)
+    return _sem
+
 
 def enabled() -> bool:
     return bool(settings.anthropic_api_key)
@@ -66,12 +77,13 @@ async def ask(
     )
     for attempt in range(_MAX_ATTEMPTS):
         try:
-            resp = await _c().messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                system=system_param,
-                messages=[{"role": "user", "content": user}],
-            )
+            async with _semaphore():  # стеля одночасних викликів (backoff-сон — поза семафором)
+                resp = await _c().messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system_param,
+                    messages=[{"role": "user", "content": user}],
+                )
             if label:  # облік витрат — best-effort, не валимо основний потік
                 try:
                     from app.services import aicost
@@ -126,13 +138,14 @@ async def ask_json(
     )
     for attempt in range(_MAX_ATTEMPTS):
         try:
-            resp = await _c().messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                system=system_param,
-                messages=[{"role": "user", "content": user}],
-                output_config={"format": {"type": "json_schema", "schema": schema}},
-            )
+            async with _semaphore():  # стеля одночасних викликів (backoff-сон — поза семафором)
+                resp = await _c().messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system_param,
+                    messages=[{"role": "user", "content": user}],
+                    output_config={"format": {"type": "json_schema", "schema": schema}},
+                )
             if label:
                 try:
                     from app.services import aicost

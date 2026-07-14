@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     strong_model: str = "claude-sonnet-4-6"
     cheap_model: str = "claude-haiku-4-5-20251001"
     ai_daily_limit: int = 30  # ліміт AI-вправ на користувача/добу (контроль витрат; адмін — без ліміту)
+    ai_max_concurrency: int = 6  # стеля одночасних запитів до Anthropic (захист від шторму 429/вартості під напливом)
+    ai_daily_budget_usd: float = 5.0  # поріг денних AI-витрат → алерт адміну (0 = вимкнено)
+
+    # Антиспам алертів адміну: не частіше 1 повідомлення на тип помилки за цей інтервал
+    alert_throttle_secs: int = 600
 
     # Адмін (єдиний адмін-акаунт — для запитів на доступ)
     admin_id: int = 0

@@ -10,6 +10,9 @@ from __future__ import annotations
 from redis.asyncio import Redis
 
 from app.config import settings
+from app.services import clock
+
+_DAY_TTL = 8 * 24 * 3600  # денні лічильники живуть тиждень+ (тренд), тоді самоскид
 
 # $/токен за тіром (Sonnet 4.6: 3/15; Haiku 4.5: 1/5 за 1М)
 _PRICE = {
@@ -47,6 +50,30 @@ async def record(label: str, tier: str, usage) -> None:  # noqa: ANN001 — anth
     await r.hincrby("aicost:out", label, out)
     await r.hincrby("aicost:cread", label, cread)
     await r.hincrby("aicost:micro", label, micro)
+    day = f"aicost:day:{clock.today_local().isoformat()}"  # денний загальний — для бюджет-алерту
+    await r.incrby(day, micro)
+    await r.expire(day, _DAY_TTL)
+
+
+def _over_budget(micro: int, threshold_usd: float) -> float | None:
+    """Чиста функція: якщо витрати (мікродолари) ≥ порогу — повертає суму в $, інакше None.
+    Поріг ≤0 → вимкнено."""
+    if threshold_usd <= 0:
+        return None
+    usd = micro / 1_000_000
+    return usd if usd >= threshold_usd else None
+
+
+async def budget_alert_due() -> float | None:
+    """Денні AI-витрати перетнули поріг і сьогодні ще не алертили → сума в $ (раз/добу)."""
+    day = clock.today_local().isoformat()
+    micro = int(await _r().get(f"aicost:day:{day}") or 0)
+    usd = _over_budget(micro, settings.ai_daily_budget_usd)
+    if usd is None:
+        return None
+    if not await _r().set(f"aicost:alerted:{day}", "1", nx=True, ex=_DAY_TTL):
+        return None  # уже сповіщали сьогодні
+    return usd
 
 
 async def report() -> list[dict]:

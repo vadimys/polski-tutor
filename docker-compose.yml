@@ -1,11 +1,23 @@
 name: polski-b1
 
+# Ротація логів: під напливом json-file росте безмежно й забиває диск → обмежуємо.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   redis:
     image: redis:7-alpine
+    # maxmemory + noeviction: FSM-стан і лічильники НЕ витісняємо (краще явна помилка,
+    # ніж тихо загублений стан). RDB-snapshot-точки як у дефолті — зберігаємо наявний
+    # dump.rdb (БЕЗ appendonly, щоб не піднятись порожнім і не втратити стан).
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--save", "3600", "1", "--save", "300", "100", "--save", "60", "10000"]
     volumes:
       - redis-data:/data
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -21,6 +33,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U polski"]
       interval: 10s
@@ -36,6 +49,7 @@ services:
       postgres:
         condition: service_healthy  # чекаємо готовності БД (alembic у entrypoint)
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:  # внутрішній /health перевіряє живий конект до Postgres+Redis
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -55,6 +69,7 @@ services:
     depends_on:
       - bot
     restart: unless-stopped
+    logging: *default-logging
     profiles: ["tunnel"]
 
 volumes:

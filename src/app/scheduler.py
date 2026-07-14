@@ -200,6 +200,18 @@ async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
     sent = await _nudge_due(bot, now.hour, today)
     if sent:
         logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
+    try:  # бюджет-алерт AI — щогодини, спрацьовує раз/добу при перетині порогу
+        from app.services import aicost
+
+        usd = await aicost.budget_alert_due()
+        if usd is not None and settings.admin_id:
+            await bot.send_message(
+                settings.admin_id,
+                f"💸 <b>AI-витрати за сьогодні: ${usd:.2f}</b> — перетнули поріг "
+                f"${settings.ai_daily_budget_usd:.0f}. Деталі: /admin → 💰 AI-витрати.",
+            )
+    except Exception:  # noqa: BLE001
+        logger.exception("budget alert failed")
     if now.hour == _PURGE_HOUR and purged_on != today:  # ретеншн — раз на добу
         purged_on = today
         try:
