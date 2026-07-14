@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 
 from app.integrations import ai
@@ -20,10 +19,27 @@ _SYSTEM = (
     "(у правильній формі). Тобі дано офіційний зразок(и) як еталон — можливі й інші "
     "правильні варіанти. Признач ok=true, якщо відповідь студента: (1) містить форму "
     "заданого слова, (2) зберігає сенс оригіналу, (3) граматично коректна. Дрібні "
-    "одруки й брак діакритики пробач. Поверни СУВОРО JSON-масив об'єктів "
-    '{"ok": true/false, "feedback": "коротко українською: що добре або що виправити"} '
-    "у ТОМУ Ж порядку, що й пункти. Нічого поза JSON."
+    "одруки й брак діакритики пробач. Поверни поле results — по одному об'єкту на пункт "
+    "У ТОМУ Ж порядку: ok (чи зараховано) + feedback (коротко українською: що добре / що виправити)."
 )
+
+# json_schema для structured output — API гарантує валідний JSON цієї форми
+_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "results": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"ok": {"type": "boolean"}, "feedback": {"type": "string"}},
+                "required": ["ok", "feedback"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["results"],
+    "additionalProperties": False,
+}
 
 
 def _build_prompt(items: list[dict]) -> str:
@@ -40,37 +56,28 @@ def _build_prompt(items: list[dict]) -> str:
     return "Оціни кожен пункт:\n\n" + "\n\n".join(blocks)
 
 
-def _parse(raw: str, n: int) -> list[dict] | None:
-    s = raw.strip()
-    try:
-        start, end = s.index("["), s.rindex("]") + 1
-        data = json.loads(s[start:end])
-    except (ValueError, json.JSONDecodeError):
+def _normalize(data: object, n: int) -> list[dict] | None:
+    """Робастно дістати results (structured output гарантує форму, але кількість — ні)."""
+    results = data.get("results") if isinstance(data, dict) else None
+    if not isinstance(results, list) or len(results) != n:
         return None
-    if not isinstance(data, list) or len(data) != n:
-        return None
-    out: list[dict] = []
-    for d in data:
-        if not isinstance(d, dict):
-            return None
-        out.append({"ok": bool(d.get("ok")), "feedback": str(d.get("feedback", ""))[:300]})
-    return out
+    return [{"ok": bool(r.get("ok")), "feedback": str(r.get("feedback", ""))[:300]} for r in results]
 
 
 async def grade(items: list[dict]) -> list[dict] | None:
     """items: [{n, original, word, models, answer}]. → [{ok, feedback}] або None.
 
-    None → AI недоступний або відповідь невалідна (хендлер: self-check fallback +
-    refund AI-квоти).
+    Structured output (json_schema) → валідний JSON гарантовано; лишається звірити к-сть.
+    None → AI недоступний / збій / к-сть не збіглась (хендлер: self-check fallback + refund).
     """
     if not ai.enabled() or not items:
         return None
-    raw = await ai.ask(
-        _SYSTEM, _build_prompt(items), strong=True, max_tokens=1000, cache=True, label="open"
+    data = await ai.ask_json(
+        _SYSTEM, _build_prompt(items), _SCHEMA, strong=True, max_tokens=1000, cache=True, label="open"
     )
-    if not raw:
+    if data is None:
         return None
-    parsed = _parse(raw, len(items))
+    parsed = _normalize(data, len(items))
     if parsed is None:
-        logger.warning("opencheck: AI відповів (%d симв.), але JSON не розпарсився", len(raw))
+        logger.warning("opencheck: structured output прийшов, але к-сть results ≠ %d", len(items))
     return parsed

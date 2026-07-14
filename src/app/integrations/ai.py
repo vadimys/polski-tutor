@@ -6,7 +6,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+from typing import Any
 
 from app.config import settings
 
@@ -88,3 +90,62 @@ async def ask(
             logger.exception("AI ask failed (model=%s)", model)
             return ""
     return ""
+
+
+async def ask_json(
+    system: str,
+    user: str,
+    schema: dict,
+    *,
+    strong: bool = False,
+    max_tokens: int = 1200,
+    cache: bool = False,
+    label: str = "",
+) -> Any | None:
+    """Запит зі structured output (json_schema) — API гарантує валідний JSON за схемою.
+    Надійніше за регекс-парсинг «десь у тексті». Повертає розпарсений обʼєкт або None
+    (AI вимкнено / збій / неповна відповідь). Модель має підтримувати structured outputs
+    (Sonnet 4.6 / Haiku 4.5)."""
+    if not enabled():
+        return None
+    from anthropic import (
+        APIConnectionError,
+        APITimeoutError,
+        InternalServerError,
+        RateLimitError,
+    )
+
+    retryable = (RateLimitError, InternalServerError, APITimeoutError, APIConnectionError)
+    model = settings.strong_model if strong else settings.cheap_model
+    system_param: Any = (
+        [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
+        if cache
+        else system
+    )
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            resp = await _c().messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                system=system_param,
+                messages=[{"role": "user", "content": user}],
+                output_config={"format": {"type": "json_schema", "schema": schema}},
+            )
+            if label:
+                try:
+                    from app.services import aicost
+
+                    await aicost.record(label, "strong" if strong else "cheap", resp.usage)
+                except Exception:  # noqa: BLE001
+                    logger.debug("aicost record failed", exc_info=True)
+            text = next((b.text for b in resp.content if getattr(b, "type", None) == "text"), "")
+            return json.loads(text) if text else None
+        except retryable as e:
+            if attempt + 1 >= _MAX_ATTEMPTS:
+                logger.warning("AI ask_json вичерпав спроби (model=%s): %s", model, e)
+                return None
+            await asyncio.sleep(0.5 * (2**attempt))
+        except Exception:
+            logger.exception("AI ask_json failed (model=%s)", model)
+            return None
+    return None

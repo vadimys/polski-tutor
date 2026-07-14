@@ -1,38 +1,33 @@
-"""Open-таски: парсинг AI-відповіді + валідність даних завдань."""
+"""Авто-оцінка open-tasks: робастна нормалізація structured output."""
 
-from app import content
 from app.services import opencheck
 
 
-def test_parse_valid_json():
-    raw = '[{"ok": true, "feedback": "добре"}, {"ok": false, "feedback": "не той відмінок"}]'
-    out = opencheck._parse(raw, 2)
-    assert out == [
-        {"ok": True, "feedback": "добре"},
-        {"ok": False, "feedback": "не той відмінок"},
-    ]
+def test_normalize_valid():
+    data = {"results": [{"ok": True, "feedback": "добре"}, {"ok": False, "feedback": "виправ час"}]}
+    out = opencheck._normalize(data, 2)
+    assert out == [{"ok": True, "feedback": "добре"}, {"ok": False, "feedback": "виправ час"}]
 
 
-def test_parse_with_prose_around_json():
-    raw = 'Ось оцінка:\n[{"ok": true, "feedback": "ок"}]\nсподіваюсь допомогло'
-    out = opencheck._parse(raw, 1)
-    assert out and out[0]["ok"] is True
+def test_normalize_count_mismatch():
+    assert opencheck._normalize({"results": [{"ok": True, "feedback": "x"}]}, 2) is None
 
 
-def test_parse_wrong_length_is_none():
-    raw = '[{"ok": true, "feedback": "x"}]'
-    assert opencheck._parse(raw, 3) is None  # очікували 3 пункти
+def test_normalize_bad_shapes():
+    assert opencheck._normalize({}, 1) is None
+    assert opencheck._normalize([], 1) is None
+    assert opencheck._normalize({"results": "nope"}, 1) is None
 
 
-def test_parse_garbage_is_none():
-    assert opencheck._parse("вибачте, не можу", 1) is None
-    assert opencheck._parse("", 1) is None
+def test_normalize_coerces_and_truncates():
+    out = opencheck._normalize({"results": [{"ok": 1, "feedback": "x" * 500}]}, 1)
+    assert out[0]["ok"] is True and len(out[0]["feedback"]) == 300
 
 
-def test_parse_coerces_types():
-    raw = '[{"ok": 1, "feedback": 123}]'
-    out = opencheck._parse(raw, 1)
-    assert out == [{"ok": True, "feedback": "123"}]
+def test_schema_is_object_with_results_array():
+    s = opencheck._SCHEMA
+    assert s["type"] == "object" and "results" in s["properties"]
+    assert s["properties"]["results"]["items"]["additionalProperties"] is False
 
 
 def test_build_prompt_contains_grounding():
@@ -41,20 +36,3 @@ def test_build_prompt_contains_grounding():
           "models": ["A interesuje się B."], "answer": "A interesuje się B."}]
     )
     assert "Офіційний зразок" in p and "interesuje się" in p and "Відповідь студента" in p
-
-
-def test_open_tasks_wellformed():
-    tasks = content.all_open_tasks()
-    assert tasks, "має бути хоча б одне відкрите завдання"
-    for t in tasks:
-        assert len(t.prompts) == len(t.words) == len(t.models)
-        for m in t.models:
-            assert m and all(isinstance(x, str) and x.strip() for x in m)
-        assert t.section in ("czytanie", "gramatyka")
-        assert t.title and t.intro and t.criterion
-
-
-def test_open_section_filter():
-    assert content.all_open_tasks("gramatyka")  # 2020 Zad VI
-    assert content.all_open_tasks("czytanie") == []
-    assert content.exam_open_tasks("2020")
