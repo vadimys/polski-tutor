@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 
 from redis.asyncio import Redis
@@ -166,7 +165,7 @@ def _prompt(topic_lbl: str, sub_lbl: str) -> str:
         "Ти — укладач польсько-українського навчального словника для іспиту B1.\n"
         f"Тема: «{topic_lbl}», підтема: «{sub_lbl}».\n"
         f"Згенеруй {_N} НАЙКОРИСНІШИХ польських слів САМЕ цієї підтеми (рівень A2–B1).\n"
-        'Поверни СТРОГО JSON-масив об\'єктів {"pl","ua","example","level"}:\n'
+        "Поверни поле words — масив об'єктів {pl, ua, example, level}:\n"
         "• pl — польське слово в базовій формі (іменники з родом, якщо доречно — без дужок);\n"
         "• ua — стислий і ТОЧНИЙ український переклад (без приміток у дужках);\n"
         "• example — коротке природне речення польською з цим словом;\n"
@@ -176,16 +175,32 @@ def _prompt(topic_lbl: str, sub_lbl: str) -> str:
     )
 
 
-def _parse(raw: str) -> list[Word]:
-    s = raw.strip()
-    if s.startswith("```"):
-        s = re.sub(r"^```[a-zA-Z]*\s*", "", s).rstrip("`").strip()
-    i, j = s.find("["), s.rfind("]")
-    if i < 0 or j < 0:
-        return []
-    try:
-        arr = json.loads(s[i : j + 1])
-    except (ValueError, TypeError):
+_WORD_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "words": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "pl": {"type": "string"},
+                    "ua": {"type": "string"},
+                    "example": {"type": "string"},
+                    "level": {"type": "integer"},
+                },
+                "required": ["pl", "ua", "example", "level"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["words"],
+    "additionalProperties": False,
+}
+
+
+def _words_from(arr: object) -> list[Word]:
+    """Список слів зі structured output → дедуп + клемпінг рівня (робастно)."""
+    if not isinstance(arr, list):
         return []
     words: list[Word] = []
     seen: set[str] = set()
@@ -215,14 +230,15 @@ async def words_for(topic_key: str, sub_key: str) -> list[Word]:
         return [Word(**w) for w in json.loads(cached)]
     if not ai.enabled():
         return []
-    raw = await ai.ask(
+    data = await ai.ask_json(
         "Ти вкладаєш польсько-українські навчальні словники.",
         _prompt(topic_label(topic_key), sub_label(topic_key, sub_key)),
+        _WORD_SCHEMA,
         strong=False,
         max_tokens=2200,
         label="lexicon",
     )
-    words = _parse(raw)
+    words = _words_from(data.get("words") if isinstance(data, dict) else None)
     if words:
         await _r().set(key, json.dumps([w.__dict__ for w in words], ensure_ascii=False), ex=_TTL)
     return words
@@ -235,22 +251,32 @@ def _fix_prompt(pairs: list[tuple[str, str]]) -> str:
         "Виправ У РЕЧЕННЯХ ЛИШЕ граматичні помилки (узгодження роду/числа/відмінка, "
         "форми дієслів, прийменники). ЗБЕРЕЖИ зміст і ОБОВ'ЯЗКОВО залиш у реченні те саме "
         "цільове слово (у будь-якій правильній формі). Якщо речення вже правильне — лишай як є.\n"
-        'Поверни СТРОГО JSON-масив {"pl","example"} у ТОМУ Ж порядку. Тільки валідний JSON.\n\n'
+        "Поверни поле fixes — масив {pl, example} у ТОМУ Ж порядку.\n\n"
         + items
     )
 
 
-def _parse_fixes(raw: str) -> dict[str, str]:
-    """[{'pl','example'}] → {pl: example}. Толерантний до ```-огортання."""
-    s = raw.strip()
-    if s.startswith("```"):
-        s = re.sub(r"^```[a-zA-Z]*\s*", "", s).rstrip("`").strip()
-    i, j = s.find("["), s.rfind("]")
-    if i < 0 or j < 0:
-        return {}
-    try:
-        arr = json.loads(s[i : j + 1])
-    except (ValueError, TypeError):
+_FIX_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "fixes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"pl": {"type": "string"}, "example": {"type": "string"}},
+                "required": ["pl", "example"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["fixes"],
+    "additionalProperties": False,
+}
+
+
+def _fixes_from(arr: object) -> dict[str, str]:
+    """[{'pl','example'}] зі structured output → {pl: example}."""
+    if not isinstance(arr, list):
         return {}
     out: dict[str, str] = {}
     for o in arr:
@@ -281,10 +307,11 @@ async def fix_examples(topic_key: str, sub_key: str) -> int:
     pairs = [(o["pl"], o["example"]) for o in arr if o.get("pl") and o.get("example")]
     if not pairs:
         return 0
-    fixed = _parse_fixes(
-        await ai.ask("Ти редагуєш польські навчальні речення.", _fix_prompt(pairs),
-                     strong=True, max_tokens=2600, label="lexicon")
+    data = await ai.ask_json(
+        "Ти редагуєш польські навчальні речення.", _fix_prompt(pairs), _FIX_SCHEMA,
+        strong=True, max_tokens=2600, label="lexicon",
     )
+    fixed = _fixes_from(data.get("fixes") if isinstance(data, dict) else None)
     changed = _merge_fixed(arr, fixed)
     if changed:
         await _r().set(key, json.dumps(arr, ensure_ascii=False), ex=_TTL)

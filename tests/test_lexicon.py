@@ -19,20 +19,21 @@ def test_labels_and_fallback():
     assert lexicon.topic_label("nope") == "nope"
 
 
-def test_parse_dedups_and_sorts_by_level():
-    raw = """[
-      {"pl":"trudny","ua":"важкий","example":"","level":3},
-      {"pl":"dom","ua":"дім","example":"To jest dom.","level":1},
-      {"pl":"dom","ua":"дубль","example":"","level":1},
-      {"pl":"okno","ua":"вікно","example":"","level":2}
-    ]"""
-    words = lexicon._parse(raw)
+def test_words_from_dedups_and_sorts_by_level():
+    arr = [
+        {"pl": "trudny", "ua": "важкий", "example": "", "level": 3},
+        {"pl": "dom", "ua": "дім", "example": "To jest dom.", "level": 1},
+        {"pl": "dom", "ua": "дубль", "example": "", "level": 1},
+        {"pl": "okno", "ua": "вікно", "example": "", "level": 2},
+    ]
+    words = lexicon._words_from(arr)
     assert [w.pl for w in words] == ["dom", "okno", "trudny"]  # дедуп + сорт за level
 
 
-def test_parse_handles_codefence_and_junk():
-    assert lexicon._parse("```json\n[]\n```") == []
-    assert lexicon._parse("not json") == []
+def test_words_from_bad_shapes():
+    assert lexicon._words_from(None) == []
+    assert lexicon._words_from("not a list") == []
+    assert lexicon._words_from([{"pl": "", "ua": "x"}]) == []  # без pl — пропуск
 
 
 def test_apply_edit_changes_ua_and_example():
@@ -53,10 +54,14 @@ def test_apply_remove():
     assert [o["pl"] for o in lexicon._apply_remove(arr, "a")] == ["b"]
 
 
-def test_parse_fixes_and_merge():
-    raw = '```json\n[{"pl":"banan","example":"Banan jest bogaty w potas."},{"pl":"dom","example":"To jest dom."}]\n```'
-    fixes = lexicon._parse_fixes(raw)
+def test_fixes_from_and_merge():
+    arr_in = [
+        {"pl": "banan", "example": "Banan jest bogaty w potas."},
+        {"pl": "dom", "example": "To jest dom."},
+    ]
+    fixes = lexicon._fixes_from(arr_in)
     assert fixes["banan"].startswith("Banan jest bogaty")
+    assert lexicon._fixes_from(None) == {}  # робастність до битої форми
     arr = [
         {"pl": "banan", "ua": "банан", "example": "Banana jest bogata w potas.", "level": 1},
         {"pl": "dom", "ua": "дім", "example": "To jest dom.", "level": 1},
