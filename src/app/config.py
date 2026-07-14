@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Observability (опційно): якщо задано SENTRY_DSN — трекінг помилок без нагляду
     sentry_dsn: str | None = None
 
+    # Зовнішній dead-man's-switch (healthchecks.io): бот пінгує URL що heartbeat_secs.
+    # Пінги припинились (впав хост/бот) → сервіс алертить. Порожній → вимкнено.
+    healthcheck_url: str = ""
+    heartbeat_secs: int = 120
+
     # Whisper (локальне розпізнавання голосу для модуля Mówienie)
     whisper_model: str = "small"
     whisper_dir: str = "/opt/models"

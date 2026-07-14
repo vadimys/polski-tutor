@@ -3,6 +3,7 @@
 from app import config
 from app.integrations import ai
 from app.services import aicost
+from app.services.heartbeat import _fail_url
 
 
 def test_ai_semaphore_singleton_and_size():
@@ -16,3 +17,8 @@ def test_over_budget_threshold():
     assert aicost._over_budget(6_000_000, 5.0) == 6.0  # $6 ≥ $5 → спрацьовує
     assert aicost._over_budget(4_000_000, 5.0) is None  # $4 < $5
     assert aicost._over_budget(9_000_000, 0.0) is None  # поріг 0 → вимкнено
+
+
+def test_heartbeat_fail_url():
+    assert _fail_url("https://hc-ping.com/abc") == "https://hc-ping.com/abc/fail"
+    assert _fail_url("https://hc-ping.com/abc/") == "https://hc-ping.com/abc/fail"

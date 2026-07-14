@@ -48,7 +48,7 @@ from app.handlers import (
 )
 from app.health import start_health_server
 from app.scheduler import daily_nudge_loop
-from app.services import access
+from app.services import access, heartbeat
 
 logging.basicConfig(
     level=logging.INFO,
@@ -150,10 +150,12 @@ async def main() -> None:
     )
 
     nudge_task = asyncio.create_task(daily_nudge_loop(bot))
+    heartbeat_task = asyncio.create_task(heartbeat.loop())  # no-op без HEALTHCHECK_URL
     try:
         await dp.start_polling(bot)
     finally:
         nudge_task.cancel()
+        heartbeat_task.cancel()
 
 
 if __name__ == "__main__":

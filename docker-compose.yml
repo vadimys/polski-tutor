@@ -72,6 +72,34 @@ services:
     logging: *default-logging
     profiles: ["tunnel"]
 
+  # Метрики хоста+контейнерів (CPU/RAM/диск/Postgres/Redis) + Telegram-алерти.
+  # Opt-in: `docker compose --profile monitoring up -d netdata`. Дашборд — :19999.
+  # Алерти: cp monitoring/netdata/health_alarm_notify.conf.example → .conf і впиши токен/chat.
+  netdata:
+    image: netdata/netdata:stable
+    hostname: polski-homeserver
+    pid: host
+    network_mode: host
+    restart: unless-stopped
+    logging: *default-logging
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdata-lib:/var/lib/netdata
+      - netdata-cache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./monitoring/netdata/health_alarm_notify.conf:/etc/netdata/health_alarm_notify.conf:ro
+    profiles: ["monitoring"]
+
 volumes:
   redis-data:
   pg-data:
+  netdata-lib:
+  netdata-cache:

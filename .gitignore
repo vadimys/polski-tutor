@@ -32,3 +32,6 @@ Gemini_Generated_Image_*.png
 # згенеровані маркетингові постери (локальні)
 poster*.jpg
 bg_*.jpg
+
+# netdata: реальний конфіг алертів із секретами — поза git
+monitoring/netdata/health_alarm_notify.conf

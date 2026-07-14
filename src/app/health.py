@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 _runner: web.AppRunner | None = None  # утримуємо посилання, щоб сервер не збирався GC
 
 
-async def _health(_request: web.Request) -> web.Response:
+async def check() -> tuple[bool, dict[str, str]]:
+    """Живий конект до Postgres+Redis. (ok, {db, redis}). Перевикористовується
+    HTTP-хендлером /health і зовнішнім heartbeat (healthchecks.io)."""
     detail: dict[str, str] = {}
     ok = True
     try:
@@ -38,6 +40,11 @@ async def _health(_request: web.Request) -> web.Response:
     except Exception:  # noqa: BLE001
         ok = False
         detail["redis"] = "fail"
+    return ok, detail
+
+
+async def _health(_request: web.Request) -> web.Response:
+    ok, detail = await check()
     return web.json_response(
         {"status": "ok" if ok else "degraded", **detail},
         status=200 if ok else 503,

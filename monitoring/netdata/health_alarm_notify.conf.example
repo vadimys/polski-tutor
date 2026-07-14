@@ -1,0 +1,13 @@
+# Telegram-алерти netdata — мінімальний конфіг.
+# Налаштування на сервері:
+#   cp monitoring/netdata/health_alarm_notify.conf.example monitoring/netdata/health_alarm_notify.conf
+#   впиши TELEGRAM_BOT_TOKEN і DEFAULT_RECIPIENT_TELEGRAM, тоді:
+#   docker compose --profile monitoring up -d netdata
+#
+# Токен: можна взяти того самого бота (@BotFather) або окремого «alerts»-бота.
+# chat id: свій особистий id (той самий ADMIN_ID) або id групи/каналу з ботом усередині.
+# Реальний .conf у git НЕ потрапляє (gitignored) — тримає секрети поза репо.
+
+SEND_TELEGRAM="YES"
+TELEGRAM_BOT_TOKEN="123456789:PASTE_YOUR_BOT_TOKEN"
+DEFAULT_RECIPIENT_TELEGRAM="123456789"
