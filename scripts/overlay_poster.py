@@ -27,13 +27,13 @@ _INK = (24, 30, 44)
 W, H = 1080, 1350
 LM = 90
 KICKER = "ДЕРЖАВНИЙ ІСПИТ З ПОЛЬСЬКОЇ · РІВЕНЬ B1"
-HEAD = ["Склади іспит B1", "і залишся в Польщі"]
+HEAD = ["Склади іспит B1 легко", "з Телеграм-ботом"]
 BENEFITS = [
-    "Усі 5 частин іспиту — щодня по 15 хвилин",
+    "Усі 5 частин іспиту, щодня по 15 хвилин",
     "Пояснення українською, від самого нуля",
     "Перевірка письма й розмови з AI-тренером",
 ]
-CTA = "Скануй QR і почни вчитися — безкоштовно"
+CTA = "Скануй QR і почни вчитися безкоштовно"
 HANDLE = "@polski_b1_coach_bot"
 
 
@@ -57,12 +57,19 @@ def _scrim(img: Image.Image) -> None:
     img.alpha_composite(ov)
 
 
-def _plane(d, cx, cy, r) -> None:
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_TG)
-    pts = [(-0.62, -0.02), (0.64, -0.46), (0.18, 0.52), (-0.02, 0.10)]
-    d.polygon([(cx + x * r, cy + y * r) for x, y in pts], fill=_WHITE)
-    d.polygon([(cx + 0.18 * r, cy + 0.52 * r), (cx + 0.30 * r, cy + 0.06 * r),
-               (cx - 0.02 * r, cy + 0.10 * r)], fill=(210, 233, 246))
+def _tg(img: Image.Image, cx: int, cy: int, r: int) -> None:
+    """Офіційний логотип Telegram (прозорий webp) з центром у (cx, cy), діаметр 2r."""
+    logo = Image.open(ROOT / "Telegram_logo.svg.webp").convert("RGBA").resize((r * 2, r * 2))
+    img.paste(logo, (cx - r, cy - r), logo)
+
+
+def _fit(text: str, hi: int, lo: int, maxw: int) -> ImageFont.FreeTypeFont:
+    """Найбільший Arial Bold, за якого text вміщується в maxw."""
+    for size in range(hi, lo - 1, -2):
+        f = ImageFont.truetype(_BOLD, size)
+        if f.getlength(text) <= maxw:
+            return f
+    return ImageFont.truetype(_BOLD, lo)
 
 
 def _check(d, x, y, s) -> None:
@@ -79,23 +86,25 @@ def build() -> None:
     img = _cover(Image.open(ROOT / "bg_theme.jpg").convert("RGB")).convert("RGBA")
     _scrim(img)
     d = ImageDraw.Draw(img)
+    maxw = W - 2 * LM
     f_kick = ImageFont.truetype(_BOLD, 27)
-    f_head = ImageFont.truetype(_BOLD, 66)
+    f_head = _fit(max(HEAD, key=len), 92, 60, maxw)
+    lh = int(f_head.size * 1.12)
     f_ben = ImageFont.truetype(_REG, 33)
     f_cta = ImageFont.truetype(_BOLD, 34)
     f_handle = ImageFont.truetype(_BOLD, 37)
 
-    # лого (верх-ліво) + Telegram-бейдж (верх-право)
+    # лого (верх-ліво) + Telegram-лого (верх-право)
     logo = Image.open(ROOT / "logo_b1_circle.png").convert("RGBA").resize((104, 104))
     img.paste(logo, (LM, 58), logo)
-    _plane(d, W - LM - 42, 110, 42)
+    _tg(img, W - LM - 46, 110, 46)
 
-    # кикер (letter-spaced) + заголовок-хук
-    d.text((LM, 210), " ".join(KICKER), font=f_kick, fill=_AMBER)
-    y = 258
+    # кикер (letter-spaced) + великий заголовок-хук
+    d.text((LM, 196), " ".join(KICKER), font=f_kick, fill=_AMBER)
+    y = 244
     for line in HEAD:
         d.text((LM, y), line, font=f_head, fill=_WHITE)
-        y += 78
+        y += lh
     d.rounded_rectangle([LM, y + 6, LM + 150, y + 14], radius=4, fill=_RED)
 
     # вигоди (з галочками)
@@ -127,7 +136,7 @@ def build() -> None:
     total = br * 2 + gap + hw
     gx = (W - total) // 2
     by = cy0 + card_h - 48
-    _plane(d, gx + br, by, br)
+    _tg(img, gx + br, by, br)
     d.text((gx + br * 2 + gap, by - (hb[3] - hb[1]) // 2 - hb[1]), HANDLE, font=f_handle, fill=_GREEN)
 
     out = ROOT / "poster_final.jpg"
