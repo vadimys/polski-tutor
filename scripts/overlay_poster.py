@@ -83,8 +83,8 @@ def _extract_qr() -> Image.Image:
     return card.crop((int(cw * 0.15), int(ch * 0.345), int(cw * 0.85), int(ch * 0.63)))
 
 
-def build() -> None:
-    img = _cover(Image.open(ROOT / "bg_theme.jpg").convert("RGB")).convert("RGBA")
+def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
+    img = _cover(Image.open(ROOT / bg).convert("RGB")).convert("RGBA")
     _scrim(img)
     d = ImageDraw.Draw(img)
     maxw = W - 2 * LM
@@ -134,10 +134,14 @@ def build() -> None:
     d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=40, fill=_WHITE)
     img.paste(qr, ((W - qs) // 2, cy0 + pad))
 
-    out = ROOT / "poster_final.jpg"
+    out = ROOT / out_name
     img.convert("RGB").save(out, quality=92)
     print(f"OK → {out} ({out.stat().st_size} байт, {W}x{H})")
 
 
 if __name__ == "__main__":
-    build()
+    import sys
+
+    bg = sys.argv[1] if len(sys.argv) > 1 else "bg_theme.jpg"
+    out_name = sys.argv[2] if len(sys.argv) > 2 else "poster_final.jpg"
+    build(bg, out_name)
