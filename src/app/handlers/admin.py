@@ -10,7 +10,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import approved_kb, contact_admin_kb, teacher_welcome_kb
@@ -51,6 +51,10 @@ def _is_admin(user_id: int) -> bool:
 # ── Адмін-консоль (/admin) — інлайн-хаб; префікс ac: (щоб не плутати з adm:) ──
 def _hub_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
+    if settings.webapp_url:  # веб-дашборд (Mini App) — цілісна картина в одному вікні
+        from app.bot.webapp_admin import admin_url
+
+        kb.button(text="📱 Веб-дашборд", web_app=WebAppInfo(url=admin_url()))
     kb.button(text="📊 Огляд", callback_data="ac:overview")
     kb.button(text="👥 Користувачі", callback_data="ac:users:0")
     kb.button(text="🧑‍🎓 Сегменти", callback_data="ac:segments")
