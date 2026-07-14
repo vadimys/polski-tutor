@@ -24,3 +24,10 @@ logo_b1_*.png
 Gemini_Generated_Image_*.png
 
 .DS_Store
+
+# локальні секрети (Gemini для генерації постерів) — НЕ комітити
+.gemini.key
+.secrets/
+
+# згенеровані маркетингові постери (локальні)
+poster*.jpg
