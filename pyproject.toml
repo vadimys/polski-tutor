@@ -8,7 +8,7 @@ dependencies = [
     "aiogram>=3.13,<4",
     "aiohttp>=3.10",  # прямо використовується в health.py (HTTP /health)
     "redis>=5",
-    "anthropic>=0.40,<1",  # SDK швидко ламає API між minor — тримаємо стелю
+    "anthropic>=0.69,<1",  # >=0.69 гарантує output_config (structured output); <1 — стеля
     "pydantic-settings>=2.5",
     "tzdata>=2024.1",
     "sqlalchemy[asyncio]>=2.0",

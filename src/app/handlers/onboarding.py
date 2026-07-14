@@ -94,12 +94,16 @@ async def _approved_welcome(message: Message, user_id: int) -> None:
         )
         return
     steps = await activation.checklist(user_id)
-    if activation.all_done(steps):  # уже освоївся (aha!) → меню + тригер запрошення друга
+    if activation.all_done(steps):  # уже освоївся (aha!) → меню
+        # word-of-mouth-тригер лише ОРГАНІЧНИМ учням — щоб не розмивати teacher-атрибуцію
+        ref_hint = (
+            f"\n\n🎁 <i>Подобається? Запроси друга («🎁 Запросити друга» в меню) — він отримає "
+            f"trial, а ти +{settings.referral_reward_days} днів, коли він оформить підписку.</i>"
+            if not inf.referred_by
+            else ""
+        )
         await message.answer(
-            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\n"
-            "Обери дію в меню 👇\n\n"
-            f"🎁 <i>Подобається? Запроси друга («🎁 Запросити друга» в меню) — він отримає "
-            f"trial, а ти +{settings.referral_reward_days} днів, коли він оформить підписку.</i>",
+            f"{banner}Cześć! 👋 Доступ активний. {_days_line(inf)}\nОбери дію в меню 👇{ref_hint}",
             reply_markup=approved_kb(),
         )
     else:  # веду до наступного кроку з видимим прогресом (one goal per session)

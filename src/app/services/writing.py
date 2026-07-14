@@ -206,7 +206,7 @@ async def feedback(ws: WritingSet, text_a: str, text_b: str) -> tuple[str, tuple
     """(фідбек, (wykonanie, środki, poprawność)|None). '' якщо AI недоступний."""
     data = await ai.ask_json(
         _SYSTEM, _prompt(ws, text_a, text_b), _SCHEMA,
-        strong=True, max_tokens=1900, cache=True, label="pisanie",
+        strong=True, max_tokens=2400, cache=True, label="pisanie",  # запас, щоб JSON не обірвався
     )
     if not isinstance(data, dict):
         return "", None

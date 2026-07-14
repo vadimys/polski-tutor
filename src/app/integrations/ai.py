@@ -79,6 +79,8 @@ async def ask(
                     await aicost.record(label, "strong" if strong else "cheap", resp.usage)
                 except Exception:  # noqa: BLE001
                     logger.debug("aicost record failed", exc_info=True)
+            if getattr(resp, "stop_reason", None) == "max_tokens":  # обрив — підняти max_tokens
+                logger.warning("ai.ask обрізано по max_tokens (model=%s label=%s)", model, label)
             parts = [b.text for b in resp.content if getattr(b, "type", None) == "text"]
             return "\n".join(parts).strip()
         except retryable as e:
@@ -139,6 +141,9 @@ async def ask_json(
                 except Exception:  # noqa: BLE001
                     logger.debug("aicost record failed", exc_info=True)
             text = next((b.text for b in resp.content if getattr(b, "type", None) == "text"), "")
+            stop = getattr(resp, "stop_reason", None)
+            if stop not in (None, "end_turn"):  # max_tokens (обрив JSON) / refusal — діагностика
+                logger.warning("ai.ask_json stop_reason=%s label=%s len=%d", stop, label, len(text))
             return json.loads(text) if text else None
         except retryable as e:
             if attempt + 1 >= _MAX_ATTEMPTS:

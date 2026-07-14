@@ -36,11 +36,13 @@ def _r() -> Redis:
 
 
 async def record_invite(invitee: int, referrer: int) -> None:
-    """Зафіксувати, що invitee прийшов від referrer (лише перший referrer «прилипає»)."""
+    """Зафіксувати, що invitee прийшов від referrer (лише ПЕРШИЙ referrer «прилипає»).
+    Лічильник invited інкрементуємо лише коли зв'язок реально закріпився (не завищуємо,
+    якщо друг клікнув чуже посилання другим)."""
     if invitee == referrer:
         return
-    await _r().set(f"ref:by:{invitee}", str(referrer), nx=True)
-    await _r().sadd(f"ref:inv:{referrer}", str(invitee))
+    if await _r().set(f"ref:by:{invitee}", str(referrer), nx=True):
+        await _r().sadd(f"ref:inv:{referrer}", str(invitee))
 
 
 async def on_subscription(invitee: int) -> int | None:

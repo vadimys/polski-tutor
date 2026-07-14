@@ -32,7 +32,6 @@ MODULES = [
     "app.services.writing",
     "app.services.drills",
     "app.services.vocab",
-    "app.services.feedback",
     "app.services.speaking",
     "app.services.listening",
     "app.services.mock",

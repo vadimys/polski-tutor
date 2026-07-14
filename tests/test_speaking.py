@@ -1,4 +1,4 @@
-from app.services import feedback, speaking
+from app.services import speaking
 
 
 def test_tasks_valid():
@@ -30,14 +30,6 @@ def test_photo_tasks_valid():
         assert t.photo_source  # атрибуція ліцензії
     # task_by_id знаходить і фото-завдання
     assert speaking.task_by_id(speaking.PHOTOS[0].id) is not None
-
-
-def test_parse_official_mowienie():
-    txt = "ok\nWYNIK: wykonanie=6 gramatyka=7 słownictwo=6"
-    assert feedback.parse_official_mowienie(txt) == (6, 7, 6)
-    assert feedback.parse_official_mowienie("без оцінки") is None
-
-
 def test_readiness_pct():
     t = speaking.task_by_id("m_film")  # monolog, max 7
     assert speaking.readiness_pct(t, 7, 8, 8) == 100
