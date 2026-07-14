@@ -33,8 +33,9 @@ BENEFITS = [
     "Пояснення українською, від самого нуля",
     "Перевірка письма й розмови з AI-тренером",
 ]
-CTA = "Скануй QR і почни вчитися безкоштовно"
+CTA1 = "Скануй QR-код або знайди бот у Telegram:"
 HANDLE = "@polski_b1_coach_bot"
+CTA2 = "  і почни вчитися безкоштовно"
 
 
 def _cover(im: Image.Image) -> Image.Image:
@@ -114,30 +115,24 @@ def build() -> None:
         d.text((LM + 52, y), b, font=f_ben, fill=(238, 242, 250))
         y += 58
 
-    # CTA
-    y += 24
-    d.text((LM, y), CTA, font=f_cta, fill=_AMBER)
+    # CTA у два рядки: два способи почати + безкоштовно; хендл підсвічено білим
+    y += 26
+    d.text((LM, y), CTA1, font=f_cta, fill=_AMBER)
+    y += 48
+    d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
+    d.text((LM + f_handle.getlength(HANDLE), y + 2), CTA2, font=f_cta, fill=_AMBER)
 
-    # біла картка з QR (центр, низ)
-    cw2 = 520
-    cx0 = (W - cw2) // 2
-    cy0 = 792
+    # біла картка ТІЛЬКИ з QR (без хендла й значка Telegram)
     qr = _extract_qr()
-    qs = 400
+    qs = 420
     qr = qr.resize((qs, int(qr.size[1] * qs / qr.size[0])))
-    card_h = 44 + qr.size[1] + 92
+    pad = 46
+    cw2 = qs + pad * 2
+    cx0 = (W - cw2) // 2
+    cy0 = y + 74
+    card_h = qr.size[1] + pad * 2
     d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=40, fill=_WHITE)
-    img.paste(qr, ((W - qs) // 2, cy0 + 44))
-
-    # Telegram-бейдж + хендл усередині картки
-    hb = d.textbbox((0, 0), HANDLE, font=f_handle)
-    hw = hb[2] - hb[0]
-    br, gap = 24, 16
-    total = br * 2 + gap + hw
-    gx = (W - total) // 2
-    by = cy0 + card_h - 48
-    _tg(img, gx + br, by, br)
-    d.text((gx + br * 2 + gap, by - (hb[3] - hb[1]) // 2 - hb[1]), HANDLE, font=f_handle, fill=_GREEN)
+    img.paste(qr, ((W - qs) // 2, cy0 + pad))
 
     out = ROOT / "poster_final.jpg"
     img.convert("RGB").save(out, quality=92)
