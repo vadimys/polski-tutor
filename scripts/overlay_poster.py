@@ -26,16 +26,15 @@ _INK = (24, 30, 44)
 
 W, H = 1080, 1350
 LM = 90
-KICKER = "ДЕРЖАВНИЙ ІСПИТ З ПОЛЬСЬКОЇ · РІВЕНЬ B1"
-HEAD = ["Склади іспит B1 легко", "з Телеграм-ботом"]
-BENEFITS = [
-    "Усі 5 частин іспиту, щодня по 15 хвилин",
-    "Пояснення українською, від самого нуля",
-    "Перевірка письма й розмови з AI-тренером",
-]
-CTA1 = "Скануй QR-код або знайди бот у Telegram:"
+HEAD = ["Разом готуємось", "до іспиту B1"]
+SUB = (
+    "Ми зробили цього бота, щоб самим готуватись до іспиту, "
+    "і відкрили його для всіх. Українською, усі 5 частин, "
+    "з перевіркою письма й розмови."
+)
+INVITE = "Цікаво й корисно? Приєднуйся, це безкоштовно."
 HANDLE = "@polski_b1_coach_bot"
-CTA2 = "  і почни вчитися безкоштовно"
+GOODLUCK = "Усім удачі!"
 
 
 def _cover(im: Image.Image) -> Image.Image:
@@ -73,16 +72,26 @@ def _fit(text: str, hi: int, lo: int, maxw: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(_BOLD, lo)
 
 
-def _check(d, x, y, s) -> None:
-    d.line([(x, y + s * 0.55), (x + s * 0.38, y + s * 0.9), (x + s, y)], fill=_AMBER, width=6, joint="curve")
+def _wrap(text: str, font: ImageFont.FreeTypeFont, maxw: int) -> list[str]:
+    """Розбити текст на рядки, що вміщуються в maxw."""
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        t = f"{cur} {w}".strip()
+        if font.getlength(t) <= maxw or not cur:
+            cur = t
+        else:
+            lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+    return lines
 
 
 import os
 
-# t.me впав на рівні реєстру (serverHold, 07.2026) → веб-лінки мертві.
-# Дефолт — прямий app-лінк tg:// (відкриває Telegram напряму). Через env QR_URL
-# можна згенерувати t.me-версію про запас (коли домен повернуть).
-BOT_URL = os.environ.get("QR_URL", "tg://resolve?domain=polski_b1_coach_bot")
+# Дефолт — веб-лінк t.me (працює і з застосунком, і без; після відновлення домену).
+# Через env QR_URL можна перемкнути на app-лінк tg://resolve?domain=... (якщо t.me знову ляже).
+BOT_URL = os.environ.get("QR_URL", "https://t.me/polski_b1_coach_bot")
 _CREAM = (245, 240, 230)
 
 
@@ -113,50 +122,50 @@ def build(bg: str = "bg_theme.jpg", out_name: str = "poster_final.jpg") -> None:
     _scrim(img)
     d = ImageDraw.Draw(img)
     maxw = W - 2 * LM
-    f_kick = ImageFont.truetype(_BOLD, 27)
-    f_head = _fit(max(HEAD, key=len), 92, 60, maxw)
+    f_head = _fit(max(HEAD, key=len), 84, 60, maxw)
     lh = int(f_head.size * 1.12)
-    f_ben = ImageFont.truetype(_REG, 33)
-    f_cta = ImageFont.truetype(_BOLD, 34)
-    f_handle = ImageFont.truetype(_BOLD, 37)
+    f_sub = ImageFont.truetype(_REG, 34)
+    f_cta = ImageFont.truetype(_BOLD, 33)
+    f_handle = ImageFont.truetype(_BOLD, 38)
 
     # лого (верх-ліво) + Telegram-лого (верх-право)
     logo = Image.open(ROOT / "logo_b1_circle.png").convert("RGBA").resize((104, 104))
     img.paste(logo, (LM, 58), logo)
     _tg(img, W - LM - 46, 110, 46)
 
-    # кикер (letter-spaced) + великий заголовок-хук
-    d.text((LM, 196), " ".join(KICKER), font=f_kick, fill=_AMBER)
-    y = 244
+    # теплий заголовок (без формального кикера/хука)
+    y = 190
     for line in HEAD:
         d.text((LM, y), line, font=f_head, fill=_WHITE)
         y += lh
     d.rounded_rectangle([LM, y + 6, LM + 150, y + 14], radius=4, fill=_RED)
 
-    # вигоди (з галочками)
-    y += 66
-    for b in BENEFITS:
-        _check(d, LM + 4, y + 6, 26)
-        d.text((LM + 52, y), b, font=f_ben, fill=(238, 242, 250))
-        y += 58
+    # людський абзац від першої особи (не реклама)
+    y += 52
+    for line in _wrap(SUB, f_sub, maxw):
+        d.text((LM, y), line, font=f_sub, fill=(238, 242, 250))
+        y += 46
 
-    # CTA у два рядки: два способи почати + безкоштовно; хендл підсвічено білим
-    y += 26
-    d.text((LM, y), CTA1, font=f_cta, fill=_AMBER)
-    y += 48
+    # запрошення + хендл
+    y += 16
+    d.text((LM, y), INVITE, font=f_cta, fill=_AMBER)
+    y += 54
     d.text((LM, y), HANDLE, font=f_handle, fill=_WHITE)
-    d.text((LM + f_handle.getlength(HANDLE), y + 2), CTA2, font=f_cta, fill=_AMBER)
 
-    # власний QR на кремовій картці (світле тло + темні модулі = гарантований скан)
-    qs = 440
+    # QR на кремовій картці
+    qs = 410
     qr = _make_qr(qs)
-    pad = 40
+    pad = 38
     cw2 = qs + pad * 2
     cx0 = (W - cw2) // 2
-    cy0 = y + 70
+    cy0 = y + 66
     card_h = qs + pad * 2
     d.rounded_rectangle([cx0, cy0, cx0 + cw2, cy0 + card_h], radius=44, fill=_CREAM)
     img.alpha_composite(qr, ((W - qs) // 2, cy0 + pad))
+
+    # тепле підписання під QR
+    gb = d.textbbox((0, 0), GOODLUCK, font=f_cta)
+    d.text(((W - (gb[2] - gb[0])) / 2, cy0 + card_h + 16), GOODLUCK, font=f_cta, fill=_AMBER)
 
     out = ROOT / out_name
     img.convert("RGB").save(out, quality=92)
