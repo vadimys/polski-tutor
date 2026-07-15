@@ -16,7 +16,7 @@ from redis.asyncio import Redis
 from app.config import settings
 
 _redis: Redis | None = None
-_TTL = 30 * 24 * 3600  # 30 днів — кнопка живе в старому повідомленні
+_TTL = 365 * 24 * 3600  # 12 міс — вимова кешується надовго (Azure F0-ліміт майже не витрачається)
 _FID_VER = "4"  # бамп → ігноруємо старий кеш file_id (перегенерувати вимову після фіксу)
 
 
