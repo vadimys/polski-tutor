@@ -6,15 +6,56 @@ send_voice + кеш file_id. Наступні тапи: миттєвий send_vo
 
 from __future__ import annotations
 
+import html
+import os
+import tempfile
 from contextlib import suppress
 
 from aiogram import F, Router
-from aiogram.types import BufferedInputFile, CallbackQuery
+from aiogram.filters import Command
+from aiogram.types import BufferedInputFile, CallbackQuery, Message
 
-from app.integrations import tts
+from app.config import settings
+from app.integrations import speech, tts
 from app.services import tts_say
 
 router = Router()
+
+
+@router.message(Command("tts"))
+async def cmd_tts(message: Message) -> None:
+    """Адмін-діагностика вимови: синтез piper + звірка через Whisper (що РЕАЛЬНО звучить).
+    Показує й код-поінти вводу (щоб зловити комбіновані діакритики). /tts <текст>"""
+    if message.from_user.id != settings.admin_id:
+        return
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Використання: <code>/tts &lt;текст&gt;</code>")
+        return
+    txt = parts[1].strip()
+    if not tts.available():
+        await message.answer("TTS недоступний.")
+        return
+    data = await tts.synthesize(txt)
+    if not data:
+        await message.answer("Синтез не вдався 😔")
+        return
+    codes = " ".join(f"U+{ord(c):04X}" for c in txt)
+    await message.answer_voice(
+        BufferedInputFile(data, filename="tts.ogg"),
+        caption=f"🔊 <b>{html.escape(txt)}</b>\n<code>{codes}</code>",
+    )
+    if speech.available():  # прогнати власним Whisper — що реально вимовлено
+        fd, p = tempfile.mkstemp(suffix=".ogg")
+        os.close(fd)
+        try:
+            with open(p, "wb") as f:
+                f.write(data)
+            heard = await speech.transcribe(p)
+        finally:
+            with suppress(OSError):
+                os.remove(p)
+        await message.answer(f"🎧 Whisper почув: «{html.escape(heard) or '—'}»")
 
 
 @router.callback_query(F.data.startswith("say:"))
