@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     # Piper TTS (локальне озвучення для модуля Słuchanie)
     piper_model: str = "/opt/voices/pl_PL-gosia-medium.onnx"
 
+    # Azure Neural TTS — чиста вимова ОДИНОЧНИХ слів (piper їх ламає). Порожній ключ →
+    # фолбек на piper. Ключ/регіон — у .env; віддає готовий OGG/Opus для send_voice.
+    azure_tts_key: str = ""
+    azure_tts_region: str = ""  # напр. "westeurope"
+    azure_tts_voice: str = "pl-PL-ZofiaNeural"
+
     # Навчання / графік
     timezone: str = "Europe/Warsaw"
     lesson_hour: int = 8

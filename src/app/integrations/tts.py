@@ -35,7 +35,7 @@ def _norm(s: str) -> str:
 _voice = None
 
 
-def available() -> bool:
+def _piper_ok() -> bool:
     """Чи встановлено piper і чи є модель голосу."""
     try:
         import piper  # noqa: F401
@@ -43,6 +43,13 @@ def available() -> bool:
         return os.path.exists(settings.piper_model)
     except Exception:
         return False
+
+
+def available() -> bool:
+    """Чи можемо озвучувати взагалі (piper АБО хмарний Azure)."""
+    from app.integrations import cloud_tts
+
+    return _piper_ok() or cloud_tts.available()
 
 
 def _v():
@@ -125,8 +132,17 @@ def _synth_word_sync(word: str) -> bytes | None:
 
 
 async def synthesize(text: str) -> bytes | None:
-    """OGG/Opus-байти озвученого тексту або None. Одиночне слово → контекст+виріз."""
-    if not available():
+    """OGG/Opus-байти озвученого тексту або None.
+
+    Одиночне слово: спершу хмарний Azure (чиста вимова), фолбек — piper у контексті+виріз.
+    Фрази/речення: piper (локально, безкоштовно; аудіювання й так якісне)."""
+    single = _is_single_word(text)
+    if single:
+        from app.integrations import cloud_tts
+
+        data = await cloud_tts.synthesize(text)  # None, якщо ключа нема/збій → фолбек
+        if data:
+            return data
+    if not _piper_ok():
         return None
-    fn = _synth_word_sync if _is_single_word(text) else _synth_sync
-    return await asyncio.to_thread(fn, text)
+    return await asyncio.to_thread(_synth_word_sync if single else _synth_sync, text)
