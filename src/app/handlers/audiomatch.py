@@ -13,13 +13,12 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import BufferedInputFile, CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import audiomatch_kb, menu_kb_for, to_menu_kb
 from app.domain.models import Module
-from app.integrations import tts
-from app.services import goals, listening
+from app.services import goals, listening, tts_say
 from app.services import state as user_state
 
 router = Router()
@@ -30,12 +29,10 @@ class AMatch(StatesGroup):
 
 
 async def _play(message: Message, label: str, text: str) -> None:
-    data = await tts.synthesize(text)
-    if data:
-        await message.answer_voice(
-            BufferedInputFile(data, filename="osoba.ogg"), caption=f"🔊 <b>{label}</b>"
-        )
-    else:
+    msg = await tts_say.send_voice(
+        message.bot, message.chat.id, text, caption=f"🔊 <b>{label}</b>", filename="osoba.ogg"
+    )
+    if msg is None:
         await message.answer(f"🔇 <b>{label}</b> <i>(аудіо недоступне — прочитай)</i>\n\n{html.escape(text)}")
 
 

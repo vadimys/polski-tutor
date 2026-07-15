@@ -134,15 +134,17 @@ def _synth_word_sync(word: str) -> bytes | None:
 async def synthesize(text: str) -> bytes | None:
     """OGG/Opus-байти озвученого тексту або None.
 
-    Одиночне слово: спершу хмарний Azure (чиста вимова), фолбек — piper у контексті+виріз.
-    Фрази/речення: piper (локально, безкоштовно; аудіювання й так якісне)."""
-    single = _is_single_word(text)
-    if single:
-        from app.integrations import cloud_tts
+    Спершу хмарний Azure Neural (природний голос — і слова, і речення/аудіювання),
+    фолбек — локальний piper (одиночне слово в контексті+виріз; фрази — напряму).
+    Виклики-сайти фіксованого аудіо кешують file_id (services.tts_say.send_voice),
+    тож Azure синтезує кожен текст РАЗ → F0-ліміт майже не витрачається."""
+    from app.integrations import cloud_tts
 
-        data = await cloud_tts.synthesize(text)  # None, якщо ключа нема/збій → фолбек
-        if data:
-            return data
+    data = await cloud_tts.synthesize(text)  # None, якщо ключа нема/збій → фолбек piper
+    if data:
+        return data
     if not _piper_ok():
         return None
-    return await asyncio.to_thread(_synth_word_sync if single else _synth_sync, text)
+    return await asyncio.to_thread(
+        _synth_word_sync if _is_single_word(text) else _synth_sync, text
+    )

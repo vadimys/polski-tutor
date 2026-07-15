@@ -15,7 +15,7 @@ import json
 from typing import Any
 
 from aiogram import Bot
-from aiogram.types import BufferedInputFile, InputPollOption
+from aiogram.types import InputPollOption
 from redis.asyncio import Redis
 
 from app.config import settings
@@ -60,16 +60,14 @@ async def send_item(bot: Bot, session: dict[str, Any]) -> None:
     item = session["items"][session["idx"]]
     audio = item.get("audio")
     if audio:
-        from app.integrations import tts
+        from app.services import tts_say
 
-        data = await tts.synthesize(audio)
-        if data:
-            await bot.send_voice(
-                session["chat_id"],
-                BufferedInputFile(data, filename="sluchanie.ogg"),
-                caption="🎧 Прослухай (можна кілька разів), тоді відповідай.",
-            )
-        else:
+        msg = await tts_say.send_voice(
+            bot, session["chat_id"], audio,
+            caption="🎧 Прослухай (можна кілька разів), тоді відповідай.",
+            filename="sluchanie.ogg",
+        )
+        if msg is None:
             await bot.send_message(session["chat_id"], f"🔇 (аудіо недоступне — прочитай)\n\n{audio}")
     total = len(session["items"])
     question = f"{session['idx'] + 1}/{total} · {item['q']}"

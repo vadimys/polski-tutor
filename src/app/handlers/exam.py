@@ -36,7 +36,7 @@ from app.bot.keyboards import (
 )
 from app.bot.ui import emph
 from app.domain.models import MODULE_LABELS, Module
-from app.integrations import ai, tts
+from app.integrations import ai
 from app.services import (
     clock,
     exam_scale,
@@ -199,14 +199,12 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
 
 # ── аудіо-запис сегмента (piper TTS) ─────────────────────────────────────────
 async def _play_audio(message: Message, text: str, label: str | None = None) -> None:
-    """Озвучує запис сегмента; якщо TTS недоступний — показує транскрипт (деградація)."""
-    from aiogram.types import BufferedInputFile
+    """Озвучує запис сегмента (з кешем file_id); якщо TTS недоступний — транскрипт (деградація)."""
+    from app.services import tts_say
 
     caption = f"🔊 {label}" if label else "🎧 Прослухай запис, тоді відповідай на питання нижче."
-    data = await tts.synthesize(text)
-    if data:
-        await message.answer_voice(BufferedInputFile(data, filename="egzamin.ogg"), caption=caption)
-    else:
+    msg = await tts_say.send_voice(message.bot, message.chat.id, text, caption=caption, filename="egzamin.ogg")
+    if msg is None:
         pre = f"🔇 <b>{label}</b> " if label else "🔇 "
         await message.answer(f"{pre}<i>(аудіо недоступне — прочитай транскрипт)</i>\n\n{html.escape(text)}")
 

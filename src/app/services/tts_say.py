@@ -11,6 +11,7 @@ import hashlib
 from contextlib import suppress
 
 from aiogram import Bot
+from aiogram.types import BufferedInputFile, Message
 from redis.asyncio import Redis
 
 from app.config import settings
@@ -55,6 +56,29 @@ async def get_file_id(sid: str) -> str | None:
 
 async def set_file_id(sid: str, file_id: str) -> None:
     await _r().set(f"polski:say:fid:{_FID_VER}:{sid}", file_id, ex=_TTL)
+
+
+async def send_voice(
+    bot: Bot, chat_id: int, text: str, *, caption: str | None = None, filename: str = "audio.ogg"
+) -> Message | None:
+    """Надіслати озвучення тексту з кешем file_id: синтез (Azure/piper) РАЗ, далі всі
+    покази — миттєво з Telegram за file_id (жодних повторних викликів TTS). Для фіксованого
+    аудіо (аудіювання/діалоги) — тримає витрату Azure обмеженою. None → синтез не вдався."""
+    sid = sid_for(text)
+    fid = await get_file_id(sid)
+    if fid:
+        with suppress(Exception):
+            return await bot.send_voice(chat_id, fid, caption=caption)
+        # file_id протух → ре-синтез нижче
+    from app.integrations import tts
+
+    data = await tts.synthesize(text)
+    if not data:
+        return None
+    msg = await bot.send_voice(chat_id, BufferedInputFile(data, filename=filename), caption=caption)
+    if msg and msg.voice:
+        await set_file_id(sid, msg.voice.file_id)
+    return msg
 
 
 async def lock(sid: str) -> bool:
