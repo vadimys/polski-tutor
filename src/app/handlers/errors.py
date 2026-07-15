@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import logging
 
 from aiogram import Bot
@@ -9,6 +10,7 @@ from aiogram.types import ErrorEvent
 from redis.asyncio import Redis
 
 from app.config import settings
+from app.services import alerts
 
 logger = logging.getLogger(__name__)
 
@@ -42,21 +44,31 @@ def _uid(event: ErrorEvent) -> int | None:
     return None
 
 
+def _where(event: ErrorEvent) -> str:
+    """Контекст тригера (що саме викликало) — для деталізації алерту."""
+    upd = event.update
+    if upd.message:
+        return f'повідомлення "{(upd.message.text or upd.message.content_type or "?")[:60]}"'
+    if upd.callback_query:
+        return f'кнопка "{(upd.callback_query.data or "?")[:60]}"'
+    return "update"
+
+
 async def on_error(event: ErrorEvent, bot: Bot) -> bool:
     exc = event.exception
     uid = _uid(event)
     logger.exception("Unhandled error (uid=%s): %s", uid, exc)
 
-    # алерт адміну (без витоку стектрейсу користувачу) — з тротлінгом проти спаму під напливом
-    if settings.admin_id and await _should_alert(type(exc).__name__):
-        try:
-            await bot.send_message(
-                settings.admin_id,
-                f"⚠️ <b>Помилка бота</b> (uid=<code>{uid}</code>)\n"
-                f"<code>{type(exc).__name__}: {str(exc)[:300]}</code>",
-            )
-        except Exception:  # noqa: BLE001
-            pass
+    # детальний алерт у спільний канал (окремий бот) — НЕ користувачу; з тротлінгом
+    if await _should_alert(type(exc).__name__):
+        detail = (
+            "⚠️ <b>Помилка бота</b>\n"
+            f"Тип: <code>{type(exc).__name__}</code>\n"
+            f"Опис: <code>{html.escape(str(exc)[:300])}</code>\n"
+            f"Хто: uid <code>{uid}</code>\n"
+            f"Де: {html.escape(_where(event))}"
+        )
+        await alerts.send(detail, fallback_bot=bot)
 
     # людське вибачення користувачу (якщо є куди відповісти)
     upd = event.update
