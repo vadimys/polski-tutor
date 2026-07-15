@@ -7,6 +7,7 @@ callback_data обмежений 64 байтами — польську фраз
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from contextlib import suppress
 
@@ -58,6 +59,14 @@ async def set_file_id(sid: str, file_id: str) -> None:
     await _r().set(f"polski:say:fid:{_FID_VER}:{sid}", file_id, ex=_TTL)
 
 
+async def _keepalive(bot: Bot, chat_id: int) -> None:
+    """Тримати індикатор «записую аудіо…» доки триває синтез (оновлюємо кожні 4с)."""
+    with suppress(asyncio.CancelledError, Exception):
+        while True:
+            await bot.send_chat_action(chat_id, "record_voice")
+            await asyncio.sleep(4)
+
+
 async def send_voice(
     bot: Bot, chat_id: int, text: str, *, caption: str | None = None, filename: str = "audio.ogg"
 ) -> Message | None:
@@ -72,7 +81,12 @@ async def send_voice(
         # file_id протух → ре-синтез нижче
     from app.integrations import tts
 
-    data = await tts.synthesize(text)
+    # живий індикатор «записую аудіо…» на весь час синтезу (щоб не виглядало як зависання)
+    keep = asyncio.create_task(_keepalive(bot, chat_id))
+    try:
+        data = await tts.synthesize(text)
+    finally:
+        keep.cancel()
     if not data:
         return None
     msg = await bot.send_voice(chat_id, BufferedInputFile(data, filename=filename), caption=caption)

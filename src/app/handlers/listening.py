@@ -11,25 +11,32 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 
 from app.domain.models import Module
-from app.services import listening, pollquiz
+from app.services import listening, pollquiz, uxlock
 
 router = Router()
 
 
 async def _start(message: Message, user_id: int) -> None:
-    ex = listening.pick()
-    items: list[dict] = []
-    for seg in ex.segments:
-        for qi, q in enumerate(seg.questions):
-            item = {"q": q.text, "opts": list(q.options), "correct": q.correct, "explain": q.explain}
-            if qi == 0:
-                item["audio"] = seg.audio  # програти запис перед першим питанням сегмента
-            items.append(item)
-    await message.answer(f"🎧 <b>Аудіювання — {ex.title}</b> ({listening.SOURCE})\n\n{ex.intro}")
-    await pollquiz.start(
-        message.bot, chat_id=message.chat.id, user_id=user_id, kind="readiness",
-        items=items, module=Module.SLUCHANIE.value, title="🎧 Аудіювання",
-    )
+    # антидубль: доки готуємо вправу (синтез аудіо кілька секунд), другий старт ігноруємо
+    if not await uxlock.acquire(f"listen:{user_id}", 40):
+        await message.answer("⏳ Уже готую вправу — секунду…")
+        return
+    try:
+        ex = listening.pick()
+        items: list[dict] = []
+        for seg in ex.segments:
+            for qi, q in enumerate(seg.questions):
+                item = {"q": q.text, "opts": list(q.options), "correct": q.correct, "explain": q.explain}
+                if qi == 0:
+                    item["audio"] = seg.audio  # програти запис перед першим питанням сегмента
+                items.append(item)
+        await message.answer(f"🎧 <b>Аудіювання — {ex.title}</b> ({listening.SOURCE})\n\n{ex.intro}")
+        await pollquiz.start(
+            message.bot, chat_id=message.chat.id, user_id=user_id, kind="readiness",
+            items=items, module=Module.SLUCHANIE.value, title="🎧 Аудіювання",
+        )
+    finally:
+        await uxlock.release(f"listen:{user_id}")
 
 
 @router.message(Command("sluchanie"))
