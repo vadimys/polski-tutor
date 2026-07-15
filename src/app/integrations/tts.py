@@ -39,6 +39,15 @@ def _v():
     return _voice
 
 
+def _prep(text: str) -> str:
+    """Голе слово/фраза без кінцевої пунктуації → piper кліпить хвіст і говорить куце
+    (напр. «skóra» звучить обрубком). Додаємо крапку для повного закриття синтезу."""
+    t = text.strip()
+    if t and t[-1] not in ".?!…":
+        t += "."
+    return t
+
+
 def _synth_sync(text: str) -> bytes | None:
     wav_fd, wav_path = tempfile.mkstemp(suffix=".wav")
     os.close(wav_fd)
@@ -46,13 +55,12 @@ def _synth_sync(text: str) -> bytes | None:
     os.close(ogg_fd)
     try:
         with wave.open(wav_path, "wb") as wf:
-            _v().synthesize_wav(text, wf)  # piper >=1.3 — пише заголовок WAV сам
-        # фіксовані аргументи, без shell і без вводу користувача — безпечно
-        subprocess.run(  # noqa: S603
-            ["ffmpeg", "-y", "-i", wav_path, "-c:a", "libopus", "-b:a", "32k", ogg_path],  # noqa: S607
-            check=True,
-            capture_output=True,
-        )
+            _v().synthesize_wav(_prep(text), wf)  # piper >=1.3 — пише заголовок WAV сам
+        # фіксовані аргументи, без shell і без вводу користувача — безпечно; apad — хвіст-тиша,
+        # щоб останній звук не «зʼїдався» кодеком/плеєром
+        cmd = ["ffmpeg", "-y", "-i", wav_path, "-af", "apad=pad_dur=0.25",
+               "-c:a", "libopus", "-b:a", "32k", ogg_path]
+        subprocess.run(cmd, check=True, capture_output=True)  # noqa: S603 — фікс.аргументи, без shell
         with open(ogg_path, "rb") as f:
             return f.read()
     except Exception:

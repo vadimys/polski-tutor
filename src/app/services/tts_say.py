@@ -17,6 +17,7 @@ from app.config import settings
 
 _redis: Redis | None = None
 _TTL = 30 * 24 * 3600  # 30 днів — кнопка живе в старому повідомленні
+_FID_VER = "2"  # бамп → ігноруємо старий кеш file_id (перегенерувати вимову після фіксу)
 
 
 def _r() -> Redis:
@@ -49,11 +50,11 @@ async def fetch(sid: str) -> str | None:
 
 
 async def get_file_id(sid: str) -> str | None:
-    return _as_str(await _r().get(f"polski:say:fid:{sid}"))
+    return _as_str(await _r().get(f"polski:say:fid:{_FID_VER}:{sid}"))
 
 
 async def set_file_id(sid: str, file_id: str) -> None:
-    await _r().set(f"polski:say:fid:{sid}", file_id, ex=_TTL)
+    await _r().set(f"polski:say:fid:{_FID_VER}:{sid}", file_id, ex=_TTL)
 
 
 async def lock(sid: str) -> bool:
