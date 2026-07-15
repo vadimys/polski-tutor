@@ -18,7 +18,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.bot.keyboards import cancel_kb, menu_kb_for, to_menu_kb
 from app.domain.models import Module
 from app.integrations import speech, tts
-from app.services import goals, guidance, limits, speaking, tts_say
+from app.services import goals, guidance, limits, speaking, tts_say, uxlock
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -233,7 +233,8 @@ async def on_voice(message: Message, state: FSMContext) -> None:
     os.close(fd)
     try:
         await message.bot.download(message.voice, destination=path)
-        transcript = await speech.transcribe(path)
+        async with uxlock.typing(message.bot, message.chat.id):
+            transcript = await speech.transcribe(path)
     finally:
         try:
             os.remove(path)
@@ -254,7 +255,8 @@ async def on_voice(message: Message, state: FSMContext) -> None:
         )
         return
 
-    fb, scores = await speaking.feedback(task, transcript)
+    async with uxlock.typing(message.bot, message.chat.id):
+        fb, scores = await speaking.feedback(task, transcript)
     if not fb:
         await limits.refund_ai(message.from_user.id)  # виклик не вдався — не палимо квоту
         await message.answer(

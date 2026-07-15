@@ -47,6 +47,7 @@ from app.services import (
     mistakes,
     opencheck,
     progress,
+    uxlock,
 )
 from app.services import state as user_state
 
@@ -184,17 +185,22 @@ async def cb_pick(cb: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("exam:begin:"))
 async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
-    exam_id = cb.data.split(":", 2)[2]
-    seq = _build_seq(exam_id)
-    if not seq:
-        await cb.message.answer("Цей тест тимчасово недоступний.", reply_markup=to_menu_kb())
-        return
-    await state.set_state(Exam.active)
-    await state.update_data(
-        exam_id=exam_id, seq=seq, pos=0, answers={}, sel=[],
-        started=clock.now_local().isoformat(),
-    )
-    await _send_step(cb.message, exam_id, seq, 0)
+    if not await uxlock.acquire(f"exam:{cb.from_user.id}", 60):
+        return  # мок уже стартує — ігноруємо повторний тап
+    try:
+        exam_id = cb.data.split(":", 2)[2]
+        seq = _build_seq(exam_id)
+        if not seq:
+            await cb.message.answer("Цей тест тимчасово недоступний.", reply_markup=to_menu_kb())
+            return
+        await state.set_state(Exam.active)
+        await state.update_data(
+            exam_id=exam_id, seq=seq, pos=0, answers={}, sel=[],
+            started=clock.now_local().isoformat(),
+        )
+        await _send_step(cb.message, exam_id, seq, 0)
+    finally:
+        await uxlock.release(f"exam:{cb.from_user.id}")
 
 
 # ── аудіо-запис сегмента (piper TTS) ─────────────────────────────────────────

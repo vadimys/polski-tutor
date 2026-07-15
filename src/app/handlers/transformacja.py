@@ -20,7 +20,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app import content
 from app.bot.keyboards import menu_kb_for, open_kb, to_menu_kb
 from app.integrations import ai
-from app.services import goals, limits, opencheck
+from app.services import goals, limits, opencheck, uxlock
 from app.services import state as user_state
 
 router = Router()
@@ -151,7 +151,8 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
              "models": models[i], "answer": answers[i]}
             for i in range(total)
         ]
-        graded = await opencheck.grade(items)
+        async with uxlock.typing(message.bot, message.chat.id):
+            graded = await opencheck.grade(items)
         if graded is None:  # AI не спрацював — не палимо квоту
             await limits.refund_ai(user_id)
 

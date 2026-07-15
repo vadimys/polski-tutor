@@ -26,7 +26,7 @@ from redis.asyncio import Redis
 from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
 from app.integrations import ai, tts
-from app.services import clock, goals, limits, tts_say, vocab
+from app.services import clock, goals, limits, tts_say, uxlock, vocab
 from app.services import state as user_state
 
 logger = logging.getLogger(__name__)
@@ -283,12 +283,16 @@ async def _open(message: Message, user_id: int, state: FSMContext) -> None:
         st = await user_state.load(user_id)
         await _show(message, user_id, state, cached, st, edit=False)
         return
+    if not await uxlock.acquire(f"lesson:{user_id}", 60):
+        await message.answer("⏳ Урок уже готується…")
+        return
     status = await message.answer(_FRAMES[0])
     task = asyncio.create_task(_animate(status))
     try:
         await _deliver(status, user_id, state)
     finally:
         task.cancel()
+        await uxlock.release(f"lesson:{user_id}")
 
 
 @router.message(Command("lekcja", "lesson"))

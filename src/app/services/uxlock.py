@@ -4,11 +4,35 @@
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import asynccontextmanager, suppress
+
+from aiogram import Bot
 from redis.asyncio import Redis
 
 from app.config import settings
 
 _redis: Redis | None = None
+
+
+async def _keepalive(bot: Bot, chat_id: int, action: str) -> None:
+    """Тримати індикатор дії (typing/record_voice/upload_document) доки триває повільна
+    операція — оновлюємо кожні 4с (Telegram сам гасить статус ~через 5с)."""
+    with suppress(asyncio.CancelledError, Exception):
+        while True:
+            await bot.send_chat_action(chat_id, action)
+            await asyncio.sleep(4)
+
+
+@asynccontextmanager
+async def typing(bot: Bot, chat_id: int, action: str = "typing"):
+    """`async with uxlock.typing(bot, chat_id): <повільна операція>` — весь час показує
+    «пише…/записує…», щоб не виглядало як зависання."""
+    task = asyncio.create_task(_keepalive(bot, chat_id, action))
+    try:
+        yield
+    finally:
+        task.cancel()
 
 
 def _r() -> Redis:

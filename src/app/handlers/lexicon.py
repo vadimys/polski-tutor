@@ -17,7 +17,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.config import settings
 from app.integrations import tts
-from app.services import clock, lexicon, tts_say, vocab
+from app.services import clock, lexicon, tts_say, uxlock, vocab
 
 router = Router()
 
@@ -100,7 +100,8 @@ async def cb_topic(cb: CallbackQuery, state: FSMContext) -> None:
 
 async def _send_subtopic(message: Message, user_id: int, topic: str, sub: str) -> None:
     status = await message.answer("⏳ Готую слова…")
-    words = await lexicon.words_for(topic, sub)
+    async with uxlock.typing(message.bot, message.chat.id):
+        words = await lexicon.words_for(topic, sub)
     if not words:
         await status.edit_text(
             "😔 Не вдалося завантажити слова. Спробуй пізніше.",

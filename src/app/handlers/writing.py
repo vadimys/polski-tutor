@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot.keyboards import cancel_kb, menu_kb_for, to_menu_kb
 from app.domain.models import Module
-from app.services import goals, guidance, limits, writing
+from app.services import goals, guidance, limits, uxlock, writing
 from app.services import state as user_state
 
 router = Router()
@@ -172,7 +172,8 @@ async def on_task_b(message: Message, state: FSMContext) -> None:
         return
 
     await message.answer("🔍 Оцінюю за офіційними критеріями (wykonanie / środki / poprawność)…")
-    fb, scores = await writing.feedback(ws, text_a, message.text)
+    async with uxlock.typing(message.bot, message.chat.id):
+        fb, scores = await writing.feedback(ws, text_a, message.text)
     if not fb:
         await limits.refund_ai(message.from_user.id)  # виклик не вдався — не палимо квоту
         await message.answer("AI тимчасово недоступний — спробуй пізніше.", reply_markup=to_menu_kb())
