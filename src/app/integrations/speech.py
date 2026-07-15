@@ -46,6 +46,23 @@ def _transcribe_sync(path: str) -> str:
     return " ".join(s.text.strip() for s in segments).strip()
 
 
+def transcribe_words_sync(path: str) -> list[dict]:
+    """Слова з таймкодами [{word,start,end}] (для форс-аляйнменту вирізання слова).
+    Синхронно — виклик уже з робочого потоку (напр. синтез вимови). [] якщо недоступно."""
+    if not available():
+        return []
+    try:
+        segments, _info = _m().transcribe(path, language="pl", word_timestamps=True)
+        out: list[dict] = []
+        for seg in segments:
+            for w in seg.words or []:
+                out.append({"word": w.word.strip(), "start": float(w.start), "end": float(w.end)})
+        return out
+    except Exception:
+        logger.exception("transcribe_words failed")
+        return []
+
+
 async def transcribe(path: str) -> str:
     """Транскрибувати аудіофайл (польська). '' якщо порожньо/помилка."""
     if not available():
