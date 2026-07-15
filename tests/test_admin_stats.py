@@ -25,18 +25,18 @@ def test_render_overview():
 def test_render_user_card():
     d = {
         "id": 5, "name": "@ola", "role": "student", "status": "approved", "until": "2026-08-01",
-        "exam_date": "2026-12-05", "referred_by": 99, "level": "A2", "streak": 7,
-        "placement_done": True,
+        "exam_date": "2026-12-05", "referred_by": 99, "referrer_name": "@teacher99",
+        "level": "A2", "streak": 7, "placement_done": True,
         "readiness": {"sluchanie": 60, "czytanie": 70, "gramatyka": 55, "pisanie": 40, "mowienie": 50},
         "n_sessions": 23, "last": [("gramatyka", 80, "2026-07-12 10:00")],
-        "pay_n": 1, "pay_stars": 300, "created_at": "2026-06-01 09:00",
+        "pay_n": 1, "pay_stars": 300, "n_students": 0, "n_paying": 0, "created_at": "2026-06-01 09:00",
     }
     t = admin_stats.render_user(d)
     assert "@ola" in t and "🎓 учень" in t
-    assert "id99" in t  # реферер
-    assert "🎧60%" in t and "✍️40%" in t  # готовність по модулях
-    assert "Оплат: 1 (300⭐)" in t
-    assert "placement ✅" in t
+    assert "від викладача @teacher99" in t  # реферер — читабельно
+    assert "Аудіювання 60%" in t and "Письмо 40%" in t  # готовність повними словами
+    assert "Оплати: 1 (300 ⭐)" in t
+    assert "Вхідний тест: ✅ пройдено" in t
 
 
 def test_render_segments():
@@ -69,11 +69,12 @@ def test_render_group_empty():
 def test_render_user_no_referrer_no_exam():
     d = {
         "id": 1, "name": "id1", "role": "teacher", "status": "approved", "until": "",
-        "exam_date": "", "referred_by": 0, "level": "", "streak": 0, "placement_done": False,
-        "readiness": {}, "n_sessions": 0, "last": [], "pay_n": 0, "pay_stars": 0,
-        "created_at": "2026-06-01 09:00",
+        "exam_date": "", "referred_by": 0, "referrer_name": "", "level": "", "streak": 0,
+        "placement_done": False, "readiness": {}, "n_sessions": 0, "last": [],
+        "pay_n": 0, "pay_stars": 0, "n_students": 3, "n_paying": 1, "created_at": "2026-06-01 09:00",
     }
     t = admin_stats.render_user(d)
-    assert "👩‍🏫 викладач" in t and "Реферер: —" in t
-    assert "📅 Іспит" not in t  # без дати — рядок відсутній
-    assert "🎧0%" in t  # порожня готовність → нулі
+    assert "👩‍🏫 викладач" in t
+    assert "учнів <b>3</b>" in t and "платних <b>1</b>" in t  # клас, не навчальний прогрес
+    assert "режим перегляду" in t
+    assert "Готовність" not in t and "🎧" not in t  # для викладача прогресу нема

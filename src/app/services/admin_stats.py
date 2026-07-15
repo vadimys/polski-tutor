@@ -150,6 +150,17 @@ async def user_detail(user_id: int) -> dict | None:
         pay_stars = (
             await s.execute(select(func.coalesce(func.sum(Payment.stars), 0)).where(Payment.user_id == user_id))
         ).scalar() or 0
+        # роль-залежні дані: для викладача — його клас; для приведеного учня — хто привів
+        n_students = n_paying = 0
+        referrer_name = ""
+        if u.role == "teacher":
+            sids = list((await s.execute(select(User.id).where(User.referred_by == user_id))).scalars().all())
+            n_students = len(sids)
+            paying = await _paying_ids()
+            n_paying = sum(1 for x in sids if x in paying)
+        elif u.referred_by:
+            ref_u = await s.get(User, u.referred_by)
+            referrer_name = (f"@{ref_u.username}" if ref_u and ref_u.username else f"id{u.referred_by}")
     return {
         "id": u.id,
         "name": f"@{u.username}" if u.username else f"id{u.id}",
@@ -166,6 +177,9 @@ async def user_detail(user_id: int) -> dict | None:
         "last": [(m, sc, ts.isoformat(timespec="minutes") if ts else "") for m, sc, ts in last],
         "pay_n": int(pay_n),
         "pay_stars": int(pay_stars),
+        "n_students": n_students,
+        "n_paying": n_paying,
+        "referrer_name": referrer_name,
         "created_at": u.created_at.isoformat(timespec="minutes") if u.created_at else "",
     }
 
@@ -202,20 +216,53 @@ def render_sources(rows: list[tuple[str, int]]) -> str:
     )
 
 
+# повні підписи модулів (без «сирих» кодів чи обрізаних emoji на кшталт «abc»)
+_MOD_LABEL = {
+    "sluchanie": "🎧 Аудіювання", "czytanie": "📖 Читання", "gramatyka": "🔤 Граматика",
+    "pisanie": "✍️ Письмо", "mowienie": "🗣 Мовлення",
+}
+
+
 def render_user(d: dict) -> str:
-    ready = " ".join(f"{e}{d['readiness'].get(k, 0)}%" for k, e in _MOD.items())
-    ref = f"id{d['referred_by']}" if d["referred_by"] else "—"
-    exam = f"\n📅 Іспит: {d['exam_date']}" if d["exam_date"] else ""
-    last = "\n".join(f"  • {m} {sc}% ({ts})" for m, sc, ts in d["last"]) or "  —"
+    """Картка користувача — роль-залежна: викладачу показуємо клас (не навчальний прогрес,
+    який у нього завжди 0 — превʼю-режим), учню — повний прогрес. Без «сміття»/скорочень."""
+    access = f"Доступ: <b>{d['status']}</b>" + (f" (до {d['until']})" if d["until"] else "")
+    joined = f"З нами з: {(d['created_at'] or '—')[:10]}"
+
+    if d["role"] == "teacher":
+        return (
+            f"👤 <b>{d['name']}</b> · 👩‍🏫 викладач\n"
+            f"{access}\n"
+            f"Клас: учнів <b>{d['n_students']}</b> · із них платних <b>{d['n_paying']}</b>\n"
+            f"Код запрошення учнів: <code>t{d['id']}</code>\n"
+            f"{joined}\n"
+            "<i>Навчальний прогрес для викладача не рахується — режим перегляду.</i>"
+        )
+
+    # учень
+    exam = d["exam_date"] or "не вказано"
+    placement = "✅ пройдено" if d["placement_done"] else "❌ не пройдено"
+    came = "самостійно" if not d["referred_by"] else f"від викладача {d['referrer_name'] or ('id' + str(d['referred_by']))}"
+    r = d["readiness"]
+    ready = (
+        f"  {_MOD_LABEL['sluchanie']} {r.get('sluchanie', 0)}% · "
+        f"{_MOD_LABEL['czytanie']} {r.get('czytanie', 0)}% · {_MOD_LABEL['gramatyka']} {r.get('gramatyka', 0)}%\n"
+        f"  {_MOD_LABEL['pisanie']} {r.get('pisanie', 0)}% · {_MOD_LABEL['mowienie']} {r.get('mowienie', 0)}%"
+    )
+    last = "\n".join(
+        f"  • {_MOD_LABEL.get(m, m)} {sc}% ({ts[5:16].replace('T', ' ')})" for m, sc, ts in d["last"]
+    ) or "  —"
     return (
-        f"👤 <b>{d['name']}</b> · {_ROLE.get(d['role'], d['role'])}\n"
-        f"Статус: <b>{d['status']}</b>" + (f" до {d['until']}" if d["until"] else "") + exam + "\n"
-        f"Рівень {d['level'] or '—'} · 🔥{d['streak']} · placement {'✅' if d['placement_done'] else '❌'}\n"
-        f"Реферер: {ref}\n"
-        f"Готовність: {ready}\n"
-        f"Вправ усього: <b>{d['n_sessions']}</b>\nОстанні:\n{last}\n"
-        f"💎 Оплат: {d['pay_n']} ({d['pay_stars']}⭐)\n"
-        f"Створено: {d['created_at']}"
+        f"👤 <b>{d['name']}</b> · 🎓 учень\n"
+        f"{access}\n"
+        f"Дата іспиту: {exam}\n"
+        f"Рівень: <b>{d['level'] or '—'}</b> · Серія: 🔥 {d['streak']} дн · Вхідний тест: {placement}\n"
+        f"Прийшов: {came}\n"
+        f"Готовність до B1:\n{ready}\n"
+        f"Вправ виконано: <b>{d['n_sessions']}</b>\n"
+        f"Останні:\n{last}\n"
+        f"Оплати: {d['pay_n']} ({d['pay_stars']} ⭐)\n"
+        f"{joined}"
     )
 
 
