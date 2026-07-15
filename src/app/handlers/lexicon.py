@@ -290,6 +290,15 @@ async def cb_edit(cb: CallbackQuery, state: FSMContext) -> None:
     )
 
 
+@router.message(LexEdit.waiting, Command("anuluj", "cancel"))
+async def cancel_edit(message: Message, state: FSMContext) -> None:
+    """Скасувати редагування слова → повернутись на ту саму картку (а не в головне меню).
+    lexicon-роутер включений раніше за menu, тож перехоплює /anuluj у цьому стані."""
+    await state.set_state(Lexicon.browsing)
+    await message.answer("↩️ Редагування скасовано.")
+    await _render_card(message, state, reveal=True, fresh=True)
+
+
 @router.message(LexEdit.waiting, F.text, ~F.text.startswith("/"))
 async def on_edit_text(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
