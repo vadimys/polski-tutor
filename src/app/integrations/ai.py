@@ -106,6 +106,69 @@ async def ask(
     return ""
 
 
+async def ask_json_image(
+    system: str,
+    user: str,
+    image_b64: str,
+    schema: dict,
+    *,
+    media_type: str = "image/jpeg",
+    strong: bool = True,
+    max_tokens: int = 3000,
+    label: str = "",
+) -> Any | None:
+    """Vision + structured output: аналіз зображення → валідний JSON за схемою.
+
+    Використовуємо для OCR (витяг тексту з фото) — strong-модель (Sonnet) точніша на
+    польській діакритиці. Повертає розпарсений обʼєкт або None (AI вимкнено/збій)."""
+    if not enabled():
+        return None
+    from anthropic import (
+        APIConnectionError,
+        APITimeoutError,
+        InternalServerError,
+        RateLimitError,
+    )
+
+    retryable = (RateLimitError, InternalServerError, APITimeoutError, APIConnectionError)
+    model = settings.strong_model if strong else settings.cheap_model
+    content = [
+        {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": image_b64}},
+        {"type": "text", "text": user},
+    ]
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            async with _semaphore():
+                resp = await _c().messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=[{"role": "user", "content": content}],
+                    output_config={"format": {"type": "json_schema", "schema": schema}},
+                )
+            if label:
+                try:
+                    from app.services import aicost
+
+                    await aicost.record(label, "strong" if strong else "cheap", resp.usage)
+                except Exception:  # noqa: BLE001
+                    logger.debug("aicost record failed", exc_info=True)
+            text = next((b.text for b in resp.content if getattr(b, "type", None) == "text"), "")
+            stop = getattr(resp, "stop_reason", None)
+            if stop not in (None, "end_turn"):
+                logger.warning("ask_json_image stop_reason=%s label=%s len=%d", stop, label, len(text))
+            return json.loads(text) if text else None
+        except retryable as e:
+            if attempt + 1 >= _MAX_ATTEMPTS:
+                logger.warning("AI ask_json_image вичерпав спроби (model=%s): %s", model, e)
+                return None
+            await asyncio.sleep(0.5 * (2**attempt))
+        except Exception:
+            logger.exception("AI ask_json_image failed (model=%s)", model)
+            return None
+    return None
+
+
 async def ask_json(
     system: str,
     user: str,

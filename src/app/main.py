@@ -36,6 +36,7 @@ from app.handlers import (
     plan,
     privacy,
     quizpoll,
+    reading,
     review,
     say,
     speaking,
@@ -122,6 +123,7 @@ async def main() -> None:
     dp.include_router(privacy.router)  # GDPR — поза гейтом (доступно будь-кому)
     dp.include_router(payments.router)  # підписка Stars — платити може й той, у кого trial минув
     dp.include_router(quizpoll.router)  # poll_answer нативних quiz-poll (стан у Redis)
+    dp.include_router(reading.router)  # 📖 Читалочка — секретний адмін-режим (фото→читання)
     dp.include_router(start.router)
 
     # Навчальні розділи — під access-гейтом (лише схвалені; адмін завжди)
