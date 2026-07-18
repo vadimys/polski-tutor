@@ -128,7 +128,8 @@ async def cmd_czytanka(message: Message) -> None:
         "📖 <b>Читалочка</b> (секретний режим)\n\n"
         "Надішли <b>фото сторінки</b> з польським текстом — я розпізнаю його й підготую до "
         "читання: слухати весь текст або по реченнях, тапати кожне слово (вимова + переклад), "
-        "словничок. Скрізь є кнопка 🐢 <b>Повільніше</b>."
+        "словничок. Скрізь є кнопка 🐢 <b>Повільніше</b>.\n\n"
+        "💡 Для найточнішого розпізнавання шли фото <b>як «Файл»</b> (📎 → Файл) — без стиснення."
     )
 
 
@@ -136,15 +137,27 @@ async def cmd_czytanka(message: Message) -> None:
 async def on_photo(message: Message) -> None:
     if not _admin(message.from_user.id):
         return  # секретна фіча — мовчки ігноруємо чужі фото
+    await _process_image(message, message.photo[-1].file_id, "image/jpeg")
+
+
+@router.message(F.document.mime_type.startswith("image/"))
+async def on_image_document(message: Message) -> None:
+    if not _admin(message.from_user.id):
+        return
+    # фото як «Файл» — без стиснення, найкраще для OCR
+    await _process_image(message, message.document.file_id, message.document.mime_type or "image/jpeg")
+
+
+async def _process_image(message: Message, file_id: str, media_type: str) -> None:
     if not ai.enabled():
         await message.answer("🔒 Розпізнавання недоступне (AI вимкнено).")
         return
     note = await message.answer("🔍 Читаю сторінку… (кілька секунд)")
     try:
-        buf = await message.bot.download(message.photo[-1].file_id)
+        buf = await message.bot.download(file_id)
         b64 = base64.b64encode(buf.read()).decode()
         async with uxlock.typing(message.bot, message.chat.id):
-            obj = await reading.extract(b64, "image/jpeg")
+            obj = await reading.extract(b64, media_type)
     except Exception:  # noqa: BLE001
         obj = None
     with suppress(Exception):
