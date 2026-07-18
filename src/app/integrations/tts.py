@@ -70,7 +70,16 @@ def _prep(text: str) -> str:
     return t
 
 
-def _synth_sync(text: str) -> bytes | None:
+_SLOW_ATEMPO = 0.8  # піпер-фолбек: сповільнення для режиму «повільніше»
+
+
+def _af(slow: bool) -> str:
+    """Ланцюжок аудіофільтрів ffmpeg: хвіст-тиша + (опц.) сповільнення темпу."""
+    tempo = f"atempo={_SLOW_ATEMPO}," if slow else ""
+    return f"{tempo}apad=pad_dur=0.25"
+
+
+def _synth_sync(text: str, slow: bool = False) -> bytes | None:
     wav_fd, wav_path = tempfile.mkstemp(suffix=".wav")
     os.close(wav_fd)
     ogg_fd, ogg_path = tempfile.mkstemp(suffix=".ogg")
@@ -80,7 +89,7 @@ def _synth_sync(text: str) -> bytes | None:
             _v().synthesize_wav(_prep(text), wf)  # piper >=1.3 — пише заголовок WAV сам
         # фіксовані аргументи, без shell і без вводу користувача — безпечно; apad — хвіст-тиша,
         # щоб останній звук не «зʼїдався» кодеком/плеєром
-        cmd = ["ffmpeg", "-y", "-i", wav_path, "-af", "apad=pad_dur=0.25",
+        cmd = ["ffmpeg", "-y", "-i", wav_path, "-af", _af(slow),
                "-c:a", "libopus", "-b:a", "32k", ogg_path]
         subprocess.run(cmd, check=True, capture_output=True)  # noqa: S603 — фікс.аргументи, без shell
         with open(ogg_path, "rb") as f:
@@ -131,20 +140,21 @@ def _synth_word_sync(word: str) -> bytes | None:
                 os.remove(p)
 
 
-async def synthesize(text: str) -> bytes | None:
+async def synthesize(text: str, *, slow: bool = False) -> bytes | None:
     """OGG/Opus-байти озвученого тексту або None.
 
     Спершу хмарний Azure Neural (природний голос — і слова, і речення/аудіювання),
     фолбек — локальний piper (одиночне слово в контексті+виріз; фрази — напряму).
+    slow=True → сповільнений темп (Azure prosody / piper atempo) для навчання.
     Виклики-сайти фіксованого аудіо кешують file_id (services.tts_say.send_voice),
     тож Azure синтезує кожен текст РАЗ → F0-ліміт майже не витрачається."""
     from app.integrations import cloud_tts
 
-    data = await cloud_tts.synthesize(text)  # None, якщо ключа нема/збій → фолбек piper
+    data = await cloud_tts.synthesize(text, slow=slow)  # None → фолбек piper
     if data:
         return data
     if not _piper_ok():
         return None
-    return await asyncio.to_thread(
-        _synth_word_sync if _is_single_word(text) else _synth_sync, text
-    )
+    if _is_single_word(text) and not slow:  # чистий виріз слова лише на нормальному темпі
+        return await asyncio.to_thread(_synth_word_sync, text)
+    return await asyncio.to_thread(_synth_sync, text, slow)

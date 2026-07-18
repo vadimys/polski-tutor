@@ -18,7 +18,11 @@ from app.config import settings
 
 _redis: Redis | None = None
 _TTL = 365 * 24 * 3600  # 12 міс — вимова кешується надовго (Azure F0-ліміт майже не витрачається)
-_FID_VER = "4"  # бамп → ігноруємо старий кеш file_id (перегенерувати вимову після фіксу)
+_FID_VER = "5"  # бамп → ігноруємо старий кеш file_id (додано варіант темпу «повільніше»)
+
+
+def _tag(slow: bool) -> str:
+    return "s" if slow else "n"  # нормальний / сповільнений темп — окремі file_id
 
 
 def _r() -> Redis:
@@ -50,47 +54,52 @@ async def fetch(sid: str) -> str | None:
     return _as_str(await _r().get(f"polski:say:txt:{sid}"))
 
 
-async def get_file_id(sid: str) -> str | None:
-    return _as_str(await _r().get(f"polski:say:fid:{_FID_VER}:{sid}"))
+async def get_file_id(sid: str, *, slow: bool = False) -> str | None:
+    return _as_str(await _r().get(f"polski:say:fid:{_FID_VER}:{_tag(slow)}:{sid}"))
 
 
-async def set_file_id(sid: str, file_id: str) -> None:
-    await _r().set(f"polski:say:fid:{_FID_VER}:{sid}", file_id, ex=_TTL)
+async def set_file_id(sid: str, file_id: str, *, slow: bool = False) -> None:
+    await _r().set(f"polski:say:fid:{_FID_VER}:{_tag(slow)}:{sid}", file_id, ex=_TTL)
 
 
 async def send_voice(
-    bot: Bot, chat_id: int, text: str, *, caption: str | None = None, filename: str = "audio.ogg"
+    bot: Bot, chat_id: int, text: str, *, caption: str | None = None,
+    filename: str = "audio.ogg", slow: bool = False, reply_markup=None,  # noqa: ANN001
 ) -> Message | None:
     """Надіслати озвучення тексту з кешем file_id: синтез (Azure/piper) РАЗ, далі всі
     покази — миттєво з Telegram за file_id (жодних повторних викликів TTS). Для фіксованого
-    аудіо (аудіювання/діалоги) — тримає витрату Azure обмеженою. None → синтез не вдався."""
+    аудіо (аудіювання/діалоги) — тримає витрату Azure обмеженою. slow=True → сповільнений
+    темп (окремий кеш). None → синтез не вдався."""
     sid = sid_for(text)
-    fid = await get_file_id(sid)
+    fid = await get_file_id(sid, slow=slow)
     if fid:
         with suppress(Exception):
-            return await bot.send_voice(chat_id, fid, caption=caption)
+            return await bot.send_voice(chat_id, fid, caption=caption, reply_markup=reply_markup)
         # file_id протух → ре-синтез нижче
     from app.integrations import tts
     from app.services import uxlock
 
     # живий індикатор «записую аудіо…» на весь час синтезу (щоб не виглядало як зависання)
     async with uxlock.typing(bot, chat_id, "record_voice"):
-        data = await tts.synthesize(text)
+        data = await tts.synthesize(text, slow=slow)
     if not data:
         return None
-    msg = await bot.send_voice(chat_id, BufferedInputFile(data, filename=filename), caption=caption)
+    msg = await bot.send_voice(
+        chat_id, BufferedInputFile(data, filename=filename), caption=caption,
+        reply_markup=reply_markup,
+    )
     if msg and msg.voice:
-        await set_file_id(sid, msg.voice.file_id)
+        await set_file_id(sid, msg.voice.file_id, slow=slow)
     return msg
 
 
-async def lock(sid: str) -> bool:
+async def lock(sid: str, *, slow: bool = False) -> bool:
     """Взяти лок на генерацію (анти-дубль подвійного тапу). True — узято щойно."""
-    return bool(await _r().set(f"polski:say:lock:{sid}", "1", nx=True, ex=30))
+    return bool(await _r().set(f"polski:say:lock:{_tag(slow)}:{sid}", "1", nx=True, ex=30))
 
 
-async def unlock(sid: str) -> None:
-    await _r().delete(f"polski:say:lock:{sid}")
+async def unlock(sid: str, *, slow: bool = False) -> None:
+    await _r().delete(f"polski:say:lock:{_tag(slow)}:{sid}")
 
 
 # --- «одне голосове за раз»: попереднє прибираємо, щоб не накопичувались ---

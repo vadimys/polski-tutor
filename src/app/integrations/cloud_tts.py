@@ -18,7 +18,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-_SSML = "<speak version='1.0' xml:lang='pl-PL'><voice name='{voice}'>{text}</voice></speak>"
+_SSML = "<speak version='1.0' xml:lang='pl-PL'><voice name='{voice}'>{inner}</voice></speak>"
+_SLOW_RATE = "-25%"  # темп «повільніше» для навчання (Azure prosody rate)
 
 
 def available() -> bool:
@@ -32,12 +33,22 @@ def _escape(text: str) -> str:
     )
 
 
-async def synthesize(text: str) -> bytes | None:
-    """OGG/Opus-байти вимови (Azure neural) або None (не налаштовано/збій → фолбек на piper)."""
+def _ssml(text: str, *, slow: bool) -> str:
+    """Зібрати SSML для Azure (з опц. сповільненням темпу)."""
+    inner = _escape(text.strip())
+    if slow:
+        inner = f"<prosody rate='{_SLOW_RATE}'>{inner}</prosody>"
+    return _SSML.format(voice=settings.azure_tts_voice, inner=inner)
+
+
+async def synthesize(text: str, *, slow: bool = False) -> bytes | None:
+    """OGG/Opus-байти вимови (Azure neural) або None (не налаштовано/збій → фолбек на piper).
+
+    slow=True → сповільнений темп (SSML prosody rate) для навчання/аудіювання."""
     if not available():
         return None
     url = f"https://{settings.azure_tts_region}.tts.speech.microsoft.com/cognitiveservices/v1"
-    ssml = _SSML.format(voice=settings.azure_tts_voice, text=_escape(text.strip()))
+    ssml = _ssml(text, slow=slow)
     headers = {
         "Ocp-Apim-Subscription-Key": settings.azure_tts_key,
         "Content-Type": "application/ssml+xml",
