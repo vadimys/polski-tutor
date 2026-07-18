@@ -27,6 +27,18 @@ def test_translate_matches_normalized_token():
     assert reading.translate(obj, "kot") is None
 
 
+def test_reading_ids_parses_allowlist(monkeypatch):
+    from app.config import settings
+    from app.handlers import reading as h
+
+    monkeypatch.setattr(settings, "admin_id", 111)
+    monkeypatch.setattr(settings, "reading_allowed_ids", " 452750999 , 222 , x ")
+    ids = h._reading_ids()
+    assert ids == {111, 452750999, 222}  # адмін + валідні; сміття «x» відкидається
+    assert h._allowed(452750999) and h._allowed(111)
+    assert not h._allowed(999)
+
+
 def test_gloss_map_dedupes_first_wins():
     obj = {"glossary": [
         {"pl": "z", "uk": "з"},

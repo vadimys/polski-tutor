@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # Адмін (єдиний адмін-акаунт — для запитів на доступ)
     admin_id: int = 0
 
+    # 📖 «Читалочка» (секретний режим фото→читання): додаткові user_id, кому дозволено
+    # (окрім адміна), через кому. Напр. "452750999,123". Порожньо → лише адмін.
+    reading_allowed_ids: str = ""
+
     # Інфра
     redis_url: str = "redis://redis:6379/0"
     database_url: str = "postgresql+asyncpg://polski:polski@postgres:5432/polski"
