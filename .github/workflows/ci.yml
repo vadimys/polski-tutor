@@ -32,7 +32,7 @@ jobs:
           mypy src/app/domain src/app/config.py src/app/bot/ui.py
           src/app/services/srs.py src/app/services/placement.py
           src/app/services/clock.py src/app/services/writing.py src/app/services/drills.py
-          src/app/services/speaking.py src/app/services/listening.py
+          src/app/services/speaking.py src/app/services/listening/
           src/app/services/mock.py src/app/services/exam_dates.py src/app/services/plan.py
           src/app/services/progress.py src/app/services/access.py src/app/services/state.py
           src/app/services/limits.py src/app/services/badges.py src/app/services/guidance.py
