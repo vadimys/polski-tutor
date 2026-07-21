@@ -80,4 +80,10 @@ async def grade(items: list[dict]) -> list[dict] | None:
     parsed = _normalize(data, len(items))
     if parsed is None:
         logger.warning("opencheck: structured output прийшов, але к-сть results ≠ %d", len(items))
+    else:
+        from app.services.eval_feedback import open_contract  # відкладено — уникаємо циклів
+
+        issues = open_contract(parsed, len(items))  # моніторинг якості (лог, не блокує учня)
+        if issues:
+            logger.warning("opencheck contract issues %s", issues)
     return parsed

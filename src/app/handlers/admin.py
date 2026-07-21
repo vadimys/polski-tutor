@@ -96,7 +96,39 @@ async def cmd_eval_pisanie(message: Message) -> None:
         return
     await message.answer("🧪 Ганяю калібрування фідбеку письма (може зайняти ~хвилину)…")
     rows = await eval_feedback.run_calibration()
-    await message.answer(eval_feedback.render_calibration(rows))
+    await message.answer(eval_feedback.render_calibration(rows, title="Фідбек письма"))
+
+
+@router.message(Command("eval_mowienie"))
+async def cmd_eval_mowienie(message: Message) -> None:
+    """Калібрування якості AI-фідбеку мовлення (LLM-as-judge на фікстурах). Лише адмін."""
+    if not _is_admin(message.from_user.id):
+        return
+    from app.integrations import ai
+    from app.services import eval_feedback
+
+    if not ai.enabled():
+        await message.answer("AI вимкнено — калібрування недоступне.")
+        return
+    await message.answer("🧪 Ганяю калібрування фідбеку мовлення…")
+    rows = await eval_feedback.run_speaking_calibration()
+    await message.answer(eval_feedback.render_calibration(rows, title="Фідбек мовлення"))
+
+
+@router.message(Command("eval_formy"))
+async def cmd_eval_formy(message: Message) -> None:
+    """Калібрування оцінки відкритих граматичних завдань (трансформація). Лише адмін."""
+    if not _is_admin(message.from_user.id):
+        return
+    from app.integrations import ai
+    from app.services import eval_feedback
+
+    if not ai.enabled():
+        await message.answer("AI вимкнено — калібрування недоступне.")
+        return
+    await message.answer("🧪 Ганяю калібрування оцінки трансформацій…")
+    rows = await eval_feedback.run_open_calibration()
+    await message.answer(eval_feedback.render_calibration(rows, title="Оцінка трансформацій"))
 
 
 @router.callback_query(F.data == "ac:hub")
