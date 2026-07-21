@@ -76,6 +76,13 @@ async def budget_alert_due() -> float | None:
     return usd
 
 
+async def spent_today_usd() -> float:
+    """Сумарні AI-витрати за сьогодні у $ (для добового дайджесту)."""
+    day = clock.today_local().isoformat()
+    micro = int(await _r().get(f"aicost:day:{day}") or 0)
+    return micro / 1_000_000
+
+
 async def report() -> list[dict]:
     r = _r()
     calls = await r.hgetall("aicost:calls")

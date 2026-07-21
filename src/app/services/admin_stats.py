@@ -471,3 +471,29 @@ def render_features(rows: list[tuple[str, int, int]]) -> str:
             lines.append(f"• {feat}: {hits} · 👤{uniq}")
     lines.append("\n<i>На що звертають увагу більше/менше.</i>")
     return "\n".join(lines)
+
+
+def render_digest(ov: dict, ai_today_usd: float, open_tickets: int, pending_resets: int) -> str:
+    """Щоденний метрик-дайджест для alerts-каналу (чиста функція → тестується без БД)."""
+    lines = [
+        f"📊 <b>Щоденний дайджест</b> · {ov['today']}",
+        "",
+        f"👥 Усього: <b>{ov['total']}</b> (🎓 {ov['students']} · 👩‍🏫 {ov['teachers']})",
+        f"🟢 Активні: <b>{ov['active7']}</b> за 7дн · {ov['active30']} за 30дн",
+        f"🆕 Нових за 7дн: <b>{ov['new7']}</b>"
+        + (f" · ⏳ на розгляді: {ov['pending']}" if ov["pending"] else ""),
+        f"💎 Платні: <b>{ov['payers']}</b> · виторг {ov['revenue']} ⭐ · "
+        f"конв. trial→оплата {ov['conv_pct']}%",
+        f"🏁 Сер. готовність: <b>{ov['avg_readiness']}%</b>",
+    ]
+    if ov["passed"] or ov["failed"]:
+        lines.append(f"🎓 Іспит: ✅ {ov['passed']} · ❌ {ov['failed']} ({ov['pass_rate']}% pass)")
+    lines.append(f"💸 AI-витрати сьогодні: <b>${ai_today_usd:.2f}</b>")
+    todo = []
+    if open_tickets:
+        todo.append(f"🆘 тікетів: {open_tickets}")
+    if pending_resets:
+        todo.append(f"♻️ запитів на reset: {pending_resets}")
+    if todo:
+        lines.append("📮 Потребує уваги: " + " · ".join(todo))
+    return "\n".join(lines)

@@ -78,3 +78,31 @@ def test_render_user_no_referrer_no_exam():
     assert "учнів <b>3</b>" in t and "платних <b>1</b>" in t  # клас, не навчальний прогрес
     assert "режим перегляду" in t
     assert "Готовність" not in t and "🎧" not in t  # для викладача прогресу нема
+
+
+def test_render_digest():
+    ov = {
+        "today": "2026-07-21", "total": 12, "students": 9, "teachers": 2,
+        "active7": 4, "active30": 7, "new7": 3, "pending": 1,
+        "payers": 2, "revenue": 600, "conv_pct": 22, "avg_readiness": 41,
+        "passed": 1, "failed": 0, "pass_rate": 100,
+    }
+    t = admin_stats.render_digest(ov, 0.734, 3, 1)
+    assert "Щоденний дайджест" in t and "2026-07-21" in t
+    assert "Усього: <b>12</b>" in t and "🎓 9" in t and "👩‍🏫 2" in t
+    assert "$0.73" in t  # AI-витрати сьогодні
+    assert "🆘 тікетів: 3" in t and "♻️ запитів на reset: 1" in t
+    assert "100% pass" in t
+
+
+def test_render_digest_hides_optional_blocks():
+    ov = {
+        "today": "2026-07-21", "total": 2, "students": 1, "teachers": 1,
+        "active7": 0, "active30": 0, "new7": 0, "pending": 0,
+        "payers": 0, "revenue": 0, "conv_pct": 0, "avg_readiness": 0,
+        "passed": 0, "failed": 0, "pass_rate": 0,
+    }
+    t = admin_stats.render_digest(ov, 0.0, 0, 0)
+    assert "на розгляді" not in t  # pending=0 → приховано
+    assert "Іспит:" not in t  # немає складань/провалів
+    assert "Потребує уваги" not in t  # немає тікетів/reset

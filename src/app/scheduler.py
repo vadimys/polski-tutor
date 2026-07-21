@@ -24,6 +24,7 @@ from app.services import access, assignments, clock, exam_dates, gdpr, goals, st
 logger = logging.getLogger(__name__)
 
 _PURGE_HOUR = 3  # ретеншн-очищення denied-користувачів — раз на добу вночі
+_DIGEST_HOUR = 8  # добовий метрик-дайджест в alerts-канал (не юзерам) — раз на добу зранку
 _EXAM_HOUR = 9  # exam-lifecycle (напередодні/день/post-exam) — раз на добу зранку
 _NUDGE_TTL = 90_000  # ~25 год — дедуп-мітка нагадування самоскидається щодоби
 _EXAM_TTL = 40 * 24 * 3600  # дедуп exam-повідомлень (довше за вікно до/після іспиту)
@@ -141,6 +142,22 @@ async def _winback(bot: Bot, today: date) -> None:
                 break
 
 
+async def _daily_digest(bot: Bot, today: date) -> None:
+    """Раз на добу: звести ключові метрики → alerts-канал (адмін, НЕ користувачі)."""
+    if not await _claim(f"digest:{today.isoformat()}"):  # дедуп на добу (переживає рестарт)
+        return
+    try:
+        from app.services import admin_stats, aicost, alerts, resets, support
+
+        ov = await admin_stats.overview()
+        text = admin_stats.render_digest(
+            ov, await aicost.spent_today_usd(), await support.count_open(), len(await resets.pending())
+        )
+        await alerts.send(text, fallback_bot=bot)
+    except Exception:  # noqa: BLE001
+        logger.exception("daily digest failed")
+
+
 async def _seconds_until_next_hour() -> float:
     now = clock.now_local()
     target = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
@@ -220,6 +237,8 @@ async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
                 logger.info("Retention: видалено %d denied-користувачів", purged)
         except Exception:
             logger.exception("retention purge failed")
+    if now.hour == _DIGEST_HOUR:  # метрик-дайджест в alerts-канал — раз на добу
+        await _daily_digest(bot, clock.today_local())
     if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань + win-back — раз на добу
         await _exam_lifecycle(bot, clock.today_local())
         await _assignment_reminders(bot, clock.today_local())
