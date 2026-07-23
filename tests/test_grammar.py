@@ -5,10 +5,10 @@ from app.services import grammar as gp
 
 
 def test_registry_nonempty_and_ids_unique():
-    assert len(grammar.all_modules()) >= 2
+    assert len(grammar.all_modules()) >= 12  # повний базовий курс
     ids = grammar.all_lesson_ids()
     assert len(ids) == len(set(ids)), "id уроків мають бути унікальні"
-    assert len(ids) >= 8
+    assert len(ids) >= 55
 
 
 def test_every_lesson_has_cards_and_valid_quiz():

@@ -13,18 +13,20 @@ from app.grammar.czasownik_czas import MODULE as _CZAS_PP
 from app.grammar.czasownik_teraz import MODULE as _CZAS_TER
 from app.grammar.liczebniki import MODULE as _LICZEBNIKI
 from app.grammar.podstawy import MODULE as _PODSTAWY
+from app.grammar.przyimki import MODULE as _PRZYIMKI
 from app.grammar.przymiotnik import MODULE as _PRZYMIOTNIK
 from app.grammar.przypadki import MODULE as _PRZYPADKI
 from app.grammar.rzeczownik import MODULE as _RZECZOWNIK
 from app.grammar.schema import Card, Lesson, Module, Quiz
+from app.grammar.skladnia import MODULE as _SKLADNIA
 from app.grammar.zaimki import MODULE as _ZAIMKI
 
 __all__ = ["Card", "Lesson", "Module", "Quiz", "MODULES"]
 
-# Порядок = навчальний шлях (від легкого до найважчого). Далі: przyimki, składnia…
+# Порядок = навчальний шлях: алфавіт → базові речення → відмінки → дієслова → …
 MODULES: list[Module] = [
     _ALFABET, _PODSTAWY, _RZECZOWNIK, _PRZYPADKI, _CZAS_TER, _CZAS_PP, _ASPEKT,
-    _PRZYMIOTNIK, _ZAIMKI, _LICZEBNIKI,
+    _PRZYMIOTNIK, _ZAIMKI, _LICZEBNIKI, _PRZYIMKI, _SKLADNIA,
 ]
 
 
