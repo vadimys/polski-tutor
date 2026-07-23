@@ -15,7 +15,15 @@ from aiogram.types import BufferedInputFile, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import charts
-from app.bot.keyboards import cancel_kb, menu_kb, teacher_menu_kb, to_menu_kb
+from app.bot.keyboards import (
+    cancel_kb,
+    class_menu_kb,
+    exam_menu_kb,
+    menu_kb,
+    practice_menu_kb,
+    teacher_menu_kb,
+    to_menu_kb,
+)
 from app.bot.ui import bar
 from app.config import settings
 from app.domain.models import MODULE_LABELS, Module
@@ -123,6 +131,39 @@ async def cb_menu(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await _send_menu(cb.message, cb.from_user.id)
     await cb.answer()
+
+
+# --- Підменю (згруповані розділи) — редагуються на місці, чистий браузер меню ---
+_SUBMENU = {
+    "practice": (
+        "🏋️ <b>Вправи</b>\n<i>Тренуй розділи іспиту. Обери тип завдання 👇</i>",
+        practice_menu_kb,
+    ),
+    "exam": (
+        "🎓 <b>Іспит: тести й контроль</b>\n<i>Офіційні моки, робота над помилками, план 👇</i>",
+        exam_menu_kb,
+    ),
+    "class": (
+        "👥 <b>Клас і друзі</b>\n<i>Рейтинг класу, завдання від викладача, запрошення 👇</i>",
+        class_menu_kb,
+    ),
+}
+
+
+@router.callback_query(F.data.in_({"menu:practice", "menu:exam", "menu:class"}))
+async def cb_submenu(cb: CallbackQuery) -> None:
+    await cb.answer()
+    text, kbfn = _SUBMENU[cb.data.split(":")[1]]
+    with suppress(Exception):
+        await cb.message.edit_text(text, reply_markup=kbfn())
+
+
+@router.callback_query(F.data == "menu:top")
+async def cb_menu_top(cb: CallbackQuery) -> None:
+    """Повернення з підменю у головне меню — редагуємо те саме повідомлення."""
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_text(await _menu_header(cb.from_user.id), reply_markup=menu_kb())
 
 
 # --- ⚡ Навчатись зараз (розумний автопідбір найкориснішої дії) ---

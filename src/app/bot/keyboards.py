@@ -171,42 +171,76 @@ def question_kb(options: list[str], qidx: int) -> InlineKeyboardMarkup:
     return _mcq_kb(options, qidx, "pl:ans", "pl:stop")
 
 
-def menu_kb() -> InlineKeyboardMarkup:
-    """Головне меню: практика (що ти РОБИШ) + Панель (прогрес/похід/місії — read-only).
+def _grid(items: list[tuple[str, str]], back: tuple[str, str]) -> InlineKeyboardMarkup:
+    """Підменю у 2 колонки + кнопка «назад» окремим рядком."""
+    kb = InlineKeyboardBuilder()
+    for i in range(0, len(items), 2):
+        kb.row(*(InlineKeyboardButton(text=t, callback_data=c) for t, c in items[i : i + 2]))
+    kb.row(InlineKeyboardButton(text=back[0], callback_data=back[1]))
+    return kb.as_markup()
 
-    Похід/Місії/Прогрес окремими кнопками НЕ дублюємо — вони в «📱 Панелі»
-    (лишаються командами /quest /misje /postep для тих, хто без панелі)."""
+
+def menu_kb() -> InlineKeyboardMarkup:
+    """Головне меню — чисте й згруповане: щоденне зверху, решта — у логічних підрозділах.
+
+    Групи: Вивчати (урок/граматика/слова) · Вправи (розділи іспиту) · Іспит (моки/
+    контроль) · Клас і друзі. Похід/Місії/Прогрес — у «📱 Панелі» (+ команди /quest тощо)."""
     kb = InlineKeyboardBuilder()
     kb.row(InlineKeyboardButton(text="⚡ Навчатись зараз", callback_data="coach:now"))  # головний CTA
     if settings.webapp_url:  # хаб прогресу — коли Mini App увімкнено
         kb.row(InlineKeyboardButton(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url)))
-    kb.row(InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"))
-    kb.row(InlineKeyboardButton(text="📚 Граматика (курс з нуля)", callback_data="grammar:home"))
-    practice = [
-        ("🔁 Повторення слів", "review:start"),
-        ("📚 Словник за темами", "lex:open"),
-        ("✍️ Письмо", "writing:start"),
-        ("🗣 Мовлення", "speaking:start"),
-        ("🖼 Опис фото", "speaking:photo"),
-        ("🎧 Аудіювання", "listening:start"),
-        ("🎯 Тренування", "drill:start"),
-        ("🧩 Зіставлення", "match:open"),
-        ("🔗 Аудіо-зіставлення", "amatch:open"),
-        ("✏️ Впиши форму", "fill:open"),
-        ("🔄 Трансформації", "open:open"),
-        ("📋 Офіційний МОК", "mock:open"),
-        ("🎓 Повний мок іспиту", "exam:open"),
-        ("🧯 Мої помилки", "mistakes:open"),
-        ("📅 Мій план", "plan:show"),
-        ("📝 Завдання", "asgn:me"),
-        ("🏆 Рейтинг класу", "lb:me"),
-        ("🎁 Запросити друга", "ref:invite"),
-        ("🆘 Підтримка / 💡 Ідея", "support:open"),
-    ]
-    for i in range(0, len(practice), 2):  # у 2 колонки — менше скролу
-        kb.row(*(InlineKeyboardButton(text=t, callback_data=c) for t, c in practice[i : i + 2]))
-    kb.row(InlineKeyboardButton(text="📝 Тест рівня", callback_data="placement:start"))
+    # Вивчати
+    kb.row(
+        InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"),
+        InlineKeyboardButton(text="📚 Граматика", callback_data="grammar:home"),
+    )
+    kb.row(
+        InlineKeyboardButton(text="🗂 Словник", callback_data="lex:open"),
+        InlineKeyboardButton(text="🔁 Повторення слів", callback_data="review:start"),
+    )
+    # Підрозділи
+    kb.row(InlineKeyboardButton(text="🏋️ Вправи (розділи іспиту)", callback_data="menu:practice"))
+    kb.row(InlineKeyboardButton(text="🎓 Іспит: тести й контроль", callback_data="menu:exam"))
+    kb.row(InlineKeyboardButton(text="👥 Клас і друзі", callback_data="menu:class"))
+    kb.row(InlineKeyboardButton(text="🆘 Підтримка / 💡 Ідея", callback_data="support:open"))
     return kb.as_markup()
+
+
+def practice_menu_kb() -> InlineKeyboardMarkup:
+    """Підменю «Вправи» — тренування розділів іспиту."""
+    return _grid(
+        [
+            ("✍️ Письмо", "writing:start"), ("🗣 Мовлення", "speaking:start"),
+            ("🖼 Опис фото", "speaking:photo"), ("🎧 Аудіювання", "listening:start"),
+            ("🎯 Тренування", "drill:start"), ("🧩 Зіставлення", "match:open"),
+            ("🔗 Аудіо-зіставлення", "amatch:open"), ("✏️ Впиши форму", "fill:open"),
+            ("🔄 Трансформації", "open:open"),
+        ],
+        ("⬅️ Меню", "menu:top"),
+    )
+
+
+def exam_menu_kb() -> InlineKeyboardMarkup:
+    """Підменю «Іспит» — офіційні моки, контроль, план."""
+    return _grid(
+        [
+            ("📋 Офіційний МОК", "mock:open"), ("🎓 Повний мок іспиту", "exam:open"),
+            ("🧯 Мої помилки", "mistakes:open"), ("📝 Тест рівня", "placement:start"),
+            ("📅 Мій план", "plan:show"),
+        ],
+        ("⬅️ Меню", "menu:top"),
+    )
+
+
+def class_menu_kb() -> InlineKeyboardMarkup:
+    """Підменю «Клас і друзі» — рейтинг, завдання, реферал."""
+    return _grid(
+        [
+            ("🏆 Рейтинг класу", "lb:me"), ("📝 Завдання", "asgn:me"),
+            ("🎁 Запросити друга", "ref:invite"),
+        ],
+        ("⬅️ Меню", "menu:top"),
+    )
 
 
 def teacher_welcome_kb() -> InlineKeyboardMarkup:

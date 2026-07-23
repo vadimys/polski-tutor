@@ -1,6 +1,13 @@
 """Меню викладача: живе й функціональне саме для викладача (не мікс учнівського)."""
 
-from app.bot.keyboards import menu_kb, teacher_materials_kb, teacher_menu_kb
+from app.bot.keyboards import (
+    class_menu_kb,
+    exam_menu_kb,
+    menu_kb,
+    practice_menu_kb,
+    teacher_materials_kb,
+    teacher_menu_kb,
+)
 
 
 def _cbs(markup):
@@ -23,6 +30,24 @@ def test_teacher_materials_has_preview_and_catalog():
     assert {"listening:start", "drill:start", "writing:start", "speaking:start", "mock:open"} <= cbs
 
 
-def test_student_menu_unchanged_has_learner_items():
+def test_student_menu_top_level_is_grouped():
+    """Головне меню — чисте: щоденне + відкривачі підменю (не «стіна» з 20 кнопок)."""
     cbs = _cbs(menu_kb())
-    assert {"coach:now", "placement:start", "lesson:start", "asgn:me", "lb:me"} <= cbs
+    assert {"coach:now", "lesson:start", "grammar:home", "lex:open", "review:start"} <= cbs
+    assert {"menu:practice", "menu:exam", "menu:class"} <= cbs  # підрозділи
+
+
+def test_all_learner_actions_reachable_via_menu_or_submenus():
+    """Ніщо не загублено при групуванні: union меню + підменю покриває всі дії."""
+    reachable = (
+        _cbs(menu_kb()) | _cbs(practice_menu_kb()) | _cbs(exam_menu_kb()) | _cbs(class_menu_kb())
+    )
+    expected = {
+        "coach:now", "lesson:start", "grammar:home", "lex:open", "review:start",
+        "writing:start", "speaking:start", "speaking:photo", "listening:start",
+        "drill:start", "match:open", "amatch:open", "fill:open", "open:open",
+        "mock:open", "exam:open", "mistakes:open", "placement:start", "plan:show",
+        "lb:me", "asgn:me", "ref:invite", "support:open",
+    }
+    missing = expected - reachable
+    assert not missing, f"дії зникли з меню після групування: {missing}"
