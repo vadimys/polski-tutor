@@ -88,8 +88,23 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
         section=t.section, title=t.title, prompts=list(t.prompts), words=list(t.words),
         models=[list(m) for m in t.models], pos=0, answers=[],
     )
-    await cb.message.answer(f"🔄 <b>{html.escape(t.title)}</b>\n\n{t.intro}")
-    await _send_prompt(cb.message, t.prompts, t.words, 0)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="▶️ Розпочати", callback_data="open:go")
+    kb.button(text="⬅️ Меню", callback_data="op:stop")
+    kb.adjust(1)
+    await cb.message.answer(
+        f"🔄 <b>{html.escape(t.title)}</b>\n\n{t.intro}", reply_markup=kb.as_markup()
+    )
+
+
+@router.callback_query(Open.active, F.data == "open:go")
+async def cb_go(cb: CallbackQuery, state: FSMContext) -> None:
+    """Старт: прибрати кнопки з інтро → перше завдання (шлеться у відповідь на тап → скролиться)."""
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    await _send_prompt(cb.message, data["prompts"], data["words"], 0)
 
 
 @router.callback_query(Open.active, F.data == "op:stop")
