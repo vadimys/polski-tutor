@@ -181,6 +181,7 @@ def menu_kb() -> InlineKeyboardMarkup:
     if settings.webapp_url:  # хаб прогресу — коли Mini App увімкнено
         kb.row(InlineKeyboardButton(text="📱 Панель прогресу", web_app=WebAppInfo(url=settings.webapp_url)))
     kb.row(InlineKeyboardButton(text="📖 Урок дня", callback_data="lesson:start"))
+    kb.row(InlineKeyboardButton(text="📚 Граматика (курс з нуля)", callback_data="grammar:home"))
     practice = [
         ("🔁 Повторення слів", "review:start"),
         ("📚 Словник за темами", "lex:open"),
