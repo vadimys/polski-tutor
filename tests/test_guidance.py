@@ -47,3 +47,21 @@ def test_guided_writing_steps():
     assert guidance.WRITING_STEPS_N == 4
     assert "Крок 1/4" in guidance.writing_step(0)
     assert "Крок 4/4" in guidance.writing_step(3)
+
+
+def test_word_range_proportional_for_short_forms():
+    # ~30 слів: пласке ±20 дало б абсурдні 10 знизу; тепер — розумні 20-40
+    assert guidance.word_range(30) == (20, 40)
+    assert guidance.word_range(25) == (17, 33)
+    # довгі форми: стеля допуску 20
+    assert guidance.word_range(170) == (150, 190)
+    assert guidance.word_range(175) == (155, 195)
+    # знизу ніколи не 10 для короткої форми
+    lo, _ = guidance.word_range(30)
+    assert lo >= 20
+
+
+def test_genre_badge_has_emoji():
+    assert guidance.genre_badge("ogłoszenie").startswith("📢")
+    assert "list prywatny" in guidance.genre_badge("list prywatny")
+    assert guidance.genre_badge("невідомий").startswith("📝")  # fallback

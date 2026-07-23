@@ -31,15 +31,39 @@ class GuidedW(StatesGroup):
     active = State()  # керована практика письма (офіційний лист крок-за-кроком)
 
 
+def _split_gloss(prompt: str) -> tuple[str, str]:
+    """Розділити «PL текст (укр. пояснення)» → (польський текст, укр. глос)."""
+    p = prompt.strip()
+    if p.endswith(")") and "(" in p:
+        i = p.rfind("(")
+        return p[:i].strip(), p[i + 1 : -1].strip()
+    return p, ""
+
+
+def _task_block(letter: str, task) -> str:  # noqa: ANN001 — writing.Task
+    pl, gloss = _split_gloss(task.prompt)
+    badge = guidance.genre_badge(task.genre)
+    lo, hi = guidance.word_range(task.words)
+    gloss_line = f"\n🇺🇦 <i>{html.escape(gloss)}</i>" if gloss else ""
+    return (
+        f"📌 <b>Завдання {letter}</b> · {badge}\n"
+        f"✒️ ~{task.words} слів (орієнтир {lo}–{hi})\n"
+        f"{html.escape(pl)}{gloss_line}"
+    )
+
+
 async def _give_set(message: Message, state: FSMContext) -> None:
     ws = writing.pick_set()
     await state.set_state(Writing.await_a)
     await state.update_data(set_id=ws.id, text_a="")
+    sep = "➖➖➖➖➖➖➖➖➖➖"
     await message.answer(
-        f"✍️ <b>Письмо — набір ({writing.SOURCE})</b>\n\n"
-        f"Як на іспиті: <b>два завдання</b>, обидва з цього набору.\n\n"
-        f"<b>Завдання a</b> ({ws.a.genre}, ~{ws.a.words} слів):\n{html.escape(ws.a.prompt)}\n\n"
-        f"<b>Завдання b</b> ({ws.b.genre}, ~{ws.b.words} слів):\n{html.escape(ws.b.prompt)}"
+        f"✍️ <b>Письмо</b> · офіційний набір Держкомісії (B1)\n\n"
+        f"📋 Як на іспиті — <b>2 завдання</b>, обидва з цього набору. Пишеш польською.\n"
+        f"{sep}\n"
+        f"{_task_block('A', ws.a)}\n"
+        f"{sep}\n"
+        f"{_task_block('B', ws.b)}"
     )
     a_req = writing.GENRE_REQ.get(ws.a.genre, "—")
     b_req = writing.GENRE_REQ.get(ws.b.genre, "—")

@@ -214,15 +214,56 @@ def guided_available(kind: str) -> bool:
 
 # --- ПИСЬМО (Pisanie) ------------------------------------------------------
 
+# емодзі-бейджі жанрів (для дружньої картки завдання)
+_GENRE_EMOJI = {
+    "ogłoszenie": "📢",
+    "list prywatny": "💌",
+    "zaproszenie": "🎟",
+    "recenzja": "⭐",
+    "życzenia": "🎉",
+    "charakterystyka": "🧑",
+    "pozdrowienia": "✉️",
+    "esej": "📝",
+    "opowiadanie": "📖",
+    "opis osoby": "🧑",
+    "zawiadomienie": "📣",
+    "sprawozdanie": "📄",
+}
+
+
+def genre_badge(genre: str) -> str:
+    """Емодзі + назва жанру (для заголовків блоків завдань)."""
+    return f"{_GENRE_EMOJI.get(genre, '📝')} {genre}"
+
+
+def word_range(words: int) -> tuple[int, int]:
+    """Розумний діапазон обсягу навколо норми.
+
+    Пласке «±20» несправедливе для КОРОТКИХ форм: для ~30 слів воно дало б 10-50,
+    а 10 слів — це вже не завдання. Тому допуск пропорційний (≈⅓ норми), але не більший
+    за 20 слів (стеля для довгих форм) і не менший за 8 (мінімальний люфт для коротких).
+    Напр.: 25→17-33 · 30→20-40 · 40→27-53 · 170→150-190 · 175→155-195.
+    """
+    tol = min(20, max(8, round(words / 3)))
+    return max(1, words - tol), words + tol
+
+
+def _range_hint(words: int) -> str:
+    lo, hi = word_range(words)
+    return f"~{words} слів (≈{lo}–{hi})"
+
 
 def writing_instruction(
     a_genre: str, a_req: str, a_words: int, b_genre: str, b_req: str, b_words: int
 ) -> str:
     return (
-        "🎯 <b>Що зробити:</b> виконай <b>обидва</b> завдання, кожне у своєму жанрі з "
-        "обов'язковими елементами форми та в межах обсягу (±20 слів).\n\n"
-        f"🪜 <b>Завдання a — {a_genre}</b> (~{a_words} слів). Обов'язкові елементи:\n{a_req}\n\n"
-        f"🪜 <b>Завдання b — {b_genre}</b> (~{b_words} слів). Обов'язкові елементи:\n{b_req}\n\n"
+        "🎯 <b>Що зробити:</b> виконай <b>обидва</b> завдання, кожне у своєму жанрі з усіма "
+        "обов'язковими елементами форми. Тримайся приблизного обсягу (нижче за орієнтир "
+        "втрачаєш бали за неповноту; трохи більше — не страшно).\n\n"
+        f"🪜 <b>Завдання a — {genre_badge(a_genre)}</b> · {_range_hint(a_words)}. "
+        f"Обов'язкові елементи:\n{a_req}\n\n"
+        f"🪜 <b>Завдання b — {genre_badge(b_genre)}</b> · {_range_hint(b_words)}. "
+        f"Обов'язкові елементи:\n{b_req}\n\n"
         "💬 <b>Регістр:</b> офіційно — <i>Szanowni Państwo… Z poważaniem</i>; "
         "приватно — <i>Cześć / Drogi X… Pozdrawiam / Ściskam</i>.\n\n"
         "📊 <b>За чим оцінюю (0-30, поріг 15):</b> Wykonanie 0-10 (жанр+елементи+обсяг) · "
