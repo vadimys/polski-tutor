@@ -1,6 +1,24 @@
 """Реєстр офіційного контенту: агрегат/за-тестом, latest, валідність ключів."""
 
+import re
+
 from app import content
+
+
+def test_match_explain_letters_match_key():
+    """Літера в поясненні matching = позиційна літера правильної відповіді chr(65+key[i]).
+
+    Бот показує фрагменти позиційно (A=options[0], B=options[1]…). Якщо пояснення цитує
+    ІНШУ літеру (напр. офіційну з арқуша, коли приклад-фрагмент виключено) — учень бачить
+    «обрав F, правильно», а пояснення каже «G». Регрес-гейт проти цього дрейфу.
+    """
+    bad = []
+    for t in content.all_match_tasks():
+        for i, ex in enumerate(t.explain):
+            m = re.search(r"→\s*([A-Z])", ex)
+            if m and m.group(1) != chr(65 + t.key[i]):
+                bad.append((t.title, i + 1, "каже " + m.group(1), "показ " + chr(65 + t.key[i])))
+    assert not bad, f"Літери в поясненнях ≠ позиційні (показувані): {bad[:10]}"
 
 
 def test_registry_nonempty_and_latest_is_complete():
