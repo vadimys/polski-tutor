@@ -9,6 +9,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import quiz
 from app.bot.keyboards import menu_kb_for, mock_kb, mock_menu_kb, to_menu_kb
@@ -63,11 +64,25 @@ async def cb_start(cb: CallbackQuery, state: FSMContext) -> None:
     items = mock.section_items(section)
     await state.set_state(Mock.active)
     await state.update_data(section=section, idx=0, correct=0)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="▶️ Розпочати", callback_data="mk:go")
+    kb.button(text="⬅️ Меню", callback_data="mk:stop")
+    kb.adjust(1)
     await cb.message.answer(
-        f"▶️ <b>{_SECTION_LABEL[section]}</b> — {len(items)} завдань з офіційного тесту. "
-        "Відповідай, наприкінці — результат."
+        f"📋 <b>{_SECTION_LABEL[section]}</b> — {len(items)} завдань з офіційного тесту. "
+        "Відповідай, наприкінці — результат.",
+        reply_markup=kb.as_markup(),
     )
-    await _send_item(cb.message, section, 0)
+
+
+@router.callback_query(Mock.active, F.data == "mk:go")
+async def cb_go(cb: CallbackQuery, state: FSMContext) -> None:
+    """Старт: прибрати кнопки інтро → перше завдання (шлеться у відповідь на тап → скролиться)."""
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    await _send_item(cb.message, data["section"], 0)
 
 
 @router.callback_query(Mock.active, F.data == "mk:stop")

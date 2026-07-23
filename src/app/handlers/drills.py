@@ -9,6 +9,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app.bot import quiz
 from app.bot.keyboards import drill_kb, menu_kb_for, to_menu_kb
@@ -40,34 +41,45 @@ async def _send_q(message: Message, section: str, idxs: list[int], pos: int) -> 
 
 
 async def _start(message: Message, user_id: int, state: FSMContext) -> None:
+    """Картка-інтро тренування з кнопкою ▶️ Розпочати (питання — після тапу → скролиться)."""
     st = await user_state.load(user_id)
     module = _target_module(st)
     idxs = drills.session_indices(module.value, SESSION_SIZE)
-
-    # Короткий контент (граматика) → нативний quiz-poll; довгі тексти (читання) → інлайн
-    items = []
-    for i in idxs:
-        it = mock.section_items(module.value)[i]
-        q = f"{it.context}\n\n{it.question}" if it.context else it.question
-        items.append({"q": q, "opts": list(it.options), "correct": it.correct, "explain": it.explain})
-    if pollquiz.fits(items):
-        await message.answer(
-            f"🎯 <b>Тренування</b> — {len(items)} офіційних питань, фокус: {MODULE_LABELS[module]}.\n"
-            "Відповідай у quiz-опитуваннях нижче 👇"
-        )
-        await pollquiz.start(
-            message.bot, chat_id=message.chat.id, user_id=user_id, kind="readiness",
-            items=items, module=module.value, title="🔤 Тренування",
-        )
-        return
-
     await state.set_state(Drill.active)
     await state.update_data(section=module.value, idxs=idxs, pos=0, correct=0)
+    kb = InlineKeyboardBuilder()
+    kb.button(text="▶️ Розпочати", callback_data="drill:go")
+    kb.button(text="⬅️ Меню", callback_data="dr:stop")
+    kb.adjust(1)
     await message.answer(
         f"🎯 <b>Тренування</b> — {len(idxs)} офіційних питань, фокус: {MODULE_LABELS[module]}.\n"
-        "Тисни варіант — одразу скажу, правильно чи ні, з поясненням."
+        "Після кожної відповіді одразу скажу, правильно чи ні, з поясненням.",
+        reply_markup=kb.as_markup(),
     )
-    await _send_q(message, module.value, idxs, 0)
+
+
+@router.callback_query(Drill.active, F.data == "drill:go")
+async def cb_go(cb: CallbackQuery, state: FSMContext) -> None:
+    """Старт: прибрати кнопки інтро → перше питання (нативні quiz-poll для граматики, інакше інлайн)."""
+    await cb.answer()
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    section, idxs = data["section"], data["idxs"]
+    items = []
+    for i in idxs:
+        it = mock.section_items(section)[i]
+        q = f"{it.context}\n\n{it.question}" if it.context else it.question
+        items.append({"q": q, "opts": list(it.options), "correct": it.correct, "explain": it.explain})
+    # Короткий контент (граматика) → нативний quiz-poll; довгі тексти (читання) → інлайн
+    if pollquiz.fits(items):
+        await state.clear()  # далі — нативні quiz-poll (стан у quizpoll), Drill FSM не потрібен
+        await pollquiz.start(
+            cb.bot, chat_id=cb.message.chat.id, user_id=cb.from_user.id, kind="readiness",
+            items=items, module=section, title="🔤 Тренування",
+        )
+    else:
+        await _send_q(cb.message, section, idxs, 0)
 
 
 @router.message(Command("trening"))
