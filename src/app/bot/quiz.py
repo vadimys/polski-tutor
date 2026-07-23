@@ -34,14 +34,14 @@ def verdict_card(question: str, chosen: int, correct: int, options: list[str], e
     Завжди показує ОБРАНУ відповідь (щоб учень бачив свій вибір), тоді вердикт."""
     yours = html.escape(options[chosen]) if 0 <= chosen < len(options) else "—"
     if chosen == correct:
-        body = f"🔵 Твій вибір: <b>{yours}</b> — ✔️ <b>Dobrze!</b>"
+        body = f"🔵 Твій вибір: <b>{yours}</b>\n\n✔️ <b>Dobrze!</b>"
     else:
         body = (
-            f"🔵 Твій вибір: <b>{yours}</b> — ❌\n"
+            f"🔵 Твій вибір: <b>{yours}</b>  ❌\n\n"
             f"✅ Poprawnie: <b>{html.escape(options[correct])}</b>"
         )
-    exp = f"\n💡 {emph(explain)}" if explain else ""
-    return f"{emph(question)}\n\n{body}{exp}"
+    exp = f"\n\n💡 {emph(explain)}" if explain else ""
+    return f"❓ {emph(question)}\n\n{body}{exp}"
 
 
 async def show_choice(cb: CallbackQuery, opt_idx: int) -> None:

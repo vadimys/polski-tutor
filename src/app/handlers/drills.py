@@ -35,7 +35,8 @@ async def _send_q(message: Message, section: str, idxs: list[int], pos: int) -> 
     it = mock.section_items(section)[idxs[pos]]
     ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
     await message.answer(
-        f"<b>{pos + 1}/{len(idxs)}</b> · {MODULE_LABELS[Module(section)]}\n\n{ctx}{emph(it.question)}",
+        f"🎯 <b>{pos + 1}/{len(idxs)}</b> · {MODULE_LABELS[Module(section)]}\n\n"
+        f"{ctx}❓ {emph(it.question)}",
         reply_markup=drill_kb(it.options, pos),
     )
 

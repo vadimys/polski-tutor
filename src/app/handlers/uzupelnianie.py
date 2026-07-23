@@ -20,6 +20,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
 from app.bot.keyboards import fill_kb, menu_kb_for, to_menu_kb
+from app.bot.ui import emph
 from app.services import freefill, goals
 from app.services import state as user_state
 
@@ -62,8 +63,9 @@ async def _intro(message: Message) -> None:
 
 async def _send_prompt(message: Message, prompts: list[str], pos: int) -> None:
     await message.answer(
-        f"✏️ Пропуск <b>{pos + 1}/{len(prompts)}</b>\n\n{html.escape(prompts[pos])}\n\n"
-        "<i>Напиши правильну форму одним повідомленням:</i>",
+        f"✏️ <b>Пропуск {pos + 1}/{len(prompts)}</b>\n\n"
+        f"❓ {html.escape(prompts[pos])}\n\n"
+        "👇 <i>Напиши правильну форму одним повідомленням:</i>",
         reply_markup=fill_kb(pos),
     )
 
@@ -146,7 +148,7 @@ async def cb_skip(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.edit_reply_markup(reply_markup=None)
     accepted, explains = data["accepted"], data["explains"]
     await cb.message.answer(
-        f"⏭ Поправна відповідь: {_correct_line(accepted[pos])}\n💡 {explains[pos]}"
+        f"⏭ <i>Пропущено.</i>\n\n✅ Правильно: {_correct_line(accepted[pos])}\n\n💡 {emph(explains[pos])}"
     )
     await _advance(cb.message, cb.from_user.id, state)
 
@@ -159,12 +161,16 @@ async def on_answer(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     pos, accepted, explains = data["pos"], data["accepted"], data["explains"]
     ok = freefill.is_correct(message.text or "", accepted[pos])
+    yours = html.escape(message.text.strip())
     if ok:
-        verdict = f"✔️ <b>Dobrze!</b> {html.escape(message.text.strip())}"
+        verdict = f"🔵 Твоя відповідь: <b>{yours}</b>\n\n✔️ <b>Dobrze!</b>"
         await state.update_data(correct=data["correct"] + 1)
     else:
-        verdict = f"❌ Poprawnie: {_correct_line(accepted[pos])}"
-    await message.answer(f"{verdict}\n💡 {explains[pos]}")
+        verdict = (
+            f"🔵 Твоя відповідь: <b>{yours}</b>  ❌\n\n"
+            f"✅ Poprawnie: {_correct_line(accepted[pos])}"
+        )
+    await message.answer(f"{verdict}\n\n💡 {emph(explains[pos])}")
     await _advance(message, message.from_user.id, state)
 
 

@@ -42,8 +42,8 @@ async def _send_item(message: Message, section: str, idx: int) -> None:
     it = items[idx]
     ctx = f"<i>{emph(it.context)}</i>\n\n" if it.context else ""
     await message.answer(
-        f"<b>{_SECTION_LABEL[section]} · {idx + 1}/{len(items)}</b>\n\n"
-        f"{ctx}{emph(it.question)}",
+        f"📋 <b>{_SECTION_LABEL[section]} · {idx + 1}/{len(items)}</b>\n\n"
+        f"{ctx}❓ {emph(it.question)}",
         reply_markup=mock_kb(it.options, idx),
     )
 

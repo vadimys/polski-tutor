@@ -56,9 +56,10 @@ async def _send_prompt(
     message: Message, prompts: list[str], words: list[str], pos: int
 ) -> None:
     await message.answer(
-        f"🔄 Речення <b>{pos + 1}/{len(prompts)}</b>\n\n"
-        f"{html.escape(prompts[pos])}\n\n🔑 Обов'язково вжий: <b>{html.escape(words[pos])}</b>\n\n"
-        "<i>Напиши перетворене речення:</i>",
+        f"🔄 <b>Речення {pos + 1}/{len(prompts)}</b>\n\n"
+        f"❓ {html.escape(prompts[pos])}\n\n"
+        f"🔑 Обов'язково вжий: <b>{html.escape(words[pos])}</b>\n\n"
+        "👇 <i>Напиши перетворене речення:</i>",
         reply_markup=open_kb(pos),
     )
 
