@@ -21,8 +21,11 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app import content
 from app.bot import quiz
 from app.bot.keyboards import match_kb, menu_kb_for, to_menu_kb
+from app.bot.ui import emph
 from app.services import goals
 from app.services import state as user_state
+
+_SEP = "➖➖➖➖➖"
 
 router = Router()
 
@@ -52,12 +55,37 @@ async def _intro(message: Message) -> None:
     )
 
 
-async def _send_prompt(message: Message, prompts: list[str], n_options: int, pos: int) -> None:
-    await message.answer(
-        f"🧩 Пропуск <b>{pos + 1}/{len(prompts)}</b>\n\n{html.escape(prompts[pos])}\n\n"
-        "Обери фрагмент (літера):",
-        reply_markup=match_kb(n_options, pos),
+def _frag_block(title: str, intro: str, options: list[str]) -> str:
+    """Шапка «дошки»: заголовок + інтро + список фрагментів (референс завжди зверху)."""
+    opts = "\n".join(f"<b>{chr(65 + i)})</b> {html.escape(o)}" for i, o in enumerate(options))
+    return f"🧩 <b>{html.escape(title)}</b>\n\n{intro}\n\n🔤 <b>Фрагменти:</b>\n{opts}"
+
+
+def _verdict_line(pos: int, chosen: int, correct: int, options: list[str], explain: str) -> str:
+    """Короткий вердикт попереднього пропуску (лишається у «дошці» над наступним питанням)."""
+    cl = chr(65 + correct)
+    if chosen == correct:
+        head = f"✅ Пропуск {pos + 1}: <b>правильно</b> ({cl})"
+    else:
+        yl = chr(65 + chosen) if 0 <= chosen < len(options) else "—"
+        head = f"❌ Пропуск {pos + 1}: ти обрав {yl}, правильно <b>{cl}</b>"
+    return head + (f"\n💡 {emph(explain)}" if explain else "")
+
+
+def _board(title: str, intro: str, options: list[str], prompts: list[str], pos: int, verdict: str) -> str:
+    """Повний текст «дошки»: фрагменти + (опц.) вердикт попереднього + поточне питання.
+
+    Уся вправа — ОДНЕ повідомлення, що редагується на місці: немає окремого питання
+    «під згином», чат не засмічується, кнопки лишаються там само між пропусками.
+    """
+    s = _frag_block(title, intro, options)
+    if verdict:
+        s += f"\n\n{_SEP}\n{verdict}"
+    s += (
+        f"\n\n{_SEP}\n🧩 Пропуск <b>{pos + 1}/{len(prompts)}</b>\n\n"
+        f"{html.escape(prompts[pos])}\n\nОбери фрагмент (літера):"
     )
+    return s
 
 
 @router.message(Command("dopasowanie"))
@@ -82,16 +110,15 @@ async def cb_begin(cb: CallbackQuery, state: FSMContext) -> None:
     t = tasks[idx]
     await state.set_state(Match.active)
     await state.update_data(
-        section=t.section, options=list(t.options), prompts=list(t.prompts),
+        section=t.section, title=t.title, intro=t.intro,
+        options=list(t.options), prompts=list(t.prompts),
         key=list(t.key), explains=list(t.explain), pos=0, correct=0,
     )
-    opts_list = "\n".join(
-        f"<b>{chr(65 + i)})</b> {html.escape(o)}" for i, o in enumerate(t.options)
-    )
+    # уся вправа — ОДНЕ повідомлення-«дошка» (фрагменти + питання), редагується на місці
     await cb.message.answer(
-        f"🧩 <b>{html.escape(t.title)}</b>\n\n{t.intro}\n\n🔤 <b>Фрагменти:</b>\n{opts_list}"
+        _board(t.title, t.intro, t.options, t.prompts, 0, ""),
+        reply_markup=match_kb(len(t.options), 0),
     )
-    await _send_prompt(cb.message, t.prompts, len(t.options), 0)
 
 
 @router.callback_query(Match.active, F.data == "ma:stop")
@@ -113,19 +140,31 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
         data["prompts"], data["options"], data["key"], data["explains"],
     )
     pos, correct, section = data["pos"], data["correct"], data["section"]
+    title, intro = data["title"], data["intro"]
 
     chosen = await quiz.read_answer(cb, pos)
     if chosen is None:  # стале/дубль/зіпсовано
         return
 
-    if await quiz.show_verdict(cb, chosen, key[pos], options, prompts[pos], explains[pos]):
+    ok = chosen == key[pos]
+    if ok:
         correct += 1
-
+    await cb.answer("✔️" if ok else "❌")
+    verdict = _verdict_line(pos, chosen, key[pos], options, explains[pos])
     pos += 1
     await state.update_data(pos=pos, correct=correct)
-    if pos < len(prompts):
-        await _send_prompt(cb.message, prompts, len(options), pos)
+    if pos < len(prompts):  # редагуємо ТУ САМУ дошку → наступне питання (без нового повідомлення)
+        with suppress(Exception):
+            await cb.message.edit_text(
+                _board(title, intro, options, prompts, pos, verdict),
+                reply_markup=match_kb(len(options), pos),
+            )
     else:
+        with suppress(Exception):
+            await cb.message.edit_text(
+                _frag_block(title, intro, options) + f"\n\n{_SEP}\n{verdict}\n\n✅ Усі пропуски пройдено.",
+                reply_markup=None,
+            )
         await _finalize(cb.message, cb.from_user.id, state, correct, len(prompts), section)
 
 
