@@ -17,12 +17,12 @@ MODULE = Module(
             cards=[
                 Card(
                     "Чий?",
-                    "• <b>mój</b> — мій\n• <b>twój</b> — твій\n• <b>jego</b> — його\n"
-                    "• <b>jej</b> — її\n• <b>nasz</b> — наш\n• <b>wasz</b> — ваш\n• <b>ich</b> — їхній",
+                    "• <code>mój</code> — мій\n• <code>twój</code> — твій\n• <code>jego</code> — його\n"
+                    "• <code>jej</code> — її\n• <code>nasz</code> — наш\n• <code>wasz</code> — ваш\n• <code>ich</code> — їхній",
                 ),
                 Card(
                     "mój теж узгоджується за родом",
-                    "<b>mój</b> (ч.) · <b>moja</b> (ж.) · <b>moje</b> (с.). Так само twój, nasz, wasz.",
+                    "<code>mój</code> (ч.) · <code>moja</code> (ж.) · <code>moje</code> (с.). Так само twój, nasz, wasz.",
                     [("mój dom", "мій дім"), ("moja mama", "моя мама"), ("moje auto", "моє авто")],
                     tip="Але jego, jej, ich НЕ змінюються: jego dom, jego mama, jego auto.",
                 ),
@@ -40,13 +40,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "Цей / ця / це",
-                    "<b>ten</b> (ч.) · <b>ta</b> (ж.) · <b>to</b> (с.). Множина: <b>ci</b> (люди-чол.) "
-                    "/ <b>te</b> (решта).",
+                    "<code>ten</code> (ч.) · <code>ta</code> (ж.) · <code>to</code> (с.). Множина: <code>ci</code> (люди-чол.) "
+                    "/ <code>te</code> (решта).",
                     [("ten dom", "цей дім"), ("ta książka", "ця книжка"), ("te domy", "ці будинки")],
                 ),
                 Card(
                     "Той — tamten",
-                    "Дальший обʼєкт: <b>tamten / tamta / tamto</b> (той/та/те).",
+                    "Дальший обʼєкт: <code>tamten / tamta / tamto</code> (той/та/те).",
                     [("Tamten dom jest większy.", "Той дім більший.")],
                     tip="Не плутай: «to jest…» (це є…) — то службове «to»; а «ten/ta/to» узгоджуються з іменником.",
                 ),
@@ -63,8 +63,8 @@ MODULE = Module(
                 Card(
                     "«Я» теж відмінюється",
                     "Як і іменники, займенники змінюються за відмінками:\n"
-                    "• ja → <b>mnie</b> (мене/мені)\n• ty → <b>cię/ciebie</b> (тебе)\n"
-                    "• on → <b>go/jego</b> · ona → <b>ją</b>",
+                    "• ja → <code>mnie</code> (мене/мені)\n• ty → <code>cię/ciebie</code> (тебе)\n"
+                    "• on → <code>go/jego</code> · ona → <code>ją</code>",
                     [("Znasz mnie?", "Знаєш мене?"), ("Widzę cię.", "Бачу тебе."),
                      ("Lubię go.", "Люблю його.")],
                 ),
@@ -87,13 +87,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "się = -ся/-сь",
-                    "Багато дій «на себе» мають <b>się</b> — як українське -ся.",
+                    "Багато дій «на себе» мають <code>się</code> — як українське -ся.",
                     [("myć się", "митися"), ("uczyć się", "вчитися"),
                      ("nazywać się", "називатися")],
                 ),
                 Card(
                     "się «плаває» в реченні",
-                    "На відміну від українського -ся, польське <b>się</b> — окреме слово й може стояти "
+                    "На відміну від українського -ся, польське <code>się</code> — окреме слово й може стояти "
                     "не впритул до дієслова.",
                     [("Uczę się polskiego.", "Вчу польську (вчуся)."),
                      ("Jak się nazywasz?", "Як тебе звати?"), ("Dobrze się czuję.", "Добре почуваюся.")],

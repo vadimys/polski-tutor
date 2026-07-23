@@ -87,8 +87,8 @@ def _card_text(module: grammar.Module, lesson: grammar.Lesson, idx: int) -> str:
     ]
     if c.examples:
         parts.append("\n📝 <b>Приклади:</b>")
-        for pl, uk in c.examples:
-            parts.append(f"• <b>{html.escape(pl)}</b>" + (f" — {html.escape(uk)}" if uk else ""))
+        for pl, uk in c.examples:  # польське — монофонт (<code>), укр. переклад — звичайним
+            parts.append(f"• <code>{html.escape(pl)}</code>" + (f" — {html.escape(uk)}" if uk else ""))
     if c.tip:
         parts.append(f"\n💡 <i>{c.tip}</i>")
     return "\n".join(parts)
@@ -139,10 +139,10 @@ def _quiz_verdict(lesson: grammar.Lesson, qi: int, chosen: int) -> tuple[str, In
     q = lesson.quiz[qi]
     ok = chosen == q.correct
     yours = html.escape(q.options[chosen]) if 0 <= chosen < len(q.options) else "—"
-    body = (
-        f"🔵 Твоя відповідь: <b>{yours}</b>\n\n✔️ <b>Правильно!</b>"
+    body = (  # варіанти відповіді — польське → монофонт; «Правильно!» — укр. → жирний
+        f"🔵 Твоя відповідь: <code>{yours}</code>\n\n✔️ <b>Правильно!</b>"
         if ok
-        else f"🔵 Твоя відповідь: <b>{yours}</b>  ❌\n\n✅ Правильно: <b>{html.escape(q.options[q.correct])}</b>"
+        else f"🔵 Твоя відповідь: <code>{yours}</code>  ❌\n\n✅ Правильно: <code>{html.escape(q.options[q.correct])}</code>"
     )
     exp = f"\n\n💡 {html.escape(q.explain)}" if q.explain else ""
     text = f"❓ {html.escape(q.q)}\n\n{body}{exp}"

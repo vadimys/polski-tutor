@@ -22,7 +22,7 @@ MODULE = Module(
                 ),
                 Card(
                     "11–20",
-                    "Додаємо <b>-naście</b>: jedenaście, dwanaście, trzynaście… dwadzieścia (20).",
+                    "Додаємо <code>-naście</code>: jedenaście, dwanaście, trzynaście… dwadzieścia (20).",
                     [("dwanaście", "дванадцять"), ("piętnaście", "пʼятнадцять")],
                 ),
                 Card(
@@ -44,7 +44,7 @@ MODULE = Module(
             cards=[
                 Card(
                     "100, 1000",
-                    "<b>sto</b> (100), <b>tysiąc</b> (1000), <b>milion</b> (мільйон).",
+                    "<code>sto</code> (100), <code>tysiąc</code> (1000), <code>milion</code> (мільйон).",
                     [("dwieście", "200"), ("trzysta", "300"), ("pięćset", "500")],
                 ),
                 Card(
@@ -69,8 +69,8 @@ MODULE = Module(
                 ),
                 Card(
                     "Поводяться як прикметники",
-                    "Узгоджуються за родом: <b>pierwszy</b> (ч.) / <b>pierwsza</b> (ж.) / "
-                    "<b>pierwsze</b> (с.).",
+                    "Узгоджуються за родом: <code>pierwszy</code> (ч.) / <code>pierwsza</code> (ж.) / "
+                    "<code>pierwsze</code> (с.).",
                     [("pierwsza klasa", "перший клас"), ("Jest piąta.", "Пʼята година.")],
                     tip="Дати й час — теж порядкові: «pierwszy maja» (перше травня).",
                 ),

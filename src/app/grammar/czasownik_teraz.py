@@ -17,7 +17,7 @@ MODULE = Module(
             cards=[
                 Card(
                     "Інфінітив на -ć",
-                    "Початкова форма дієслова (у словнику) майже завжди на <b>-ć</b>: "
+                    "Початкова форма дієслова (у словнику) майже завжди на <code>-ć</code>: "
                     "<i>czytać, robić, pić</i>. Від неї утворюємо всі особи.",
                 ),
                 Card(
@@ -29,7 +29,7 @@ MODULE = Module(
                 Card(
                     "Три групи",
                     "Є 3 основні моделі відмінювання. Різниця — у формах «я» і «ти». Пройдемо кожну "
-                    "на прикладі. Спільне: <b>my</b> → -my, <b>wy</b> → -cie.",
+                    "на прикладі. Спільне: <code>my</code> → -my, <code>wy</code> → -cie.",
                     tip="Не треба зубрити — вловиш модель на кількох дієсловах, і решта підуть за аналогією.",
                 ),
             ],
@@ -41,14 +41,14 @@ MODULE = Module(
             cards=[
                 Card(
                     "Найлегша й найчастіша",
-                    "Дієслова типу <b>czytać</b> (читати): проста, регулярна модель.",
+                    "Дієслова типу <code>czytać</code> (читати): проста, регулярна модель.",
                     [("(ja) czytam", "читаю"), ("(ty) czytasz", "читаєш"), ("(on) czyta", "читає"),
                      ("(my) czytamy", "читаємо"), ("(wy) czytacie", "читаєте"), ("(oni) czytają", "читають")],
                 ),
                 Card(
                     "За тією ж моделлю",
-                    "Так само відмінюються: <b>mieszkać</b> (жити), <b>pytać</b> (питати), "
-                    "<b>kochać</b> (кохати), <b>mieć</b> (мати: mam, masz, ma…).",
+                    "Так само відмінюються: <code>mieszkać</code> (жити), <code>pytać</code> (питати), "
+                    "<code>kochać</code> (кохати), <code>mieć</code> (мати: mam, masz, ma…).",
                     [("Mieszkam w Polsce.", "Живу в Польщі."), ("Mam czas.", "Маю час.")],
                     tip="Запамʼятай ключ: ja -am, ty -asz, oni -ają. Дуже багато дієслів сюди належать.",
                 ),
@@ -66,14 +66,14 @@ MODULE = Module(
             cards=[
                 Card(
                     "Модель robić (робити)",
-                    "Форма «я» на <b>-ę</b>, «ти» на <b>-isz</b> (або -ysz).",
+                    "Форма «я» на <code>-ę</code>, «ти» на <code>-isz</code> (або -ysz).",
                     [("(ja) robię", "роблю"), ("(ty) robisz", "робиш"), ("(on) robi", "робить"),
                      ("(my) robimy", "робимо"), ("(wy) robicie", "робите"), ("(oni) robią", "роблять")],
                 ),
                 Card(
                     "За тією ж моделлю",
-                    "<b>mówić</b> (говорити), <b>lubić</b> (любити), <b>myśleć</b> (думати), "
-                    "<b>uczyć się</b> (вчитися).",
+                    "<code>mówić</code> (говорити), <code>lubić</code> (любити), <code>myśleć</code> (думати), "
+                    "<code>uczyć się</code> (вчитися).",
                     [("Mówię po polsku.", "Говорю польською."), ("Lubię kawę.", "Люблю каву.")],
                     tip="Ключ: ja -ę, ty -isz, oni -ą. Порівняй із групою 1 — відрізняються «я» і «ти».",
                 ),
@@ -90,14 +90,14 @@ MODULE = Module(
             cards=[
                 Card(
                     "Форма «ти» на -esz",
-                    "«Я» на <b>-ę</b>, «ти» на <b>-esz</b>. Часто основа трохи змінюється.",
+                    "«Я» на <code>-ę</code>, «ти» на <code>-esz</code>. Часто основа трохи змінюється.",
                     [("(ja) piję", "пʼю"), ("(ty) pijesz", "пʼєш"), ("(on) pije", "пʼє"),
                      ("(oni) piją", "пʼють")],
                 ),
                 Card(
                     "Ще приклади",
-                    "<b>pisać</b> (писати: piszę, piszesz), <b>iść</b> (йти: idę, idziesz), "
-                    "<b>móc</b> (могти: mogę, możesz).",
+                    "<code>pisać</code> (писати: piszę, piszesz), <code>iść</code> (йти: idę, idziesz), "
+                    "<code>móc</code> (могти: mogę, możesz).",
                     [("Piszę list.", "Пишу листа."), ("Idę do domu.", "Іду додому.")],
                     tip="Тут основа буває «капризна» (pisać→piszę). Такі дієслова просто варто запамʼятати.",
                 ),
@@ -119,13 +119,13 @@ MODULE = Module(
                 ),
                 Card(
                     "iść, jeść, wiedzieć",
-                    "<b>iść</b> (йти): idę, idziesz, idzie…\n<b>jeść</b> (їсти): jem, jesz, je, jemy, "
-                    "jecie, jedzą\n<b>wiedzieć</b> (знати факт): wiem, wiesz, wie, wiedzą",
+                    "<code>iść</code> (йти): idę, idziesz, idzie…\n<code>jeść</code> (їсти): jem, jesz, je, jemy, "
+                    "jecie, jedzą\n<code>wiedzieć</code> (знати факт): wiem, wiesz, wie, wiedzą",
                     [("Idę do pracy.", "Іду на роботу."), ("Wiem, gdzie to jest.", "Знаю, де це.")],
                 ),
                 Card(
                     "chcieć, móc",
-                    "<b>chcieć</b> (хотіти): chcę, chcesz, chce…\n<b>móc</b> (могти): mogę, możesz, może…",
+                    "<code>chcieć</code> (хотіти): chcę, chcesz, chce…\n<code>móc</code> (могти): mogę, możesz, może…",
                     [("Chcę kawę.", "Хочу каву."), ("Mogę ci pomóc.", "Можу тобі допомогти.")],
                     tip="Ці 5-6 дієслів — у щоденному вжитку. Варто вивчити напамʼять, як «być».",
                 ),

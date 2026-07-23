@@ -27,15 +27,15 @@ MODULE = Module(
                 ),
                 Card(
                     "7 відмінків і їхні питання",
-                    "1. <b>Mianownik</b> — хто? що?\n2. <b>Dopełniacz</b> — кого? чого?\n"
-                    "3. <b>Celownik</b> — кому? чому?\n4. <b>Biernik</b> — кого? що?\n"
-                    "5. <b>Narzędnik</b> — ким? чим?\n6. <b>Miejscownik</b> — (о) кому? (о) чому?\n"
-                    "7. <b>Wołacz</b> — звертання (гей, друже!)",
+                    "1. <code>Mianownik</code> — хто? що?\n2. <code>Dopełniacz</code> — кого? чого?\n"
+                    "3. <code>Celownik</code> — кому? чому?\n4. <code>Biernik</code> — кого? що?\n"
+                    "5. <code>Narzędnik</code> — ким? чим?\n6. <code>Miejscownik</code> — (о) кому? (о) чому?\n"
+                    "7. <code>Wołacz</code> — звертання (гей, друже!)",
                 ),
                 Card(
                     "Гарна новина",
-                    "Порядок і логіка майже такі, як в українській. Найчастіші — <b>Biernik</b> "
-                    "(що бачу/маю) і <b>Dopełniacz</b> (нема чого). З них і почнемо після базового.",
+                    "Порядок і логіка майже такі, як в українській. Найчастіші — <code>Biernik</code> "
+                    "(що бачу/маю) і <code>Dopełniacz</code> (нема чого). З них і почнемо після базового.",
                     tip="Не вчи всі таблиці одразу. Бери по відмінку, роби приклади — і воно вкладеться.",
                 ),
             ],
@@ -47,13 +47,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "Хто? Що?",
-                    "<b>Mianownik</b> — це та форма, що в словнику. Відповідає на <b>kto? co?</b> "
+                    "<code>Mianownik</code> — це та форма, що в словнику. Відповідає на <code>kto? co?</code> "
                     "і позначає <b>підмет</b> (того, хто діє).",
                     [("Kot śpi.", "Кіт спить."), ("Anna czyta.", "Анна читає.")],
                 ),
                 Card(
                     "Після «to jest»",
-                    "Називаючи щось через <b>to jest…</b>, теж уживаємо Mianownik.",
+                    "Називаючи щось через <code>to jest…</code>, теж уживаємо Mianownik.",
                     [("To jest dom.", "Це дім."), ("To są koty.", "Це коти.")],
                     tip="Це «нульова» форма-опора. Решта 6 відмінків — це зміни саме від неї.",
                 ),
@@ -70,19 +70,19 @@ MODULE = Module(
             cards=[
                 Card(
                     "Кого? Що?",
-                    "<b>Biernik</b> — це той, на кого <b>спрямована дія</b>. Питання <b>kogo? co?</b> "
+                    "<code>Biernik</code> — це той, на кого <b>спрямована дія</b>. Питання <code>kogo? co?</code> "
                     "Це найчастіший відмінок після дій.",
                 ),
                 Card(
                     "Дієслова-тригери",
-                    "Після <b>mieć</b> (мати), <b>lubić</b> (любити), <b>widzieć</b> (бачити), "
-                    "<b>znać</b>, <b>jeść</b>, <b>pić</b>, <b>kupować</b> — іде Biernik.",
+                    "Після <code>mieć</code> (мати), <code>lubić</code> (любити), <code>widzieć</code> (бачити), "
+                    "<code>znać</code>, <code>jeść</code>, <code>pić</code>, <code>kupować</code> — іде Biernik.",
                     [("Mam kota.", "Маю кота."), ("Lubię kawę.", "Люблю каву."),
                      ("Widzę Annę.", "Бачу Анну.")],
                 ),
                 Card(
                     "Закінчення — просте",
-                    "• жіночий -a → <b>-ę</b> (kawa→kawę, Anna→Annę)\n"
+                    "• жіночий -a → <code>-ę</code> (kawa→kawę, Anna→Annę)\n"
                     "• чоловічий <b>живий</b> → як Dopełniacz (-a): kot→kota, pies→psa\n"
                     "• чоловічий <b>неживий</b> та середній → <b>без змін</b> (mam dom, mam okno)",
                     [("Piję kawę.", "Пʼю каву."), ("Mam psa.", "Маю пса."), ("Mam długopis.", "Маю ручку.")],
@@ -103,7 +103,7 @@ MODULE = Module(
             cards=[
                 Card(
                     "Кого? Чого?",
-                    "<b>Dopełniacz</b> (kogo? czego?) — один із найважливіших. Три головні вживання: "
+                    "<code>Dopełniacz</code> (kogo? czego?) — один із найважливіших. Три головні вживання: "
                     "<b>заперечення</b>, <b>приналежність</b>, <b>кількість</b>.",
                 ),
                 Card(
@@ -120,14 +120,14 @@ MODULE = Module(
                 ),
                 Card(
                     "3) Кількість: dużo, mało + Dopełniacz",
-                    "Після слів кількості: <b>dużo</b>, <b>mało</b>, <b>trochę</b>, <b>ile</b>.",
+                    "Після слів кількості: <code>dużo</code>, <code>mało</code>, <code>trochę</code>, <code>ile</code>.",
                     [("dużo pracy", "багато роботи"), ("mało czasu", "мало часу"),
                      ("szklanka wody", "склянка води")],
                 ),
                 Card(
                     "Прийменники + Dopełniacz",
-                    "Багато прийменників вимагають Dopełniacz: <b>do</b> (до), <b>od</b> (від), "
-                    "<b>z</b> (з, звідки), <b>bez</b> (без), <b>dla</b> (для), <b>u</b> (у когось).",
+                    "Багато прийменників вимагають Dopełniacz: <code>do</code> (до), <code>od</code> (від), "
+                    "<code>z</code> (з, звідки), <code>bez</code> (без), <code>dla</code> (для), <code>u</code> (у когось).",
                     [("do domu", "додому"), ("bez cukru", "без цукру"), ("dla mamy", "для мами")],
                 ),
             ],
@@ -145,25 +145,25 @@ MODULE = Module(
             cards=[
                 Card(
                     "Ким? Чим?",
-                    "<b>Narzędnik</b> (kim? czym?) — три головні вживання: <b>ким я є</b>, "
+                    "<code>Narzędnik</code> (kim? czym?) — три головні вживання: <b>ким я є</b>, "
                     "<b>з ким/чим</b>, <b>чим роблю</b> (інструмент).",
                 ),
                 Card(
                     "1) Бути кимось: być + Narzędnik",
-                    "Професія/роль після <b>być</b> — у Narzędnik.",
+                    "Професія/роль після <code>być</code> — у Narzędnik.",
                     [("Jestem studentem.", "Я студент."), ("Ona jest lekarką.", "Вона лікарка.")],
                     tip="Тому не «jestem student», а «jestem studentem». Дуже часта помилка початківців!",
                 ),
                 Card(
                     "2) З кимось: z + Narzędnik",
-                    "Прийменник <b>z</b> у значенні «разом із» вимагає Narzędnik.",
+                    "Прийменник <code>z</code> у значенні «разом із» вимагає Narzędnik.",
                     [("z bratem", "з братом"), ("kawa z mlekiem", "кава з молоком")],
                 ),
                 Card(
                     "Закінчення",
-                    "• чоловічий/середній → <b>-em</b> (student→studentem, okno→oknem)\n"
-                    "• жіночий → <b>-ą</b> (kawa→kawą, Anna→Anną)\n"
-                    "• множина → <b>-ami</b> (z przyjaciółmi — з друзями)",
+                    "• чоловічий/середній → <code>-em</code> (student→studentem, okno→oknem)\n"
+                    "• жіночий → <code>-ą</code> (kawa→kawą, Anna→Anną)\n"
+                    "• множина → <code>-ami</code> (z przyjaciółmi — з друзями)",
                     [("Piszę długopisem.", "Пишу ручкою."), ("Jadę autobusem.", "Їду автобусом.")],
                 ),
             ],
@@ -180,19 +180,19 @@ MODULE = Module(
             cards=[
                 Card(
                     "(О) кому? (о) чому? Де?",
-                    "<b>Miejscownik</b> — єдиний відмінок, що <b>ніколи не буває без прийменника</b>. "
+                    "<code>Miejscownik</code> — єдиний відмінок, що <b>ніколи не буває без прийменника</b>. "
                     "Найчастіше — про <b>місце</b> (де?).",
                 ),
                 Card(
                     "Прийменники-тригери",
-                    "<b>w</b> (у), <b>na</b> (на), <b>o</b> (про), <b>przy</b> (біля), <b>po</b> (після).",
+                    "<code>w</code> (у), <code>na</code> (на), <code>o</code> (про), <code>przy</code> (біля), <code>po</code> (після).",
                     [("w domu", "вдома"), ("na stole", "на столі"), ("myślę o tobie", "думаю про тебе")],
                 ),
                 Card(
                     "Закінчення (буває «мʼяким»)",
-                    "Часто <b>-e</b> зі змʼякшенням приголосного, або <b>-u</b>:\n"
-                    "• stół → na sto<b>le</b>, szkoła → w szko<b>le</b>\n"
-                    "• dom → w do<b>mu</b>, pokój → w poko<b>ju</b>",
+                    "Часто <code>-e</code> зі змʼякшенням приголосного, або <code>-u</code>:\n"
+                    "• stół → na sto<code>le</code>, szkoła → w szko<code>le</code>\n"
+                    "• dom → w do<code>mu</code>, pokój → w poko<code>ju</code>",
                     [("w Warszawie", "у Варшаві (Warszawa→Warszawie)"), ("w Polsce", "у Польщі")],
                     tip="Miejscownik має найбільше варіантів. Не зубри таблицю — запамʼятовуй у фразах: «w domu», «na stole».",
                 ),
@@ -211,21 +211,21 @@ MODULE = Module(
             cards=[
                 Card(
                     "Кому? Чому?",
-                    "<b>Celownik</b> (komu? czemu?) — той, <b>кому</b> щось даємо/робимо "
+                    "<code>Celownik</code> (komu? czemu?) — той, <b>кому</b> щось даємо/робимо "
                     "(непрямий додаток).",
                 ),
                 Card(
                     "Дієслова-тригери",
-                    "<b>dawać</b> (давати), <b>pomagać</b> (допомагати), <b>dziękować</b> (дякувати), "
-                    "<b>mówić</b> (казати комусь).",
+                    "<code>dawać</code> (давати), <code>pomagać</code> (допомагати), <code>dziękować</code> (дякувати), "
+                    "<code>mówić</code> (казати комусь).",
                     [("Daję mamie kwiaty.", "Даю мамі квіти."), ("Pomagam bratu.", "Допомагаю братові."),
                      ("Dziękuję ci.", "Дякую тобі.")],
                 ),
                 Card(
                     "Закінчення",
-                    "• чоловічий → <b>-owi</b> (brat→bratowi, pan→panu — виняток)\n"
-                    "• жіночий → <b>-e/-i</b> (mama→mamie, Anna→Annie)\n"
-                    "• середній → <b>-u</b> (dziecko→dziecku)",
+                    "• чоловічий → <code>-owi</code> (brat→bratowi, pan→panu — виняток)\n"
+                    "• жіночий → <code>-e/-i</code> (mama→mamie, Anna→Annie)\n"
+                    "• середній → <code>-u</code> (dziecko→dziecku)",
                 ),
             ],
             quiz=[
@@ -240,13 +240,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "Коли когось кличеш",
-                    "<b>Wołacz</b> — форма для <b>звертання</b> (гей, Аню! пане!). В усному мовленні "
+                    "<code>Wołacz</code> — форма для <b>звертання</b> (гей, Аню! пане!). В усному мовленні "
                     "часто заміняють на Mianownik, але у формальному й з іменами він живий.",
                 ),
                 Card(
                     "Закінчення",
-                    "• жіночі імена → <b>-o</b> або <b>-u</b> (Anna→Anno, Ania→Aniu)\n"
-                    "• чоловічі → <b>-e/-u</b> (Piotr→Piotrze, pan→panie)",
+                    "• жіночі імена → <code>-o</code> або <code>-u</code> (Anna→Anno, Ania→Aniu)\n"
+                    "• чоловічі → <code>-e/-u</code> (Piotr→Piotrze, pan→panie)",
                     [("Aniu, chodź!", "Аню, ходи!"), ("Szanowny Panie!", "Шановний пане!"),
                      ("Mamo!", "Мамо!")],
                     tip="У листах/офіційно Wołacz обовʼязковий: «Drogi Piotrze», «Szanowni Państwo».",
@@ -268,9 +268,9 @@ MODULE = Module(
                 ),
                 Card(
                     "Головні тригери-підказки",
-                    "• <b>mieć/lubić/widzieć</b> → Biernik\n• <b>nie ma / dużo / do, od, bez, dla</b> → Dopełniacz\n"
-                    "• <b>być kim / z kim</b> → Narzędnik\n• <b>w, na, o</b> (місце) → Miejscownik\n"
-                    "• <b>dawać, pomagać, dziękować</b> → Celownik",
+                    "• <code>mieć/lubić/widzieć</code> → Biernik\n• <code>nie ma / dużo / do, od, bez, dla</code> → Dopełniacz\n"
+                    "• <code>być kim / z kim</code> → Narzędnik\n• <code>w, na, o</code> (місце) → Miejscownik\n"
+                    "• <code>dawać, pomagać, dziękować</code> → Celownik",
                 ),
                 Card(
                     "Стратегія навчання",

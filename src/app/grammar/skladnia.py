@@ -47,13 +47,13 @@ MODULE = Module(
                 ),
                 Card(
                     "«так/ні» через czy",
-                    "Без питального слова став <b>czy</b> на початок. У розмові можна й просто "
+                    "Без питального слова став <code>czy</code> на початок. У розмові можна й просто "
                     "інтонацією.",
                     [("Czy masz czas?", "Маєш час?"), ("Masz czas?", "Маєш час? (розмовно)")],
                 ),
                 Card(
                     "Заперечення nie",
-                    "<b>nie</b> перед дієсловом. Подвійне заперечення — норма (nikt <b>nie</b> wie).",
+                    "<code>nie</code> перед дієсловом. Подвійне заперечення — норма (nikt <code>nie</code> wie).",
                     [("Nie rozumiem.", "Не розумію."), ("Nigdy nie byłem.", "Ніколи не був.")],
                 ),
             ],
@@ -69,15 +69,15 @@ MODULE = Module(
             cards=[
                 Card(
                     "Зʼєднуємо думки",
-                    "• <b>i</b> — і\n• <b>a</b> — а (легке протиставлення)\n• <b>ale</b> — але\n"
-                    "• <b>lub / albo</b> — або\n• <b>więc</b> — отже\n• <b>bo</b> — бо",
+                    "• <code>i</code> — і\n• <code>a</code> — а (легке протиставлення)\n• <code>ale</code> — але\n"
+                    "• <code>lub / albo</code> — або\n• <code>więc</code> — отже\n• <code>bo</code> — бо",
                     [("Mam czas, ale nie mam pieniędzy.", "Маю час, але не маю грошей."),
                      ("Nie idę, bo jestem chory.", "Не йду, бо хворий.")],
                 ),
                 Card(
                     "że і żeby",
-                    "• <b>że</b> — що (факт): <i>Wiem, że masz rację.</i>\n"
-                    "• <b>żeby</b> — щоб (мета): <i>Uczę się, żeby zdać egzamin.</i>",
+                    "• <code>że</code> — що (факт): <i>Wiem, że masz rację.</i>\n"
+                    "• <code>żeby</code> — щоб (мета): <i>Uczę się, żeby zdać egzamin.</i>",
                     [("Myślę, że tak.", "Думаю, що так."),
                      ("Piszę, żeby zaprosić.", "Пишу, щоб запросити.")],
                     tip="że = констатуєш факт; żeby = мета/бажання. Не плутай.",
@@ -95,13 +95,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "Як? — прислівник",
-                    "Від прикметника: часто <b>-y → -e</b> або <b>-o</b>. Прислівник <b>не змінюється</b>.",
+                    "Від прикметника: часто <code>-y → -e</code> або <code>-o</code>. Прислівник <b>не змінюється</b>.",
                     [("dobry → dobrze", "добрий → добре"), ("szybki → szybko", "швидкий → швидко"),
                      ("wolny → wolno", "повільний → повільно")],
                 ),
                 Card(
                     "Ступенювання прислівників",
-                    "Теж є: dobrze → <b>lepiej</b> → najlepiej (краще/найкраще); "
+                    "Теж є: dobrze → <code>lepiej</code> → najlepiej (краще/найкраще); "
                     "źle → gorzej (гірше).",
                     [("Mówię dobrze.", "Говорю добре."), ("Teraz mówię lepiej.", "Тепер говорю краще.")],
                 ),
@@ -118,13 +118,13 @@ MODULE = Module(
             cards=[
                 Card(
                     "Обовʼязок і можливість",
-                    "Ці слова + <b>інфінітив</b>:\n• <b>musieć</b> — мусити (muszę iść — мушу йти)\n"
-                    "• <b>móc</b> — могти (mogę pomóc)\n• <b>chcieć</b> — хотіти (chcę spać)",
+                    "Ці слова + <b>інфінітив</b>:\n• <code>musieć</code> — мусити (muszę iść — мушу йти)\n"
+                    "• <code>móc</code> — могти (mogę pomóc)\n• <code>chcieć</code> — хотіти (chcę spać)",
                     [("Muszę pracować.", "Мушу працювати."), ("Mogę wejść?", "Можна увійти?")],
                 ),
                 Card(
                     "Безособові: trzeba, można, wolno",
-                    "• <b>trzeba</b> — треба\n• <b>można</b> — можна\n• <b>nie wolno</b> — не можна "
+                    "• <code>trzeba</code> — треба\n• <code>można</code> — можна\n• <code>nie wolno</code> — не можна "
                     "(заборонено). Усі + інфінітив.",
                     [("Trzeba iść.", "Треба йти."), ("Tu można palić?", "Тут можна курити?"),
                      ("Nie wolno wchodzić.", "Заходити не можна.")],

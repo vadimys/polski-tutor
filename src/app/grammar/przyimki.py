@@ -24,8 +24,8 @@ MODULE = Module(
                 ),
                 Card(
                     "Ти вже знаєш багато",
-                    "З модуля «Відмінки»: <b>do, od, bez, dla</b> → Dopełniacz · <b>z</b> (разом) → "
-                    "Narzędnik · <b>w, na, o</b> (місце) → Miejscownik. Тепер упорядкуємо.",
+                    "З модуля «Відмінки»: <code>do, od, bez, dla</code> → Dopełniacz · <code>z</code> (разом) → "
+                    "Narzędnik · <code>w, na, o</code> (місце) → Miejscownik. Тепер упорядкуємо.",
                     tip="Один прийменник іноді керує різними відмінками — залежно від значення (див. далі).",
                 ),
             ],
@@ -46,14 +46,14 @@ MODULE = Module(
                 ),
                 Card(
                     "w чи na?",
-                    "• <b>w</b> — усередині (w domu, w szkole)\n• <b>na</b> — на поверхні або з подіями/"
+                    "• <code>w</code> — усередині (w domu, w szkole)\n• <code>na</code> — на поверхні або з подіями/"
                     "відкритими місцями (na stole, na uniwersytecie, na koncercie)",
                     [("na poczcie", "на пошті"), ("na wsi", "у селі")],
                     tip="w/na — питання звички. Запамʼятовуй у фразах: «w pracy», але «na uczelni».",
                 ),
                 Card(
                     "Поруч: przy, obok, koło",
-                    "<b>przy</b> (біля) → Miejscownik · <b>obok / koło</b> (поруч/біля) → Dopełniacz.",
+                    "<code>przy</code> (біля) → Miejscownik · <code>obok / koło</code> (поруч/біля) → Dopełniacz.",
                     [("przy stole", "за столом"), ("obok domu", "поруч із домом")],
                 ),
             ],
@@ -69,14 +69,14 @@ MODULE = Module(
             cards=[
                 Card(
                     "Куди",
-                    "• <b>do</b> + Dopełniacz — до/в (місця): do domu, do szkoły\n"
-                    "• <b>na</b> + Biernik — на (подію/відкрите): na koncert, na pocztę",
+                    "• <code>do</code> + Dopełniacz — до/в (місця): do domu, do szkoły\n"
+                    "• <code>na</code> + Biernik — на (подію/відкрите): na koncert, na pocztę",
                     [("Idę do sklepu.", "Іду в магазин."), ("Idę na koncert.", "Іду на концерт.")],
                 ),
                 Card(
                     "Звідки",
-                    "• <b>z</b> + Dopełniacz — з (місця): z domu, z Polski\n"
-                    "• <b>od</b> + Dopełniacz — від (людини): od mamy",
+                    "• <code>z</code> + Dopełniacz — з (місця): z domu, z Polski\n"
+                    "• <code>od</code> + Dopełniacz — від (людини): od mamy",
                     [("Wracam z pracy.", "Повертаюся з роботи."),
                      ("List od babci.", "Лист від бабусі.")],
                     tip="Пара «куди↔звідки»: do↔z (do domu / z domu), na↔z (na pocztę / z poczty).",
@@ -94,14 +94,14 @@ MODULE = Module(
             cards=[
                 Card(
                     "Дні й години",
-                    "• <b>w</b> + день (Biernik): w poniedziałek (у понеділок)\n"
-                    "• <b>o</b> + година (Miejscownik): o piątej (о пʼятій)",
+                    "• <code>w</code> + день (Biernik): w poniedziałek (у понеділок)\n"
+                    "• <code>o</code> + година (Miejscownik): o piątej (о пʼятій)",
                     [("w sobotę", "у суботу"), ("o dziesiątej", "о десятій")],
                 ),
                 Card(
                     "Тривалість і «через»",
-                    "• <b>przez</b> + Biernik — протягом: przez godzinę (годину)\n"
-                    "• <b>za</b> + Biernik — через (у майбутньому): za godzinę (за годину)",
+                    "• <code>przez</code> + Biernik — протягом: przez godzinę (годину)\n"
+                    "• <code>za</code> + Biernik — через (у майбутньому): za godzinę (за годину)",
                     [("Uczę się przez godzinę.", "Вчуся годину."),
                      ("Wrócę za tydzień.", "Повернуся за тиждень.")],
                     tip="«za» тут = «через стільки-то часу», а не «за» у просторі.",
