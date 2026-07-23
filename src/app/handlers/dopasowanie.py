@@ -19,12 +19,13 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReactionTypeEmoji
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from app import content
 from app.bot import quiz
 from app.bot.keyboards import match_kb, menu_kb_for, to_menu_kb
+from app.bot.ui import emph
 from app.services import goals
 from app.services import state as user_state
 
@@ -59,10 +60,41 @@ async def _intro(message: Message) -> None:
 async def _send_prompt(message: Message, prompts: list[str], n_options: int, pos: int) -> None:
     """Одне питання = одне повідомлення зі своїми літерними кнопками під ним."""
     await message.answer(
-        f"🧩 Пропуск <b>{pos + 1}/{len(prompts)}</b>\n\n{html.escape(prompts[pos])}\n\n"
-        "Обери фрагмент (літера):",
+        f"🧩 <b>Пропуск {pos + 1}/{len(prompts)}</b>\n\n"
+        f"❓ {html.escape(prompts[pos])}\n\n"
+        "👇 <i>Обери літеру фрагмента, що підходить:</i>",
         reply_markup=match_kb(n_options, pos),
     )
+
+
+async def _verdict(
+    cb: CallbackQuery, chosen: int, correct: int, options: list[str], question: str, explain: str
+) -> bool:
+    """Картка-розбір matching: показує ЛІТЕРУ обраного/правильного фрагмента + пояснення.
+
+    Літера — позиційна (як у списку фрагментів), тож збігається з поясненням (див.
+    test_match_explain_letters_match_key). Кнопки зникають (повідомлення = запис відповіді).
+    """
+    ok = chosen == correct
+    yl = chr(65 + chosen) if 0 <= chosen < len(options) else "?"
+    your = html.escape(options[chosen]) if 0 <= chosen < len(options) else "—"
+    if ok:
+        body = f"🔵 Твоя відповідь: <b>{yl})</b> {your}\n\n✔️ <b>Dobrze!</b>"
+    else:
+        body = (
+            f"🔵 Твоя відповідь: <b>{yl})</b> {your}  ❌\n\n"
+            f"✅ Правильно: <b>{chr(65 + correct)})</b> {html.escape(options[correct])}"
+        )
+    exp = f"\n\n💡 {emph(explain)}" if explain else ""
+    with suppress(Exception):
+        await cb.message.edit_text(f"❓ {emph(question)}\n\n{body}{exp}")
+    await cb.answer("✔️" if ok else "❌")
+    if ok:  # маленька гейміфікація — реакція на правильну відповідь
+        with suppress(Exception):
+            await cb.bot.set_message_reaction(
+                cb.message.chat.id, cb.message.message_id, [ReactionTypeEmoji(emoji="🔥")]
+            )
+    return ok
 
 
 @router.message(Command("dopasowanie"))
@@ -139,7 +171,7 @@ async def cb_answer(cb: CallbackQuery, state: FSMContext) -> None:
         return
 
     # питання-повідомлення перетворюється на картку-розбір (кнопки зникають) — image #18
-    if await quiz.show_verdict(cb, chosen, key[pos], options, prompts[pos], explains[pos]):
+    if await _verdict(cb, chosen, key[pos], options, prompts[pos], explains[pos]):
         correct += 1
 
     pos += 1
