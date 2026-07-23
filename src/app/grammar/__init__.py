@@ -8,6 +8,9 @@
 from __future__ import annotations
 
 from app.grammar.alfabet import MODULE as _ALFABET
+from app.grammar.aspekt import MODULE as _ASPEKT
+from app.grammar.czasownik_czas import MODULE as _CZAS_PP
+from app.grammar.czasownik_teraz import MODULE as _CZAS_TER
 from app.grammar.podstawy import MODULE as _PODSTAWY
 from app.grammar.przypadki import MODULE as _PRZYPADKI
 from app.grammar.rzeczownik import MODULE as _RZECZOWNIK
@@ -15,8 +18,10 @@ from app.grammar.schema import Card, Lesson, Module, Quiz
 
 __all__ = ["Card", "Lesson", "Module", "Quiz", "MODULES"]
 
-# Порядок = навчальний шлях (від легкого до найважчого). Далі: czasowniki (дієслова)…
-MODULES: list[Module] = [_ALFABET, _PODSTAWY, _RZECZOWNIK, _PRZYPADKI]
+# Порядок = навчальний шлях (від легкого до найважчого). Далі: przymiotniki, zaimki…
+MODULES: list[Module] = [
+    _ALFABET, _PODSTAWY, _RZECZOWNIK, _PRZYPADKI, _CZAS_TER, _CZAS_PP, _ASPEKT,
+]
 
 
 def all_modules() -> list[Module]:
