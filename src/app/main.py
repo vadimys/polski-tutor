@@ -25,6 +25,7 @@ from app.handlers import (
     errors,
     exam,
     grammar,
+    grammar_verbs,
     lesson,
     lexicon,
     listening,
@@ -64,6 +65,7 @@ COMMANDS = [
     BotCommand(command="zaraz", description="⚡ Навчатись зараз (розумний підбір)"),
     BotCommand(command="lekcja", description="Почати урок"),
     BotCommand(command="gramatyka", description="📚 Граматика (курс з нуля)"),
+    BotCommand(command="czasowniki", description="🔀 Дієслова (довідник + тренажер)"),
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),
     BotCommand(command="opis", description="Опис фотографії (Zadanie 1)"),
@@ -133,7 +135,7 @@ async def main() -> None:
     for r in (
         placement, lesson, writing, drills, review, say, lexicon, mistakes,
         speaking, listening, mock, exam, dopasowanie, uzupelnianie, transformacja,
-        audiomatch, teacher, support, plan, grammar, menu,
+        audiomatch, teacher, support, plan, grammar, grammar_verbs, menu,
     ):
         learning.include_router(r.router)
     learning.message.middleware(AccessMiddleware())

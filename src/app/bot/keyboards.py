@@ -195,9 +195,10 @@ def menu_kb() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="📚 Граматика", callback_data="grammar:home"),
     )
     kb.row(
+        InlineKeyboardButton(text="🔀 Дієслова", callback_data="verbs:home"),
         InlineKeyboardButton(text="🗂 Словник", callback_data="lex:open"),
-        InlineKeyboardButton(text="🔁 Повторення слів", callback_data="review:start"),
     )
+    kb.row(InlineKeyboardButton(text="🔁 Повторення слів", callback_data="review:start"))
     # Підрозділи
     kb.row(InlineKeyboardButton(text="🏋️ Вправи (розділи іспиту)", callback_data="menu:practice"))
     kb.row(InlineKeyboardButton(text="🎓 Іспит: тести й контроль", callback_data="menu:exam"))
