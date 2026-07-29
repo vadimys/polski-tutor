@@ -8,15 +8,20 @@ from __future__ import annotations
 
 from app.verbs.codzienne import GROUP as _CODZIENNE
 from app.verbs.core import GROUP as _CORE
+from app.verbs.dom import GROUP as _DOM
 from app.verbs.komunikacja import GROUP as _KOMUNIKACJA
 from app.verbs.praca import GROUP as _PRACA
 from app.verbs.ruch import GROUP as _RUCH
 from app.verbs.schema import PERSONS, Verb, VerbGroup
+from app.verbs.sprawy import GROUP as _SPRAWY
 from app.verbs.umysl import GROUP as _UMYSL
+from app.verbs.zdrowie import GROUP as _ZDROWIE
 
 __all__ = ["PERSONS", "Verb", "VerbGroup", "GROUPS"]
 
-GROUPS: list[VerbGroup] = [_CORE, _RUCH, _CODZIENNE, _KOMUNIKACJA, _UMYSL, _PRACA]
+GROUPS: list[VerbGroup] = [
+    _CORE, _RUCH, _CODZIENNE, _KOMUNIKACJA, _UMYSL, _PRACA, _DOM, _ZDROWIE, _SPRAWY,
+]
 
 
 def all_groups() -> list[VerbGroup]:

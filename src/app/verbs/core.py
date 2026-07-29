@@ -61,7 +61,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["znam", "znasz", "zna", "znamy", "znacie", "znają"],
             past="on znał · ona znała · oni znali",
-            rekcja="kogo? co? (Biernik): znam Annę, znam to miasto",
+            rekcja="kogo? co? (Biernik): znam Annę, znam to miasto", rekcja_q="Biernik",
             examples=[("Znasz ten film?", "Знаєш цей фільм?")],
         ),
         Verb(
@@ -75,7 +75,7 @@ GROUP = VerbGroup(
             present=["potrzebuję", "potrzebujesz", "potrzebuje", "potrzebujemy",
                      "potrzebujecie", "potrzebują"],
             past="on potrzebował · ona potrzebowała · oni potrzebowali",
-            rekcja="kogo? czego? (Dopełniacz!): potrzebuję pomocy",
+            rekcja="kogo? czego? (Dopełniacz!): potrzebuję pomocy", rekcja_q="Dopełniacz",
             examples=[("Potrzebuję twojej pomocy.", "Мені потрібна твоя допомога.")],
         ),
     ],

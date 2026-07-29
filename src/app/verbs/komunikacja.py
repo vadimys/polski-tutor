@@ -23,7 +23,7 @@ GROUP = VerbGroup(
             present=["rozmawiam", "rozmawiasz", "rozmawia", "rozmawiamy", "rozmawiacie",
                      "rozmawiają"],
             past="on rozmawiał · ona rozmawiała · oni rozmawiali",
-            rekcja="z + Narzędnik · o + Miejscownik: rozmawiam z bratem o pracy",
+            rekcja="z + Narzędnik · o + Miejscownik: rozmawiam z bratem o pracy", rekcja_q="z + Narzędnik",
             examples=[("Rozmawiamy o planach.", "Розмовляємо про плани.")],
         ),
         Verb(
@@ -40,7 +40,7 @@ GROUP = VerbGroup(
             present=["odpowiadam", "odpowiadasz", "odpowiada", "odpowiadamy",
                      "odpowiadacie", "odpowiadają"],
             past="on odpowiadał · ona odpowiadała · oni odpowiadali",
-            rekcja="na + Biernik: odpowiadam na pytanie",
+            rekcja="na + Biernik: odpowiadam na pytanie", rekcja_q="na + Biernik",
             examples=[("Odpowiem na twoje pytanie.", "Відповім на твоє питання.")],
         ),
         Verb(
@@ -48,7 +48,7 @@ GROUP = VerbGroup(
             group="-ę, -isz",
             present=["proszę", "prosisz", "prosi", "prosimy", "prosicie", "proszą"],
             past="on prosił · ona prosiła · oni prosili",
-            rekcja="kogo? + o co? (o + Biernik): proszę cię o pomoc",
+            rekcja="kogo? + o co? (o + Biernik): proszę cię o pomoc", rekcja_q="o + Biernik",
             examples=[("Poproszę kawę.", "Будь ласка, каву. (у кавʼярні)")],
         ),
         Verb(
@@ -57,7 +57,7 @@ GROUP = VerbGroup(
             present=["dziękuję", "dziękujesz", "dziękuje", "dziękujemy", "dziękujecie",
                      "dziękują"],
             past="on dziękował · ona dziękowała · oni dziękowali",
-            rekcja="komu? (Celownik!) + za co? (za + Biernik): dziękuję ci za pomoc",
+            rekcja="komu? (Celownik!) + za co? (za + Biernik): dziękuję ci za pomoc", rekcja_q="Celownik",
             examples=[("Dziękuję za wszystko.", "Дякую за все.")],
         ),
         Verb(
@@ -65,7 +65,7 @@ GROUP = VerbGroup(
             group="-ę, -isz",
             present=["dzwonię", "dzwonisz", "dzwoni", "dzwonimy", "dzwonicie", "dzwonią"],
             past="on dzwonił · ona dzwoniła · oni dzwonili",
-            rekcja="do + Dopełniacz!: dzwonię do mamy (не «mamie»)",
+            rekcja="do + Dopełniacz!: dzwonię do mamy (не «mamie»)", rekcja_q="do + Dopełniacz",
             examples=[("Zadzwonię do ciebie wieczorem.", "Подзвоню тобі ввечері.")],
         ),
         Verb(
@@ -81,7 +81,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["czytam", "czytasz", "czyta", "czytamy", "czytacie", "czytają"],
             past="on czytał · ona czytała · oni czytali",
-            rekcja="co? (Biernik): czytam książkę",
+            rekcja="co? (Biernik): czytam książkę", rekcja_q="Biernik",
             examples=[("Wieczorem czytam książki.", "Увечері читаю книжки.")],
         ),
         Verb(
@@ -89,7 +89,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["słucham", "słuchasz", "słucha", "słuchamy", "słuchacie", "słuchają"],
             past="on słuchał · ona słuchała · oni słuchali",
-            rekcja="kogo? czego? (Dopełniacz!): słucham muzyki (не «muzykę»)",
+            rekcja="kogo? czego? (Dopełniacz!): słucham muzyki (не «muzykę»)", rekcja_q="Dopełniacz",
             examples=[("Słucham polskiej muzyki.", "Слухаю польську музику.")],
         ),
     ],

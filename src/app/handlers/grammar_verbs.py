@@ -30,7 +30,11 @@ class VFind(StatesGroup):
 
 
 class VDrill(StatesGroup):
-    active = State()  # сесія тренажера
+    active = State()  # сесія тренажера форм
+
+
+class RDrill(StatesGroup):
+    active = State()  # сесія тренажера rekcji (який відмінок після дієслова)
 
 
 # ── хаб ──────────────────────────────────────────────────────────────────────
@@ -48,6 +52,7 @@ def _hub_kb() -> InlineKeyboardMarkup:
         kb.button(text=f"{g.icon} {g.title}", callback_data=f"vb:g:{gi}")
     kb.adjust(2)
     kb.row(InlineKeyboardButton(text="🏋️ Тренажер відмінювання", callback_data="vb:drill"))
+    kb.row(InlineKeyboardButton(text="🎯 Тренажер rekcji (відмінок після дієслова)", callback_data="vb:rdrill"))
     kb.row(InlineKeyboardButton(text="🔍 Знайти дієслово", callback_data="vb:find"))
     kb.row(InlineKeyboardButton(text="⬅️ Меню", callback_data="menu:home"))
     return kb.as_markup()
@@ -250,6 +255,96 @@ async def cb_drill_answer(cb: CallbackQuery, state: FSMContext) -> None:
         await cb.message.answer(
             f"{emoji} <b>Результат: {correct}/{total}</b>\n"
             "<i>Тренажер запамʼятовує помилки й питатиме ці дієслова частіше.</i>",
+            reply_markup=_hub_kb(),
+        )
+
+
+# ── тренажер rekcji ──────────────────────────────────────────────────────────
+def _rekcja_q_text(v: verbs.Verb, pos: int, total: int) -> str:
+    return (
+        f"🎯 <b>Тренажер rekcji</b> · {pos + 1}/{total}\n\n"
+        f"❓ <code>{html.escape(v.inf)}</code> ({html.escape(v.uk)})\n"
+        "З яким відмінком/прийменником це працює?"
+    )
+
+
+async def _send_rekcja_q(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    queue, pos = data["queue"], data["pos"]
+    gi, vi, _ = queue[pos]
+    v = verbs.verb_at(gi, vi)
+    if not v or not v.rekcja_q:
+        await state.clear()
+        return
+    opts = vdrill.rekcja_options(v.rekcja_q, vdrill.rekcja_pool())
+    await state.update_data(opts=opts)  # варіанти фіксуємо в FSM (стабільні між тапами)
+    kb = InlineKeyboardBuilder()
+    for i, o in enumerate(opts):
+        kb.button(text=o, callback_data=f"vr:a:{pos}:{i}")
+    kb.adjust(1)
+    kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="vr:stop"))
+    await message.answer(_rekcja_q_text(v, pos, len(queue)), reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "vb:rdrill")
+async def cb_rdrill(cb: CallbackQuery, state: FSMContext) -> None:
+    await cb.answer()
+    queue = await vdrill.build_rekcja_drill(cb.from_user.id)
+    if not queue:
+        return
+    await state.set_state(RDrill.active)
+    await state.update_data(queue=queue, pos=0, correct=0)
+    await _send_rekcja_q(cb.message, state)
+
+
+@router.callback_query(RDrill.active, F.data == "vr:stop")
+async def cb_rdrill_stop(cb: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await cb.answer("Завершено")
+    with suppress(Exception):
+        await cb.message.edit_reply_markup(reply_markup=None)
+    await cb.message.answer("⏹ Тренажер закрито.", reply_markup=_hub_kb())
+
+
+@router.callback_query(RDrill.active, F.data.startswith("vr:a:"))
+async def cb_rdrill_answer(cb: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    queue, pos, correct, opts = data["queue"], data["pos"], data["correct"], data["opts"]
+    _, _, qpos, oi = cb.data.split(":")
+    if int(qpos) != pos:
+        await cb.answer("Це питання вже пройдено 🙂")
+        return
+    gi, vi, _ = queue[pos]
+    v = verbs.verb_at(gi, vi)
+    if not v:
+        await state.clear()
+        return
+    chosen = opts[int(oi)] if 0 <= int(oi) < len(opts) else "—"
+    ok = chosen == v.rekcja_q
+    await vdrill.record_answer(cb.from_user.id, gi, vi, ok, kind="rekcja")
+    await cb.answer("✔️" if ok else "❌")
+    verdict = (
+        f"🔵 Твоя відповідь: <b>{html.escape(chosen)}</b>\n\n✔️ <b>Dobrze!</b>"
+        if ok
+        else f"🔵 Твоя відповідь: <b>{html.escape(chosen)}</b>  ❌\n\n"
+        f"✅ Правильно: <b>{html.escape(v.rekcja_q)}</b>"
+    )
+    exp = f"\n\n💡 {html.escape(v.rekcja)}" if v.rekcja else ""
+    with suppress(Exception):
+        await cb.message.edit_text(f"❓ <code>{html.escape(v.inf)}</code>\n\n{verdict}{exp}")
+    correct += ok
+    pos += 1
+    await state.update_data(pos=pos, correct=correct)
+    if pos < len(queue):
+        await _send_rekcja_q(cb.message, state)
+    else:
+        await state.clear()
+        total = len(queue)
+        emoji = "🎉" if correct == total else "👍" if correct >= total - 1 else "💪"
+        await cb.message.answer(
+            f"{emoji} <b>Результат: {correct}/{total}</b>\n"
+            "<i>Rekcja — найчастіше джерело помилок. Тренажер повертатиме складні "
+            "дієслова, доки не закріпиш.</i>",
             reply_markup=_hub_kb(),
         )
 

@@ -7,10 +7,10 @@ from app.services import verbs as vdrill
 
 
 def test_registry_and_ids_unique():
-    assert len(verbs.all_groups()) == 6
+    assert len(verbs.all_groups()) == 9
     infs = [v.inf for _, _, v in verbs.all_verbs()]
     assert len(infs) == len(set(infs)), "інфінітиви мають бути унікальні"
-    assert len(infs) >= 60
+    assert len(infs) >= 90
 
 
 def test_every_verb_is_complete():
@@ -58,3 +58,20 @@ def test_pick_drill_without_wrongs():
     coords = [(0, i) for i in range(3)]
     out = vdrill.pick_drill(coords, wrongs=[], k=5, rng=random.Random(1))
     assert len(out) == 3  # не більше, ніж є дієслів
+
+
+def test_rekcja_pool_and_options():
+    pool = vdrill.rekcja_pool()
+    assert len(pool) >= 8  # достатньо моделей для дистракторів
+    assert "Dopełniacz" in pool and "na + Biernik" in pool
+    opts = vdrill.rekcja_options("Dopełniacz", pool, rng=random.Random(7))
+    assert len(opts) == 4 and len(set(opts)) == 4
+    assert "Dopełniacz" in opts
+
+
+def test_rekcja_q_values_come_from_pool_and_marked_verbs_have_text():
+    pool = set(vdrill.rekcja_pool())
+    for _, _, v in verbs.all_verbs():
+        if v.rekcja_q:
+            assert v.rekcja_q in pool
+            assert v.rekcja, f"{v.inf}: rekcja_q без пояснювального rekcja"

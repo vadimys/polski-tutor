@@ -15,7 +15,7 @@ GROUP = VerbGroup(
             group="-ę, -isz",
             present=["myślę", "myślisz", "myśli", "myślimy", "myślicie", "myślą"],
             past="on myślał · ona myślała · oni myśleli",
-            rekcja="o kim? o czym? (o + Miejscownik): myślę o tobie",
+            rekcja="o kim? o czym? (o + Miejscownik): myślę o tobie", rekcja_q="o + Miejscownik",
             examples=[("Myślę, że masz rację.", "Думаю, що ти маєш рацію.")],
         ),
         Verb(
@@ -42,7 +42,7 @@ GROUP = VerbGroup(
             present=["zapominam", "zapominasz", "zapomina", "zapominamy", "zapominacie",
                      "zapominają"],
             past="on zapominał · ona zapominała · oni zapominali",
-            rekcja="o kim? o czym? (o + Miejscownik): zapominam o spotkaniu",
+            rekcja="o kim? o czym? (o + Miejscownik): zapominam o spotkaniu", rekcja_q="o + Miejscownik",
             examples=[("Ciągle zapominam słówek.", "Постійно забуваю слова.")],
         ),
         Verb(
@@ -50,14 +50,14 @@ GROUP = VerbGroup(
             group="-ę, -isz",
             present=["lubię", "lubisz", "lubi", "lubimy", "lubicie", "lubią"],
             past="on lubił · ona lubiła · oni lubili",
-            rekcja="kogo? co? (Biernik): lubię kawę",
+            rekcja="kogo? co? (Biernik): lubię kawę", rekcja_q="Biernik",
             examples=[("Lubię się uczyć języków.", "Люблю вчити мови.")],
         ),
         Verb(
             "kochać", "кохати, любити", group="-am, -asz",
             present=["kocham", "kochasz", "kocha", "kochamy", "kochacie", "kochają"],
             past="on kochał · ona kochała · oni kochali",
-            rekcja="kogo? co? (Biernik): kocham cię",
+            rekcja="kogo? co? (Biernik): kocham cię", rekcja_q="Biernik",
             examples=[("Kocham swoją rodzinę.", "Люблю свою родину.")],
         ),
         Verb(
@@ -73,7 +73,7 @@ GROUP = VerbGroup(
             present=["boję się", "boisz się", "boi się", "boimy się", "boicie się",
                      "boją się"],
             past="on bał się · ona bała się · oni bali się",
-            rekcja="kogo? czego? (Dopełniacz!): boję się egzaminu",
+            rekcja="kogo? czego? (Dopełniacz!): boję się egzaminu", rekcja_q="Dopełniacz",
             examples=[("Nie bój się błędów.", "Не бійся помилок.")],
         ),
         Verb(
@@ -82,7 +82,7 @@ GROUP = VerbGroup(
             present=["cieszę się", "cieszysz się", "cieszy się", "cieszymy się",
                      "cieszycie się", "cieszą się"],
             past="on cieszył się · ona cieszyła się · oni cieszyli się",
-            rekcja="z + Dopełniacz: cieszę się z prezentu · що…: cieszę się, że…",
+            rekcja="z + Dopełniacz: cieszę się z prezentu · що…: cieszę się, że…", rekcja_q="z + Dopełniacz",
             examples=[("Cieszę się, że jesteś.", "Радію, що ти тут.")],
         ),
         Verb(
@@ -91,7 +91,7 @@ GROUP = VerbGroup(
             present=["martwię się", "martwisz się", "martwi się", "martwimy się",
                      "martwicie się", "martwią się"],
             past="on martwił się · ona martwiła się · oni martwili się",
-            rekcja="o + Biernik: martwię się o ciebie",
+            rekcja="o + Biernik: martwię się o ciebie", rekcja_q="o + Biernik",
             examples=[("Nie martw się!", "Не хвилюйся!")],
         ),
     ],

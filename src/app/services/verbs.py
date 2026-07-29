@@ -26,25 +26,25 @@ def _r() -> Redis:
     return _redis
 
 
-def _key(uid: int) -> str:
-    return f"verbs:wrong:{uid}"
+def _key(uid: int, kind: str = "forms") -> str:
+    return f"verbs:wrong:{kind}:{uid}"
 
 
-async def record_answer(uid: int, gi: int, vi: int, ok: bool) -> None:
+async def record_answer(uid: int, gi: int, vi: int, ok: bool, kind: str = "forms") -> None:
     """Оновити лічильник «болючості» дієслова: помилка +1, успіх −1 (не нижче 0)."""
     field = f"{gi}:{vi}"
     if ok:
-        cur = int(await _r().hget(_key(uid), field) or 0)
+        cur = int(await _r().hget(_key(uid, kind), field) or 0)
         if cur <= 1:
-            await _r().hdel(_key(uid), field)
+            await _r().hdel(_key(uid, kind), field)
         else:
-            await _r().hincrby(_key(uid), field, -1)
+            await _r().hincrby(_key(uid, kind), field, -1)
     else:
-        await _r().hincrby(_key(uid), field, 1)
+        await _r().hincrby(_key(uid, kind), field, 1)
 
 
-async def wrong_coords(uid: int) -> list[tuple[int, int]]:
-    raw = await _r().hgetall(_key(uid))
+async def wrong_coords(uid: int, kind: str = "forms") -> list[tuple[int, int]]:
+    raw = await _r().hgetall(_key(uid, kind))
     out: list[tuple[int, int]] = []
     for f in raw:
         try:
@@ -82,3 +82,28 @@ def pick_drill(
 async def build_drill(uid: int) -> list[tuple[int, int, int]]:
     coords = [(gi, vi) for gi, vi, _ in verbs.all_verbs()]
     return pick_drill(coords, await wrong_coords(uid))
+
+
+# ── тренажер rekcji («який відмінок після X?») ────────────────────────────────
+def rekcja_pool() -> list[str]:
+    """Усі різні канонічні відповіді rekcja_q — пул для дистракторів."""
+    return sorted({v.rekcja_q for _, _, v in verbs.all_verbs() if v.rekcja_q})
+
+
+def rekcja_options(correct: str, pool: list[str], rng: random.Random | None = None) -> list[str]:
+    """4 варіанти: правильна + 3 дистрактори з пулу (перемішано). Чиста функція."""
+    rng = rng or random.Random()
+    distractors = [p for p in pool if p != correct]
+    rng.shuffle(distractors)
+    opts = [correct, *distractors[:3]]
+    rng.shuffle(opts)
+    return opts
+
+
+async def build_rekcja_drill(uid: int) -> list[tuple[int, int, int]]:
+    """Сесія rekcja-тренажера: лише дієслова з rekcja_q; той самий адаптивний підбір.
+
+    person у тріаді не використовується (лишаємо 0) — формат сумісний із pick_drill.
+    """
+    coords = [(gi, vi) for gi, vi, v in verbs.all_verbs() if v.rekcja_q]
+    return pick_drill(coords, await wrong_coords(uid, "rekcja"))

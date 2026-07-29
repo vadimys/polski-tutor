@@ -22,6 +22,8 @@ class Verb:
     present: list[str] = field(default_factory=list)  # 6 форм: ja/ty/on/my/wy/oni
     past: str = ""  # готовий рядок: "on robił · ona robiła · oni robili"
     rekcja: str = ""  # керування: "kogo? co? (Biernik)" або з прийменником
+    rekcja_q: str = ""  # канонічна коротка відповідь для тренажера rekcji ("na + Biernik");
+    # ставиться ЛИШЕ коли керування однозначне (одна модель) — інакше лишити ""
     examples: list[tuple[str, str]] = field(default_factory=list)  # (pl, uk)
 
 

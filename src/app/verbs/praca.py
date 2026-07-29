@@ -24,7 +24,7 @@ GROUP = VerbGroup(
             present=["uczę się", "uczysz się", "uczy się", "uczymy się", "uczycie się",
                      "uczą się"],
             past="on uczył się · ona uczyła się · oni uczyli się",
-            rekcja="czego? (Dopełniacz!): uczę się polskiego (не «polski»)",
+            rekcja="czego? (Dopełniacz!): uczę się polskiego (не «polski»)", rekcja_q="Dopełniacz",
             examples=[("Uczę się polskiego codziennie.", "Вчу польську щодня.")],
         ),
         Verb(
@@ -40,7 +40,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["szukam", "szukasz", "szuka", "szukamy", "szukacie", "szukają"],
             past="on szukał · ona szukała · oni szukali",
-            rekcja="kogo? czego? (Dopełniacz!): szukam pracy (не «pracę»)",
+            rekcja="kogo? czego? (Dopełniacz!): szukam pracy (не «pracę»)", rekcja_q="Dopełniacz",
             examples=[("Szukam mieszkania w centrum.", "Шукаю квартиру в центрі.")],
         ),
         Verb(
@@ -73,7 +73,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["czekam", "czekasz", "czeka", "czekamy", "czekacie", "czekają"],
             past="on czekał · ona czekała · oni czekali",
-            rekcja="na + Biernik!: czekam na autobus, czekam na ciebie",
+            rekcja="na + Biernik!: czekam na autobus, czekam na ciebie", rekcja_q="na + Biernik",
             examples=[("Czekam na odpowiedź.", "Чекаю на відповідь.")],
         ),
         Verb(
@@ -81,7 +81,7 @@ GROUP = VerbGroup(
             group="-am, -asz",
             present=["pomagam", "pomagasz", "pomaga", "pomagamy", "pomagacie", "pomagają"],
             past="on pomagał · ona pomagała · oni pomagali (pomóc: pomógł/pomogła/pomogli)",
-            rekcja="komu? (Celownik!): pomagam bratu (не «brata»)",
+            rekcja="komu? (Celownik!): pomagam bratu (не «brata»)", rekcja_q="Celownik",
             examples=[("Mogę ci pomóc?", "Можу тобі допомогти?")],
         ),
         Verb(

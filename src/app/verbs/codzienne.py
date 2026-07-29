@@ -44,7 +44,7 @@ GROUP = VerbGroup(
             group="-uję, -ujesz",
             present=["kupuję", "kupujesz", "kupuje", "kupujemy", "kupujecie", "kupują"],
             past="on kupował · ona kupowała · oni kupowali",
-            rekcja="co? (Biernik): kupuję chleb",
+            rekcja="co? (Biernik): kupuję chleb", rekcja_q="Biernik",
             examples=[("Kupuję warzywa na targu.", "Купую овочі на базарі.")],
         ),
         Verb(
@@ -52,7 +52,7 @@ GROUP = VerbGroup(
             group="-ę, -isz",
             present=["płacę", "płacisz", "płaci", "płacimy", "płacicie", "płacą"],
             past="on płacił · ona płaciła · oni płacili",
-            rekcja="za + Biernik: płacę za obiad · чим: kartą (Narzędnik)",
+            rekcja="za + Biernik: płacę za obiad · чим: kartą (Narzędnik)", rekcja_q="za + Biernik",
             examples=[("Płacę kartą.", "Плачу карткою.")],
         ),
         Verb(
@@ -60,7 +60,7 @@ GROUP = VerbGroup(
             group="-uję, -ujesz",
             present=["gotuję", "gotujesz", "gotuje", "gotujemy", "gotujecie", "gotują"],
             past="on gotował · ona gotowała · oni gotowali",
-            rekcja="co? (Biernik): gotuję obiad",
+            rekcja="co? (Biernik): gotuję obiad", rekcja_q="Biernik",
             examples=[("Dziś gotuję pierogi.", "Сьогодні готую вареники.")],
         ),
         Verb(
