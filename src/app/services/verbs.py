@@ -79,9 +79,30 @@ def pick_drill(
     return [(gi, vi, rng.randrange(6)) for gi, vi in chosen]
 
 
-async def build_drill(uid: int) -> list[tuple[int, int, int]]:
+PAST_RATIO = 0.4  # частка питань у минулому часі (де парадигма доступна)
+
+
+def with_tenses(
+    queue: list[tuple[int, int, int]], rng: random.Random | None = None
+) -> list[tuple[int, int, int, int]]:
+    """Додати час до питань: (gi, vi, person, tense). tense: 0=теперішній, 1=минулий.
+
+    Минулий — лише де past_paradigm парситься; person для минулого — слот 0-5
+    (ja-ч/ja-ж/on/ona/oni/one). Чиста функція (rng інʼєктиться в тестах).
+    """
+    rng = rng or random.Random()
+    out: list[tuple[int, int, int, int]] = []
+    for gi, vi, person in queue:
+        v = verbs.verb_at(gi, vi)
+        can_past = v is not None and verbs.past_paradigm(v.past) is not None
+        tense = 1 if can_past and rng.random() < PAST_RATIO else 0
+        out.append((gi, vi, person, tense))
+    return out
+
+
+async def build_drill(uid: int) -> list[tuple[int, int, int, int]]:
     coords = [(gi, vi) for gi, vi, _ in verbs.all_verbs()]
-    return pick_drill(coords, await wrong_coords(uid))
+    return with_tenses(pick_drill(coords, await wrong_coords(uid)))
 
 
 # ── тренажер rekcji («який відмінок після X?») ────────────────────────────────

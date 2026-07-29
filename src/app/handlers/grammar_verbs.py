@@ -150,17 +150,33 @@ async def cb_card(cb: CallbackQuery) -> None:
 
 
 # ── тренажер ─────────────────────────────────────────────────────────────────
-def _drill_q_text(v: verbs.Verb, person: int, pos: int, total: int) -> str:
+def _q_item(queue: list, pos: int) -> tuple[int, int, int, int]:
+    """(gi, vi, person, tense); старі 3-елементні сесії з Redis → теперішній час."""
+    item = queue[pos]
+    return (*item, 0) if len(item) == 3 else tuple(item)  # type: ignore[return-value]
+
+
+def _drill_forms(v: verbs.Verb, tense: int) -> tuple[list[str], list[str]] | None:
+    """(форми, мітки осіб) для питання: теперішній або минулий (з парадигми past)."""
+    if tense == 0:
+        return v.present, verbs.PERSONS
+    paradigm = verbs.past_paradigm(v.past)
+    return (paradigm, verbs.PAST_PERSONS) if paradigm else None
+
+
+def _drill_q_text(v: verbs.Verb, person: int, tense: int, pos: int, total: int) -> str:
+    persons = verbs.PAST_PERSONS if tense else verbs.PERSONS
+    tense_label = "🕰 Минулий час" if tense else "🕐 Теперішній час"
     return (
         f"🏋️ <b>Тренажер</b> · {pos + 1}/{total}\n\n"
         f"❓ <code>{html.escape(v.inf)}</code> ({html.escape(v.uk)})\n"
-        f"Форма для <b>«{verbs.PERSONS[person]}»</b>?"
+        f"{tense_label} · форма для <b>«{persons[person]}»</b>?"
     )
 
 
-def _drill_q_kb(v: verbs.Verb, pos: int) -> InlineKeyboardMarkup:
+def _drill_q_kb(forms: list[str], pos: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    for i, form in enumerate(v.present):
+    for i, form in enumerate(forms):
         kb.button(text=form, callback_data=f"vd:a:{pos}:{i}")
     kb.adjust(2)
     kb.row(InlineKeyboardButton(text="⏹ Завершити", callback_data="vd:stop"))
@@ -170,15 +186,21 @@ def _drill_q_kb(v: verbs.Verb, pos: int) -> InlineKeyboardMarkup:
 async def _send_drill_q(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     queue, pos = data["queue"], data["pos"]
-    gi, vi, person = queue[pos]
+    gi, vi, person, tense = _q_item(queue, pos)
     v = verbs.verb_at(gi, vi)
-    if not v:  # дані змінились між релізами — завершуємо коректно
+    fp = _drill_forms(v, tense) if v else None
+    if not v or fp is None:  # дані змінились між релізами — завершуємо коректно
         await state.clear()
         return
-    await message.answer(_drill_q_text(v, person, pos, len(queue)), reply_markup=_drill_q_kb(v, pos))
+    forms, _ = fp
+    await message.answer(
+        _drill_q_text(v, person, tense, pos, len(queue)), reply_markup=_drill_q_kb(forms, pos)
+    )
 
 
-async def _start_drill(cb: CallbackQuery, state: FSMContext, queue: list[tuple[int, int, int]]) -> None:
+async def _start_drill(
+    cb: CallbackQuery, state: FSMContext, queue: list[tuple[int, int, int, int]]
+) -> None:
     await state.set_state(VDrill.active)
     await state.update_data(queue=queue, pos=0, correct=0)
     await _send_drill_q(cb.message, state)
@@ -192,7 +214,7 @@ async def cb_drill(cb: CallbackQuery, state: FSMContext) -> None:
 
 @router.callback_query(F.data.startswith("vb:tr:"))
 async def cb_train_one(cb: CallbackQuery, state: FSMContext) -> None:
-    """Тренувати конкретне дієслово: 3 різні особи + 2 випадкові інші."""
+    """Тренувати конкретне дієслово: 3 різні особи (мікс часів) + 2 випадкові інші."""
     await cb.answer()
     _, _, gi, vi = cb.data.split(":")
     gi, vi = int(gi), int(vi)
@@ -201,7 +223,7 @@ async def cb_train_one(cb: CallbackQuery, state: FSMContext) -> None:
     import random
 
     persons = random.sample(range(6), 3)
-    focus = [(gi, vi, p) for p in persons]
+    focus = vdrill.with_tenses([(gi, vi, p) for p in persons])
     rest = [q for q in await vdrill.build_drill(cb.from_user.id) if (q[0], q[1]) != (gi, vi)][:2]
     await _start_drill(cb, state, focus + rest)
 
@@ -223,25 +245,27 @@ async def cb_drill_answer(cb: CallbackQuery, state: FSMContext) -> None:
     if int(qpos) != pos:  # стала кнопка / подвійний тап
         await cb.answer("Це питання вже пройдено 🙂")
         return
-    gi, vi, person = queue[pos]
+    gi, vi, person, tense = _q_item(queue, pos)
     v = verbs.verb_at(gi, vi)
-    if not v:
+    fp = _drill_forms(v, tense) if v else None
+    if not v or fp is None:
         await state.clear()
         return
+    forms, persons = fp
     chosen = int(opt)
     ok = chosen == person  # правильна форма = форма цієї особи
     await vdrill.record_answer(cb.from_user.id, gi, vi, ok)
     await cb.answer("✔️" if ok else "❌")
-    yours = v.present[chosen] if 0 <= chosen < 6 else "—"
+    yours = forms[chosen] if 0 <= chosen < 6 else "—"
     verdict = (
         f"🔵 Твоя відповідь: <code>{yours}</code>\n\n✔️ <b>Dobrze!</b>"
         if ok
         else f"🔵 Твоя відповідь: <code>{yours}</code>  ❌\n\n"
-        f"✅ Правильно: <b>{verbs.PERSONS[person]}</b> <code>{v.present[person]}</code>"
+        f"✅ Правильно: <b>{persons[person]}</b> <code>{forms[person]}</code>"
     )
     with suppress(Exception):
         await cb.message.edit_text(
-            f"❓ <code>{html.escape(v.inf)}</code> — «{verbs.PERSONS[person]}»\n\n{verdict}"
+            f"❓ <code>{html.escape(v.inf)}</code> — «{persons[person]}»\n\n{verdict}"
         )
     correct += ok
     pos += 1

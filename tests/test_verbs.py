@@ -75,3 +75,40 @@ def test_rekcja_q_values_come_from_pool_and_marked_verbs_have_text():
         if v.rekcja_q:
             assert v.rekcja_q in pool
             assert v.rekcja, f"{v.inf}: rekcja_q без пояснювального rekcja"
+
+
+def test_past_paradigm_for_all_verbs():
+    """Парадигма минулого має виводитися для КОЖНОГО дієслова й бути консистентною."""
+    for _, _, v in verbs.all_verbs():
+        p = verbs.past_paradigm(v.past)
+        assert p is not None, f"{v.inf}: past не парситься: {v.past!r}"
+        assert len(p) == 6 and all(p)
+        strip = [f.removesuffix(" się") for f in p]
+        assert strip[0].endswith("em"), f"{v.inf}: ja(ч) «{p[0]}»"
+        assert strip[1].endswith("am"), f"{v.inf}: ja(ж) «{p[1]}»"
+        assert strip[3].endswith("a"), f"{v.inf}: ona «{p[3]}»"
+        assert strip[5].endswith("y"), f"{v.inf}: one «{p[5]}»"
+        assert len(set(p)) == 6, f"{v.inf}: форми минулого не унікальні: {p}"
+
+
+def test_past_paradigm_critical_forms():
+    """Відомі підступні форми — точні значення (ó→o, суплетивний iść)."""
+    cases = {
+        "móc": ["mogłem", "mogłam", "mógł", "mogła", "mogli", "mogły"],
+        "iść": ["szedłem", "szłam", "szedł", "szła", "szli", "szły"],
+        "jeść": ["jadłem", "jadłam", "jadł", "jadła", "jedli", "jadły"],
+        "być": ["byłem", "byłam", "był", "była", "byli", "były"],
+        "mieć": ["miałem", "miałam", "miał", "miała", "mieli", "miały"],
+    }
+    by_inf = {v.inf: v for _, _, v in verbs.all_verbs()}
+    for inf, want in cases.items():
+        assert verbs.past_paradigm(by_inf[inf].past) == want
+
+
+def test_with_tenses_mixes_and_respects_availability():
+    queue = [(0, 0, 2), (0, 1, 4)] * 10
+    out = vdrill.with_tenses(queue, rng=random.Random(5))
+    assert len(out) == len(queue)
+    tenses = {t for _, _, _, t in out}
+    assert tenses == {0, 1}  # при 20 питаннях і ratio 0.4 обидва часи присутні
+    assert all(len(q) == 4 for q in out)
