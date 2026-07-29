@@ -79,23 +79,30 @@ def pick_drill(
     return [(gi, vi, rng.randrange(6)) for gi, vi in chosen]
 
 
-PAST_RATIO = 0.4  # частка питань у минулому часі (де парадигма доступна)
+PAST_RATIO = 0.35  # частка питань у минулому часі (де парадигма доступна)
+FUTURE_RATIO = 0.25  # частка питань у майбутньому складеному (będę + inf)
 
 
 def with_tenses(
     queue: list[tuple[int, int, int]], rng: random.Random | None = None
 ) -> list[tuple[int, int, int, int]]:
-    """Додати час до питань: (gi, vi, person, tense). tense: 0=теперішній, 1=минулий.
+    """Додати час до питань: (gi, vi, person, tense). 0=теперішній, 1=минулий, 2=майбутній.
 
-    Минулий — лише де past_paradigm парситься; person для минулого — слот 0-5
-    (ja-ч/ja-ж/on/ona/oni/one). Чиста функція (rng інʼєктиться в тестах).
+    Минулий — лише де past_paradigm парситься (слоти ja-ч/ja-ж/on/ona/oni/one);
+    майбутній складений регулярний для всіх. Чиста функція (rng інʼєктиться в тестах).
     """
     rng = rng or random.Random()
     out: list[tuple[int, int, int, int]] = []
     for gi, vi, person in queue:
         v = verbs.verb_at(gi, vi)
         can_past = v is not None and verbs.past_paradigm(v.past) is not None
-        tense = 1 if can_past and rng.random() < PAST_RATIO else 0
+        roll = rng.random()
+        if can_past and roll < PAST_RATIO:
+            tense = 1
+        elif roll < PAST_RATIO + FUTURE_RATIO:
+            tense = 2
+        else:
+            tense = 0
         out.append((gi, vi, person, tense))
     return out
 

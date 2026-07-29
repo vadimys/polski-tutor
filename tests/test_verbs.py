@@ -106,9 +106,21 @@ def test_past_paradigm_critical_forms():
 
 
 def test_with_tenses_mixes_and_respects_availability():
-    queue = [(0, 0, 2), (0, 1, 4)] * 10
+    queue = [(0, 0, 2), (0, 1, 4)] * 15
     out = vdrill.with_tenses(queue, rng=random.Random(5))
     assert len(out) == len(queue)
     tenses = {t for _, _, _, t in out}
-    assert tenses == {0, 1}  # при 20 питаннях і ratio 0.4 обидва часи присутні
+    assert tenses == {0, 1, 2}  # при 30 питаннях присутні всі три часи
     assert all(len(q) == 4 for q in out)
+
+
+def test_future_paradigm_regular_and_reflexive():
+    assert verbs.future_paradigm("robić") == [
+        "będę robić", "będziesz robić", "będzie robić",
+        "będziemy robić", "będziecie robić", "będą robić",
+    ]
+    assert verbs.future_paradigm("myć się")[0] == "będę się myć"
+    assert verbs.future_paradigm("uczyć się")[5] == "będą się uczyć"
+    for _, _, v in verbs.all_verbs():  # 6 унікальних форм для кожного
+        p = verbs.future_paradigm(v.inf)
+        assert len(set(p)) == 6

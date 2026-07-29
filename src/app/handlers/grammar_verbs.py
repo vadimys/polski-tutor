@@ -120,6 +120,10 @@ def _card_text(v: verbs.Verb) -> str:
     )
     if v.past:
         parts.append(f"🕰 <b>Минулий:</b> <code>{html.escape(v.past)}</code>")
+    fut = f"🔮 <b>Майбутній:</b> <code>{html.escape(verbs.future_paradigm(v.inf)[0])}</code>…"
+    if v.pair_hint:
+        fut += f" · доконано: <code>{html.escape(v.pair_hint)}</code>"
+    parts.append(fut)
     if v.rekcja:
         parts.append(f"🎯 <b>Керування:</b> {html.escape(v.rekcja)}")
     for pl, uk in v.examples:
@@ -156,21 +160,25 @@ def _q_item(queue: list, pos: int) -> tuple[int, int, int, int]:
     return (*item, 0) if len(item) == 3 else tuple(item)  # type: ignore[return-value]
 
 
+_TENSE_LABEL = {0: "🕐 Теперішній час", 1: "🕰 Минулий час", 2: "🔮 Майбутній час"}
+
+
 def _drill_forms(v: verbs.Verb, tense: int) -> tuple[list[str], list[str]] | None:
-    """(форми, мітки осіб) для питання: теперішній або минулий (з парадигми past)."""
+    """(форми, мітки осіб) для питання: теперішній / минулий / майбутній складений."""
     if tense == 0:
         return v.present, verbs.PERSONS
+    if tense == 2:
+        return verbs.future_paradigm(v.inf), verbs.PERSONS
     paradigm = verbs.past_paradigm(v.past)
     return (paradigm, verbs.PAST_PERSONS) if paradigm else None
 
 
 def _drill_q_text(v: verbs.Verb, person: int, tense: int, pos: int, total: int) -> str:
-    persons = verbs.PAST_PERSONS if tense else verbs.PERSONS
-    tense_label = "🕰 Минулий час" if tense else "🕐 Теперішній час"
+    persons = verbs.PAST_PERSONS if tense == 1 else verbs.PERSONS
     return (
         f"🏋️ <b>Тренажер</b> · {pos + 1}/{total}\n\n"
         f"❓ <code>{html.escape(v.inf)}</code> ({html.escape(v.uk)})\n"
-        f"{tense_label} · форма для <b>«{persons[person]}»</b>?"
+        f"{_TENSE_LABEL[tense]} · форма для <b>«{persons[person]}»</b>?"
     )
 
 
@@ -263,6 +271,12 @@ async def cb_drill_answer(cb: CallbackQuery, state: FSMContext) -> None:
         else f"🔵 Твоя відповідь: <code>{yours}</code>  ❌\n\n"
         f"✅ Правильно: <b>{persons[person]}</b> <code>{forms[person]}</code>"
     )
+    # бонус у майбутньому: нагадуємо доконану альтернативу (закріплення теми виду)
+    if tense == 2 and v.pair and v.pair_hint:
+        verdict += (
+            f"\n\n💡 Результат одразу? Доконаний: <code>{html.escape(v.pair_hint)}</code> "
+            f"({html.escape(v.pair)})"
+        )
     with suppress(Exception):
         await cb.message.edit_text(
             f"❓ <code>{html.escape(v.inf)}</code> — «{persons[person]}»\n\n{verdict}"

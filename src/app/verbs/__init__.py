@@ -49,6 +49,20 @@ def all_verbs() -> list[tuple[int, int, Verb]]:
 # мітки слотів минулого часу (рід — головна складність минулого для українців)
 PAST_PERSONS = ["ja (чол.)", "ja (жін.)", "on", "ona", "oni", "one"]
 
+# майбутній складений (недоконаний): форма być-майбутнього + інфінітив — 100% регулярний
+_BEDE = ["będę", "będziesz", "będzie", "będziemy", "będziecie", "będą"]
+
+
+def future_paradigm(inf: str) -> list[str]:
+    """6 форм майбутнього складеного: będę robić… (zwrotne: będę się myć).
+
+    Регулярне правило без винятків → генерація безпечна (жодних вигаданих форм).
+    """
+    if inf.endswith(" się"):
+        base = inf.removesuffix(" się")
+        return [f"{b} się {base}" for b in _BEDE]
+    return [f"{b} {inf}" for b in _BEDE]
+
 _PAST_RE = re.compile(r"on (.+?) · ona (.+?) · oni (.+?)(?:\s*\(|$)")
 
 
