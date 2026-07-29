@@ -38,12 +38,24 @@ class RDrill(StatesGroup):
 
 
 # ── хаб ──────────────────────────────────────────────────────────────────────
-_HUB = (
-    "🔀 <b>Дієслова</b>\n"
-    "<i>Довідник найуживаніших дієслів: відмінювання, видова пара, керування "
-    "відмінком (rekcja) і вимова. Плюс тренажер, який запамʼятовує твої помилки.</i>\n\n"
-    "Обери групу, тренуйся або знайди дієслово 👇"
-)
+async def _hub_text(uid: int) -> str:
+    forms_due, rekcja_due = await vdrill.due_counts(uid)
+    due_line = ""
+    if forms_due or rekcja_due:
+        parts = []
+        if forms_due:
+            parts.append(f"🏋️ форми: <b>{forms_due}</b>")
+        if rekcja_due:
+            parts.append(f"🎯 rekcja: <b>{rekcja_due}</b>")
+        due_line = "\n📅 <b>На повторення сьогодні:</b> " + " · ".join(parts) + "\n"
+    return (
+        "🔀 <b>Дієслова</b>\n"
+        "<i>Довідник найуживаніших дієслів: відмінювання, видова пара, керування "
+        "відмінком (rekcja) і вимова. Тренажери повторюють вивчене за інтервалами "
+        "(SRS), а помилки повертають швидше.</i>\n"
+        f"{due_line}\n"
+        "Обери групу, тренуйся або знайди дієслово 👇"
+    )
 
 
 def _hub_kb() -> InlineKeyboardMarkup:
@@ -61,14 +73,14 @@ def _hub_kb() -> InlineKeyboardMarkup:
 @router.message(Command("czasowniki"))
 async def cmd_verbs(message: Message, state: FSMContext) -> None:
     await state.clear()
-    await message.answer(_HUB, reply_markup=_hub_kb())
+    await message.answer(await _hub_text(message.from_user.id), reply_markup=_hub_kb())
 
 
 @router.callback_query(F.data == "verbs:home")
 async def cb_open(cb: CallbackQuery, state: FSMContext) -> None:
     await cb.answer()
     await state.clear()
-    await cb.message.answer(_HUB, reply_markup=_hub_kb())
+    await cb.message.answer(await _hub_text(cb.from_user.id), reply_markup=_hub_kb())
 
 
 @router.callback_query(F.data == "vb:home")
@@ -76,7 +88,7 @@ async def cb_home(cb: CallbackQuery, state: FSMContext) -> None:
     """Повернення в хаб — редагуємо те саме повідомлення."""
     await cb.answer()
     await state.clear()
-    await _edit(cb, _HUB, _hub_kb())
+    await _edit(cb, await _hub_text(cb.from_user.id), _hub_kb())
 
 
 # ── група → список дієслів ───────────────────────────────────────────────────
@@ -292,7 +304,7 @@ async def cb_drill_answer(cb: CallbackQuery, state: FSMContext) -> None:
         emoji = "🎉" if correct == total else "👍" if correct >= total - 1 else "💪"
         await cb.message.answer(
             f"{emoji} <b>Результат: {correct}/{total}</b>\n"
-            "<i>Тренажер запамʼятовує помилки й питатиме ці дієслова частіше.</i>",
+            "<i>SRS: помилки повернуться завтра, вивчене — через 3 → 7 → 16 → 35 днів.</i>",
             reply_markup=_hub_kb(),
         )
 
@@ -381,8 +393,8 @@ async def cb_rdrill_answer(cb: CallbackQuery, state: FSMContext) -> None:
         emoji = "🎉" if correct == total else "👍" if correct >= total - 1 else "💪"
         await cb.message.answer(
             f"{emoji} <b>Результат: {correct}/{total}</b>\n"
-            "<i>Rekcja — найчастіше джерело помилок. Тренажер повертатиме складні "
-            "дієслова, доки не закріпиш.</i>",
+            "<i>Rekcja — найчастіше джерело помилок. SRS повертатиме складні дієслова, "
+            "доки не закріпиш (1 → 3 → 7 → 16 → 35 днів).</i>",
             reply_markup=_hub_kb(),
         )
 

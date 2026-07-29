@@ -44,20 +44,41 @@ def test_lookup_and_search():
     assert verbs.search("") == []
 
 
-def test_pick_drill_prioritizes_wrongs_and_no_repeats():
+def test_pick_srs_due_first_then_new_then_ahead():
+    from datetime import date
+
+    today = date(2026, 7, 29)
     coords = [(0, i) for i in range(10)]
-    rng = random.Random(42)
-    out = vdrill.pick_drill(coords, wrongs=[(0, 3), (0, 7)], k=5, rng=rng)
+    state = {
+        (0, 3): (2, "2026-07-28"),  # доспіло (вчора)
+        (0, 7): (1, "2026-07-29"),  # доспіло (сьогодні)
+        (0, 1): (4, "2026-08-20"),  # ще не доспіло
+    }
+    out = vdrill.pick_srs(coords, state, today, k=5, rng=random.Random(42))
     pairs = [(g, v) for g, v, _ in out]
     assert len(pairs) == len(set(pairs)) == 5  # без повторів
-    assert (0, 3) in pairs or (0, 7) in pairs  # «болючі» пріоритезовано
+    assert set(pairs[:2]) == {(0, 3), (0, 7)}  # доспілі — першими
+    assert (0, 1) not in pairs  # майбутнє не береться, поки є нові
     assert all(0 <= p <= 5 for _, _, p in out)  # особа в межах
 
 
-def test_pick_drill_without_wrongs():
-    coords = [(0, i) for i in range(3)]
-    out = vdrill.pick_drill(coords, wrongs=[], k=5, rng=random.Random(1))
-    assert len(out) == 3  # не більше, ніж є дієслів
+def test_pick_srs_reviews_ahead_when_nothing_else():
+    from datetime import date
+
+    today = date(2026, 7, 29)
+    coords = [(0, 0), (0, 1)]
+    state = {(0, 0): (3, "2026-08-05"), (0, 1): (2, "2026-08-01")}
+    out = vdrill.pick_srs(coords, state, today, k=5, rng=random.Random(1))
+    pairs = [(g, v) for g, v, _ in out]
+    assert pairs == [(0, 1), (0, 0)]  # усе не доспіло → найближчі за датою першими
+
+
+def test_due_count_pure():
+    from datetime import date
+
+    today = date(2026, 7, 29)
+    state = {(0, 0): (1, "2026-07-29"), (0, 1): (2, "2026-09-01"), (0, 2): (1, "")}
+    assert vdrill.due_count(state, today) == 2  # сьогодні + порожнє due
 
 
 def test_rekcja_pool_and_options():

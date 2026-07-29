@@ -1,22 +1,28 @@
-"""Тренажер дієслів: адаптивний підбір (частіше питає те, де помилявся).
+"""Тренажер дієслів: SRS-повторення (Leitner) замість простих лічильників помилок.
 
-Лічильники помилок — Redis-хеш verbs:wrong:<uid> (field="gi:vi" → к-сть). Правильна
-відповідь зменшує лічильник, хибна — збільшує. Підбір — чиста функція (тестується):
-до половини сесії — «болючі» дієслова, решта — випадкові. Прогрес B1 не рухає —
-це навчальний тренажер, як і курс граматики.
+Стан — Redis-хеш verbs:srs:<kind>:<uid> (kind: forms/rekcja), поле "gi:vi" →
+"box|due" (коробка 1-5 + дата наступного повторення; інтервали рахує services/srs —
+той самий рушій, що й у словнику: 1→3→7→16→35 днів; помилка → коробка 1).
+Підбір сесії: спершу «доспілі» (due ≤ сьогодні), тоді нові (ще не бачені), тоді
+найближчі майбутні. Прогрес B1 не рухає — це навчальний тренажер.
 """
 
 from __future__ import annotations
 
 import random
+from datetime import date
 
 from redis.asyncio import Redis
 
 from app import verbs
 from app.config import settings
+from app.services import clock, srs
 
 _redis: Redis | None = None
 DRILL_SIZE = 5
+
+PAST_RATIO = 0.35  # частка питань у минулому часі (де парадигма доступна)
+FUTURE_RATIO = 0.25  # частка питань у майбутньому складеному (będę + inf)
 
 
 def _r() -> Redis:
@@ -27,60 +33,86 @@ def _r() -> Redis:
 
 
 def _key(uid: int, kind: str = "forms") -> str:
-    return f"verbs:wrong:{kind}:{uid}"
+    return f"verbs:srs:{kind}:{uid}"
 
 
-async def record_answer(uid: int, gi: int, vi: int, ok: bool, kind: str = "forms") -> None:
-    """Оновити лічильник «болючості» дієслова: помилка +1, успіх −1 (не нижче 0)."""
-    field = f"{gi}:{vi}"
-    if ok:
-        cur = int(await _r().hget(_key(uid, kind), field) or 0)
-        if cur <= 1:
-            await _r().hdel(_key(uid, kind), field)
-        else:
-            await _r().hincrby(_key(uid, kind), field, -1)
-    else:
-        await _r().hincrby(_key(uid, kind), field, 1)
+def _legacy_key(uid: int, kind: str = "forms") -> str:
+    return f"verbs:wrong:{kind}:{uid}"  # старі лічильники помилок (до SRS)
 
 
-async def wrong_coords(uid: int, kind: str = "forms") -> list[tuple[int, int]]:
+def _parse_field(f: str) -> tuple[int, int] | None:
+    try:
+        gi, vi = str(f).split(":")
+        return int(gi), int(vi)
+    except ValueError:
+        return None
+
+
+async def _migrate_legacy(uid: int, kind: str) -> None:
+    """Одноразово: старі лічильники помилок → коробка 1, доспіло сьогодні."""
+    old = await _r().hgetall(_legacy_key(uid, kind))
+    if not old:
+        return
+    today = clock.today_local().isoformat()
+    for f in old:
+        if _parse_field(str(f)) is not None:
+            await _r().hset(_key(uid, kind), str(f), f"1|{today}")
+    await _r().delete(_legacy_key(uid, kind))
+
+
+async def srs_state(uid: int, kind: str = "forms") -> dict[tuple[int, int], tuple[int, str]]:
+    """{(gi, vi): (box, due)} — стан SRS користувача для тренажера kind."""
+    await _migrate_legacy(uid, kind)
     raw = await _r().hgetall(_key(uid, kind))
-    out: list[tuple[int, int]] = []
-    for f in raw:
+    out: dict[tuple[int, int], tuple[int, str]] = {}
+    for f, v in raw.items():
+        coords = _parse_field(str(f))
+        if coords is None:
+            continue
+        box_s, _, due = str(v).partition("|")
         try:
-            gi, vi = str(f).split(":")
-            out.append((int(gi), int(vi)))
+            out[coords] = (int(box_s), due)
         except ValueError:
             continue
     return out
 
 
-def pick_drill(
+async def record_answer(uid: int, gi: int, vi: int, ok: bool, kind: str = "forms") -> None:
+    """Оновити SRS: правильно → коробка вище (довший інтервал), помилка → коробка 1."""
+    state = await srs_state(uid, kind)
+    box = state.get((gi, vi), (0, ""))[0]
+    new_box = srs.on_correct(box) if ok else srs.on_wrong(box)
+    due = srs.next_due(new_box, clock.today_local())
+    await _r().hset(_key(uid, kind), f"{gi}:{vi}", f"{new_box}|{due}")
+
+
+def due_count(state: dict[tuple[int, int], tuple[int, str]], today: date) -> int:
+    """Скільки дієслів доспіло до повторення (чиста функція)."""
+    return sum(1 for _box, due in state.values() if srs.is_due(due, today))
+
+
+def pick_srs(
     coords: list[tuple[int, int]],
-    wrongs: list[tuple[int, int]],
+    state: dict[tuple[int, int], tuple[int, str]],
+    today: date,
     k: int = DRILL_SIZE,
     rng: random.Random | None = None,
 ) -> list[tuple[int, int, int]]:
-    """Скласти сесію тренажера: (gi, vi, person). До k//2 — «болючі», решта — випадкові.
+    """Сесія за SRS-пріоритетом: доспілі → нові (не бачені) → найближчі майбутні.
 
-    coords — усі доступні (gi, vi); wrongs — де помилявся. Дієслова не повторюються,
-    особа (0-5) — випадкова на кожне питання. Чиста функція (rng інʼєктиться в тестах).
+    Дієслова не повторюються; особа (0-5) — випадкова. Чиста функція (rng у тестах).
     """
     rng = rng or random.Random()
-    pool = list(coords)
-    chosen: list[tuple[int, int]] = []
-    hurt = [c for c in wrongs if c in pool]
-    rng.shuffle(hurt)
-    for c in hurt[: max(1, k // 2)] if hurt else []:
-        chosen.append(c)
-        pool.remove(c)
-    rng.shuffle(pool)
-    chosen += pool[: k - len(chosen)]
+    due = [c for c in coords if c in state and srs.is_due(state[c][1], today)]
+    new = [c for c in coords if c not in state]
+    ahead = sorted(
+        (c for c in coords if c in state and not srs.is_due(state[c][1], today)),
+        key=lambda c: state[c][1],  # найближчі за датою — першими
+    )
+    rng.shuffle(due)
+    rng.shuffle(new)
+    chosen = (due + new + ahead)[:k]
     return [(gi, vi, rng.randrange(6)) for gi, vi in chosen]
-
-
-PAST_RATIO = 0.35  # частка питань у минулому часі (де парадигма доступна)
-FUTURE_RATIO = 0.25  # частка питань у майбутньому складеному (będę + inf)
 
 
 def with_tenses(
@@ -109,7 +141,16 @@ def with_tenses(
 
 async def build_drill(uid: int) -> list[tuple[int, int, int, int]]:
     coords = [(gi, vi) for gi, vi, _ in verbs.all_verbs()]
-    return with_tenses(pick_drill(coords, await wrong_coords(uid)))
+    state = await srs_state(uid)
+    return with_tenses(pick_srs(coords, state, clock.today_local()))
+
+
+async def due_counts(uid: int) -> tuple[int, int]:
+    """(доспіло у формах, доспіло в rekcji) — для хаба «на повторення сьогодні»."""
+    today = clock.today_local()
+    forms = due_count(await srs_state(uid, "forms"), today)
+    rekcja = due_count(await srs_state(uid, "rekcja"), today)
+    return forms, rekcja
 
 
 # ── тренажер rekcji («який відмінок після X?») ────────────────────────────────
@@ -129,9 +170,10 @@ def rekcja_options(correct: str, pool: list[str], rng: random.Random | None = No
 
 
 async def build_rekcja_drill(uid: int) -> list[tuple[int, int, int]]:
-    """Сесія rekcja-тренажера: лише дієслова з rekcja_q; той самий адаптивний підбір.
+    """Сесія rekcja-тренажера: лише дієслова з rekcja_q; той самий SRS-підбір.
 
-    person у тріаді не використовується (лишаємо 0) — формат сумісний із pick_drill.
+    person у тріаді не використовується (лишаємо як є) — формат сумісний із формами.
     """
     coords = [(gi, vi) for gi, vi, v in verbs.all_verbs() if v.rekcja_q]
-    return pick_drill(coords, await wrong_coords(uid, "rekcja"))
+    state = await srs_state(uid, "rekcja")
+    return pick_srs(coords, state, clock.today_local())
