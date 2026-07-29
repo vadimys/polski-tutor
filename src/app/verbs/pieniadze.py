@@ -1,0 +1,100 @@
+"""Група 11 — Гроші й покупки: заробляти, витрачати, позичати, вибирати…"""
+
+from __future__ import annotations
+
+from app.verbs.schema import Verb, VerbGroup
+
+GROUP = VerbGroup(
+    id="pieniadze",
+    icon="💰",
+    title="Гроші й покупки",
+    subtitle="Заробити, витратити, заощадити, позичити — і liczę na ciebie!",
+    verbs=[
+        Verb(
+            "zarabiać", "заробляти", pair="zarobić", pair_hint="zarobię, zarobi",
+            group="-am, -asz",
+            present=["zarabiam", "zarabiasz", "zarabia", "zarabiamy", "zarabiacie",
+                     "zarabiają"],
+            past="on zarabiał · ona zarabiała · oni zarabiali",
+            examples=[("Ile się tu zarabia?", "Скільки тут заробляють?")],
+        ),
+        Verb(
+            "wydawać", "витрачати", pair="wydać", pair_hint="wydam, wyda (oni wydadzą!)",
+            group="-ję, -jesz",
+            present=["wydaję", "wydajesz", "wydaje", "wydajemy", "wydajecie", "wydają"],
+            past="on wydawał · ona wydawała · oni wydawali",
+            rekcja="co? + na co? (na + Biernik): wydaję pieniądze na jedzenie",
+            examples=[("Za dużo wydaję na kawę.", "Забагато витрачаю на каву.")],
+        ),
+        Verb(
+            "oszczędzać", "заощаджувати", pair="zaoszczędzić",
+            pair_hint="zaoszczędzę, zaoszczędzi", group="-am, -asz",
+            present=["oszczędzam", "oszczędzasz", "oszczędza", "oszczędzamy",
+                     "oszczędzacie", "oszczędzają"],
+            past="on oszczędzał · ona oszczędzała · oni oszczędzali",
+            rekcja="co? (Biernik) / na + Biernik (на що збираю): oszczędzam na wakacje",
+            examples=[("Oszczędzam na nowy telefon.", "Заощаджую на новий телефон.")],
+        ),
+        Verb(
+            "sprzedawać", "продавати", pair="sprzedać",
+            pair_hint="sprzedam, sprzeda (oni sprzedadzą!)", group="-ję, -jesz",
+            present=["sprzedaję", "sprzedajesz", "sprzedaje", "sprzedajemy", "sprzedajecie",
+                     "sprzedają"],
+            past="on sprzedawał · ona sprzedawała · oni sprzedawali",
+            rekcja="co? (Biernik): sprzedaję samochód", rekcja_q="Biernik",
+            examples=[("Sprzedam rower, mało używany.", "Продам велосипед, майже не вживаний.")],
+        ),
+        Verb(
+            "pożyczać", "позичати", pair="pożyczyć", pair_hint="pożyczę, pożyczy",
+            group="-am, -asz",
+            present=["pożyczam", "pożyczasz", "pożycza", "pożyczamy", "pożyczacie",
+                     "pożyczają"],
+            past="on pożyczał · ona pożyczała · oni pożyczali",
+            rekcja="od kogo? (позичаю В когось) / komu? (позичаю комусь): pożyczam od brata",
+            examples=[("Możesz mi pożyczyć długopis?", "Можеш позичити мені ручку?")],
+        ),
+        Verb(
+            "wybierać", "вибирати", pair="wybrać", pair_hint="wybiorę, wybierze",
+            group="-am, -asz",
+            present=["wybieram", "wybierasz", "wybiera", "wybieramy", "wybieracie",
+                     "wybierają"],
+            past="on wybierał · ona wybierała · oni wybierali",
+            rekcja="co? (Biernik): wybieram ten tańszy", rekcja_q="Biernik",
+            examples=[("Nie mogę wybrać.", "Не можу вибрати.")],
+        ),
+        Verb(
+            "zmieniać", "змінювати", pair="zmienić", pair_hint="zmienię, zmieni",
+            group="-am, -asz",
+            present=["zmieniam", "zmieniasz", "zmienia", "zmieniamy", "zmieniacie",
+                     "zmieniają"],
+            past="on zmieniał · ona zmieniała · oni zmieniali",
+            rekcja="co? (Biernik): zmieniam pracę", rekcja_q="Biernik",
+            examples=[("Chcę zmienić pracę.", "Хочу змінити роботу.")],
+        ),
+        Verb(
+            "dostawać", "отримувати", pair="dostać", pair_hint="dostanę, dostanie",
+            group="-ję, -jesz",
+            present=["dostaję", "dostajesz", "dostaje", "dostajemy", "dostajecie",
+                     "dostają"],
+            past="on dostawał · ona dostawała · oni dostawali",
+            rekcja="co? (Biernik): dostaję wypłatę", rekcja_q="Biernik",
+            examples=[("Dostałem podwyżkę!", "Я отримав підвищення (зарплати)!")],
+        ),
+        Verb(
+            "tracić", "втрачати", pair="stracić", pair_hint="stracę, straci",
+            group="-ę, -isz",
+            present=["tracę", "tracisz", "traci", "tracimy", "tracicie", "tracą"],
+            past="on tracił · ona traciła · oni tracili",
+            rekcja="co? (Biernik): tracę czas", rekcja_q="Biernik",
+            examples=[("Nie trać czasu!", "Не втрачай часу!")],
+        ),
+        Verb(
+            "liczyć", "рахувати; розраховувати", pair="policzyć",
+            pair_hint="policzę, policzy", group="-ę, -ysz",
+            present=["liczę", "liczysz", "liczy", "liczymy", "liczycie", "liczą"],
+            past="on liczył · ona liczyła · oni liczyli",
+            rekcja="co? (рахую) · na + Biernik (розраховую!): liczę na ciebie",
+            examples=[("Liczę na ciebie!", "Розраховую на тебе!")],
+        ),
+    ],
+)

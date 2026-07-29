@@ -7,10 +7,10 @@ from app.services import verbs as vdrill
 
 
 def test_registry_and_ids_unique():
-    assert len(verbs.all_groups()) == 9
+    assert len(verbs.all_groups()) == 12
     infs = [v.inf for _, _, v in verbs.all_verbs()]
     assert len(infs) == len(set(infs)), "інфінітиви мають бути унікальні"
-    assert len(infs) >= 90
+    assert len(infs) >= 120
 
 
 def test_every_verb_is_complete():

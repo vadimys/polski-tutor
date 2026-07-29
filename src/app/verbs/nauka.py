@@ -1,0 +1,103 @@
+"""Група 10 — Навчання й мова: починати, пробувати, перевіряти, перекладати…"""
+
+from __future__ import annotations
+
+from app.verbs.schema import Verb, VerbGroup
+
+GROUP = VerbGroup(
+    id="nauka",
+    icon="📚",
+    title="Навчання й мова",
+    subtitle="Почати, спробувати, повторити, перекласти — дієслова твого навчання.",
+    verbs=[
+        Verb(
+            "zaczynać", "починати", pair="zacząć", pair_hint="zacznę, zacznie",
+            group="-am, -asz",
+            present=["zaczynam", "zaczynasz", "zaczyna", "zaczynamy", "zaczynacie",
+                     "zaczynają"],
+            past="on zaczynał · ona zaczynała · oni zaczynali (zacząć: zaczął/zaczęła/zaczęli)",
+            rekcja="co? (Biernik) або + інфінітив: zaczynam pracę / zaczynam pracować",
+            examples=[("Zaczynam naukę o ósmej.", "Починаю навчання о восьмій.")],
+        ),
+        Verb(
+            "przestawać", "переставати", pair="przestać", pair_hint="przestanę, przestanie",
+            group="-ję, -jesz",
+            present=["przestaję", "przestajesz", "przestaje", "przestajemy", "przestajecie",
+                     "przestają"],
+            past="on przestawał · ona przestawała · oni przestawali",
+            rekcja="+ інфінітив: przestań się martwić (перестань хвилюватися)",
+            examples=[("Przestań żartować!", "Перестань жартувати!")],
+        ),
+        Verb(
+            "próbować", "пробувати, куштувати", pair="spróbować",
+            pair_hint="spróbuję, spróbuje", group="-uję, -ujesz",
+            present=["próbuję", "próbujesz", "próbuje", "próbujemy", "próbujecie",
+                     "próbują"],
+            past="on próbował · ona próbowała · oni próbowali",
+            rekcja="czego? (Dopełniacz!): próbuję zupy · або + інфінітив: próbuję zrozumieć",
+            examples=[("Spróbuj tego pieroga!", "Скуштуй цього вареника!")],
+        ),
+        Verb(
+            "sprawdzać", "перевіряти", pair="sprawdzić", pair_hint="sprawdzę, sprawdzi",
+            group="-am, -asz",
+            present=["sprawdzam", "sprawdzasz", "sprawdza", "sprawdzamy", "sprawdzacie",
+                     "sprawdzają"],
+            past="on sprawdzał · ona sprawdzała · oni sprawdzali",
+            rekcja="co? (Biernik): sprawdzam odpowiedzi", rekcja_q="Biernik",
+            examples=[("Sprawdź to w słowniku.", "Перевір це в словнику.")],
+        ),
+        Verb(
+            "powtarzać", "повторювати", pair="powtórzyć", pair_hint="powtórzę, powtórzy",
+            group="-am, -asz",
+            present=["powtarzam", "powtarzasz", "powtarza", "powtarzamy", "powtarzacie",
+                     "powtarzają"],
+            past="on powtarzał · ona powtarzała · oni powtarzali",
+            rekcja="co? (Biernik): powtarzam słówka", rekcja_q="Biernik",
+            examples=[("Możesz powtórzyć?", "Можеш повторити?")],
+        ),
+        Verb(
+            "tłumaczyć", "перекладати; пояснювати", pair="przetłumaczyć",
+            pair_hint="przetłumaczę, przetłumaczy", group="-ę, -ysz",
+            present=["tłumaczę", "tłumaczysz", "tłumaczy", "tłumaczymy", "tłumaczycie",
+                     "tłumaczą"],
+            past="on tłumaczył · ona tłumaczyła · oni tłumaczyli",
+            rekcja="co? + na co?: tłumaczę tekst na polski",
+            examples=[("Przetłumacz mi to, proszę.", "Переклади мені це, будь ласка.")],
+        ),
+        Verb(
+            "zapisywać", "записувати", pair="zapisać", pair_hint="zapiszę, zapisze",
+            group="-uję, -ujesz",
+            present=["zapisuję", "zapisujesz", "zapisuje", "zapisujemy", "zapisujecie",
+                     "zapisują"],
+            past="on zapisywał · ona zapisywała · oni zapisywali",
+            rekcja="co? (Biernik): zapisuję nowe słowa", rekcja_q="Biernik",
+            examples=[("Zapisuję każde nowe słowo.", "Записую кожне нове слово.")],
+        ),
+        Verb(
+            "opowiadać", "розповідати", pair="opowiedzieć", pair_hint="opowiem, opowie",
+            group="-am, -asz",
+            present=["opowiadam", "opowiadasz", "opowiada", "opowiadamy", "opowiadacie",
+                     "opowiadają"],
+            past="on opowiadał · ona opowiadała · oni opowiadali",
+            rekcja="o czym? (o + Miejscownik): opowiadam o podróży", rekcja_q="o + Miejscownik",
+            examples=[("Opowiedz mi o sobie.", "Розкажи мені про себе.")],
+        ),
+        Verb(
+            "wyjaśniać", "пояснювати", pair="wyjaśnić", pair_hint="wyjaśnię, wyjaśni",
+            group="-am, -asz",
+            present=["wyjaśniam", "wyjaśniasz", "wyjaśnia", "wyjaśniamy", "wyjaśniacie",
+                     "wyjaśniają"],
+            past="on wyjaśniał · ona wyjaśniała · oni wyjaśniali",
+            rekcja="co? + komu?: wyjaśnij mi tę zasadę",
+            examples=[("Nauczyciel wyjaśnia gramatykę.", "Учитель пояснює граматику.")],
+        ),
+        Verb(
+            "uczyć", "навчати (когось)", pair="nauczyć", pair_hint="nauczę, nauczy",
+            group="-ę, -ysz",
+            present=["uczę", "uczysz", "uczy", "uczymy", "uczycie", "uczą"],
+            past="on uczył · ona uczyła · oni uczyli",
+            rekcja="kogo? + czego?: uczę dzieci polskiego (кого — Biernik, чого — Dopełniacz)",
+            examples=[("Ona uczy matematyki.", "Вона викладає математику.")],
+        ),
+    ],
+)

@@ -12,6 +12,9 @@ from app.verbs.codzienne import GROUP as _CODZIENNE
 from app.verbs.core import GROUP as _CORE
 from app.verbs.dom import GROUP as _DOM
 from app.verbs.komunikacja import GROUP as _KOMUNIKACJA
+from app.verbs.ludzie import GROUP as _LUDZIE
+from app.verbs.nauka import GROUP as _NAUKA
+from app.verbs.pieniadze import GROUP as _PIENIADZE
 from app.verbs.praca import GROUP as _PRACA
 from app.verbs.ruch import GROUP as _RUCH
 from app.verbs.schema import PERSONS, Verb, VerbGroup
@@ -23,6 +26,7 @@ __all__ = ["PERSONS", "Verb", "VerbGroup", "GROUPS"]
 
 GROUPS: list[VerbGroup] = [
     _CORE, _RUCH, _CODZIENNE, _KOMUNIKACJA, _UMYSL, _PRACA, _DOM, _ZDROWIE, _SPRAWY,
+    _NAUKA, _PIENIADZE, _LUDZIE,
 ]
 
 

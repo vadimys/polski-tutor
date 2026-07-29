@@ -182,9 +182,20 @@ async def _personal_nudge(user_id: int) -> str:
     if g["streak"]:
         goal_line += f" · 🔥 <b>{g['streak']}</b> дн поспіль — не гасимо серію!"
     freeze_line = "🧊 <i>Пропущений день врятовано заморозкою — серія жива!</i>\n" if froze else ""
+    # делікатно: 1 рядок про доспілі дієслова (SRS) — лише якщо учень УЖЕ тренував їх
+    verbs_line = ""
+    try:
+        from app.services import verbs as verbs_srs
+
+        f_due, r_due = await verbs_srs.due_counts(user_id)
+        if f_due + r_due:
+            verbs_line = f"🔀 Дієслова на повторення: <b>{f_due + r_due}</b> (/czasowniki)\n"
+    except Exception:  # noqa: BLE001 — нудж важливіший за додатковий рядок
+        logger.debug("verbs due line failed", exc_info=True)
     return (
         f"🌅 <b>Dzień dobry!</b> Час для польської.{tail}\n"
         f"{freeze_line}{goal_line}\n"
+        f"{verbs_line}"
         f"Сьогодні варто підтягнути: <b>{weakest}</b>.\n"
         "Тисни <b>⚡ Навчатись зараз</b> — сам підберу найкорисніше 👇"
     )
