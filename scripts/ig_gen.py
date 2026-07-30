@@ -260,8 +260,8 @@ def build_story_quiz1() -> None:
     _chip(d, (M, y), "B)  byłam w domu", f(_MONO_F, 54), pad=(40, 24),
           bg=(245, 240, 238), fg=DARK)
     y += 170
-    d.text((M, y), "голосуй стікером нижче ↓  відповідь — у наступній сторіс",
-           font=f(_REG_F, 38), fill=GREY)
+    _text_block(d, (M, y), "голосуй стікером нижче ↓\nвідповідь — у наступній сторіс",
+                f(_REG_F, 38), GREY, W_ST - 2 * M, lh=1.4)
     img.save(OUT / "story_quiz1.png")
     print("OK story_quiz1.png")
 
