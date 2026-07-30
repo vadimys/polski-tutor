@@ -197,7 +197,8 @@ async def grant_trial(
             u.exam_date = exam_date
             u.exam_date_confirmed = confirmed
         u.access_status = "approved"
-        u.access_until = max(u.access_until, trial_until)  # НЕ вкорочуємо наявний доступ
+        # НЕ вкорочуємо наявний доступ; `or ""` — у старих рядках БД буває NULL (TypeError у max)
+        u.access_until = max(u.access_until or "", trial_until)
         u.requested_at = clock.now_local().isoformat(timespec="minutes")
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
@@ -213,7 +214,7 @@ async def extend_days(user_id: int, days: int) -> str:
             return ""
         until = (clock.today_local() + timedelta(days=days)).isoformat()
         u.access_status = "approved"
-        u.access_until = max(u.access_until, until)  # НЕ вкорочуємо, якщо раптом є довший
+        u.access_until = max(u.access_until or "", until)  # НЕ вкорочуємо; NULL-safe
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
         return u.access_until
