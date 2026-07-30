@@ -119,9 +119,13 @@ def _expiry_phase(until: str, today: date) -> int | None:
 def _expiry_text(phase: int, until: str, paid: bool) -> str:
     """Текст попередження: trial vs підписка (paid). Тексти апрувнуто користувачем."""
     what = "підписка закінчується" if paid else "безкоштовний період закінчується"
+    try:
+        until_h = exam_dates.label(until)
+    except ValueError:
+        until_h = until
     if phase == 3:
         return (
-            f"⏳ Нагадування: {what} <b>через 3 дні</b> (до {until}). Твій прогрес "
+            f"⏳ Нагадування: {what} <b>через 3 дні</b> (до {until_h}). Твій прогрес "
             "збережеться, але тренажери закриються. Щоб продовжити без пауз — 💎 підписка "
             f"{settings.sub_stars}⭐/{settings.sub_days} дн (без автосписань)."
         )

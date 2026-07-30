@@ -21,7 +21,7 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from app.bot.keyboards import approved_kb, to_menu_kb
+from app.bot.keyboards import menu_kb_for, to_menu_kb
 from app.config import settings
 from app.services import access, billing, experiments, referrals, viewas
 
@@ -33,6 +33,16 @@ async def _is_referred(user_id: int) -> bool:
     if (await billing.referrer_of(user_id)) > 0:
         return True
     return (await viewas.get(user_id)) == "referred"  # view-as: тест знижки реферала
+
+
+def _human_date(iso: str) -> str:
+    """ISO → «29 серпня 2026»; на нестандартному рядку повертає як є."""
+    from app.services import exam_dates
+
+    try:
+        return exam_dates.label(iso)
+    except ValueError:
+        return iso
 
 
 async def _access_line(user_id: int) -> str:
@@ -51,7 +61,7 @@ async def _access_line(user_id: int) -> str:
     if left < 0:
         return "⏳ Твій доступ завершився — прогрес збережено, продовжимо з того ж місця.\n\n"
     what = "Підписка активна" if await billing.has_payments(user_id) else "Пробний період"
-    return f"✅ {what} до <b>{inf.until}</b> (ще {left} дн). Оформити можна будь-коли — дні додаються, не згорають.\n\n"
+    return f"✅ {what} до <b>{_human_date(inf.until)}</b> (ще {left} дн). Оформити можна будь-коли — дні додаються, не згорають.\n\n"
 
 
 async def _offer(message: Message, user_id: int) -> None:
@@ -206,9 +216,10 @@ async def on_paid(message: Message) -> None:
                 )
         return
     await message.answer(
-        f"✅ <b>Дякуємо! Підписку активовано</b> до <b>{until}</b>.\n"
-        "Повний доступ відкрито — продовжуймо підготовку 👇",
-        reply_markup=approved_kb(),
+        "🎉 <b>Оплата пройшла — дякую за підтримку!</b> ❤️\n"
+        f"💎 Повний доступ активний до <b>{_human_date(until)}</b>.\n"
+        "Продовжуймо підготовку 👇",
+        reply_markup=await menu_kb_for(uid),
     )
     logger.info("payment ok uid=%s stars=%s until=%s", uid, stars, until)
     # побічні дії ПІСЛЯ активації — best-effort: збій тут НЕ має ламати грошовий шлях
