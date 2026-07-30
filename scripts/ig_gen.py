@@ -239,10 +239,6 @@ def build_reel1_frames() -> None:
     ])
 
 
-if __name__ == "__main__":
-    build_carousel_szukac()
-    build_reel1_frames()
-    build_story_quiz1()
 
 
 def build_story_quiz1() -> None:
@@ -268,3 +264,9 @@ def build_story_quiz1() -> None:
            font=f(_REG_F, 38), fill=GREY)
     img.save(OUT / "story_quiz1.png")
     print("OK story_quiz1.png")
+
+
+if __name__ == "__main__":
+    build_carousel_szukac()
+    build_reel1_frames()
+    build_story_quiz1()
