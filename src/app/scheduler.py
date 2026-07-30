@@ -104,6 +104,57 @@ async def _assignment_reminders(bot: Bot, today: date) -> None:
                     logger.exception("assignment reminder failed uid=%s aid=%s", uid, a["id"])
 
 
+def _expiry_phase(until: str, today: date) -> int | None:
+    """Фаза попередження про кінець доступу: 3 (за 3 дні) · 0 (останній день) · None.
+    Чиста функція (тестується)."""
+    if not until:
+        return None
+    try:
+        left = (date.fromisoformat(until) - today).days
+    except ValueError:
+        return None
+    return left if left in (3, 0) else None
+
+
+def _expiry_text(phase: int, until: str, paid: bool) -> str:
+    """Текст попередження: trial vs підписка (paid). Тексти апрувнуто користувачем."""
+    what = "підписка закінчується" if paid else "безкоштовний період закінчується"
+    if phase == 3:
+        return (
+            f"⏳ Нагадування: {what} <b>через 3 дні</b> (до {until}). Твій прогрес "
+            "збережеться, але тренажери закриються. Щоб продовжити без пауз — 💎 підписка "
+            f"{settings.sub_stars}⭐/{settings.sub_days} дн (без автосписань)."
+        )
+    what_last = "підписки" if paid else "безкоштовного доступу"
+    return (
+        f"⏳ Сьогодні <b>останній день</b> {what_last}. Завтра вправи закриються "
+        "(весь прогрес збережеться)."
+    )
+
+
+async def _expiry_reminders(bot: Bot, today: date) -> None:
+    """Раз на добу: попередити за 3 дні та в останній день доступу (trial чи підписка).
+    Дедуп через _claim (переживає рестарт); викладачів не чіпаємо (доступ безкоштовний)."""
+    from app.services import billing
+
+    for uid in await state.all_user_ids():
+        if uid == settings.admin_id:
+            continue
+        inf = await access.info(uid)
+        if inf.role != "student" or inf.status != "approved" or not inf.until:
+            continue
+        phase = _expiry_phase(inf.until, today)
+        if phase is None or not await _claim(f"expwarn:{uid}:{inf.until}:{phase}"):
+            continue
+        try:
+            paid = await billing.has_payments(uid)
+            await bot.send_message(
+                uid, _expiry_text(phase, inf.until, paid), reply_markup=extend_request_kb()
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("expiry reminder failed uid=%s", uid)
+
+
 _WINBACK_DAYS = (3, 14)  # через скільки днів після завершення доступу слати win-back
 
 
@@ -250,9 +301,10 @@ async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
             logger.exception("retention purge failed")
     if now.hour == _DIGEST_HOUR:  # метрик-дайджест в alerts-канал — раз на добу
         await _daily_digest(bot, clock.today_local())
-    if now.hour == _EXAM_HOUR:  # exam-lifecycle + нагадування завдань + win-back — раз на добу
+    if now.hour == _EXAM_HOUR:  # exam-lifecycle + завдання + кінець доступу + win-back — раз/добу
         await _exam_lifecycle(bot, clock.today_local())
         await _assignment_reminders(bot, clock.today_local())
+        await _expiry_reminders(bot, clock.today_local())
         await _winback(bot, clock.today_local())
     return purged_on
 

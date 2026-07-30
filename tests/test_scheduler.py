@@ -75,3 +75,17 @@ async def test_nudge_dedupe_same_day(wired):
 async def test_seconds_until_next_hour_in_range():
     s = await scheduler._seconds_until_next_hour()
     assert 0 < s <= 3600
+
+
+def test_expiry_phase_pure():
+    from datetime import date
+
+    from app.scheduler import _expiry_phase
+
+    today = date(2026, 8, 10)
+    assert _expiry_phase("2026-08-13", today) == 3  # за 3 дні
+    assert _expiry_phase("2026-08-10", today) == 0  # останній день
+    assert _expiry_phase("2026-08-12", today) is None  # за 2 — не шлемо
+    assert _expiry_phase("2026-08-01", today) is None  # вже минув → це winback-зона
+    assert _expiry_phase("", today) is None
+    assert _expiry_phase("junk", today) is None

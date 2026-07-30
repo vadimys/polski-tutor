@@ -77,6 +77,13 @@ async def apply_subscription(user_id: int, days: int, stars: int, charge_id: str
         return until
 
 
+async def has_payments(user_id: int) -> bool:
+    """Чи має користувач хоч одну оплату (розрізняємо «trial» vs «підписник» у текстах)."""
+    async with session_factory()() as s:
+        row = await s.execute(select(Payment.id).where(Payment.user_id == user_id).limit(1))
+        return row.first() is not None
+
+
 async def referrer_of(user_id: int) -> int:
     """Id викладача, який привів цього учня (0 — органічний)."""
     async with session_factory()() as s:

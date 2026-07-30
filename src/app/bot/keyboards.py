@@ -203,7 +203,10 @@ def menu_kb() -> InlineKeyboardMarkup:
     kb.row(InlineKeyboardButton(text="🏋️ Вправи (розділи іспиту)", callback_data="menu:practice"))
     kb.row(InlineKeyboardButton(text="🎓 Іспит: тести й контроль", callback_data="menu:exam"))
     kb.row(InlineKeyboardButton(text="👥 Клас і друзі", callback_data="menu:class"))
-    kb.row(InlineKeyboardButton(text="🆘 Підтримка / 💡 Ідея", callback_data="support:open"))
+    kb.row(
+        InlineKeyboardButton(text="💎 Підписка", callback_data="pay:start"),
+        InlineKeyboardButton(text="🆘 Підтримка", callback_data="support:open"),
+    )
     return kb.as_markup()
 
 
