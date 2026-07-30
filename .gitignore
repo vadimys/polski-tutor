@@ -38,3 +38,4 @@ monitoring/netdata/health_alarm_notify.conf
 
 # дампи БД — поза git
 backups/
+marketing/out/
