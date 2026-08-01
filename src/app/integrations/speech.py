@@ -73,7 +73,9 @@ async def _transcribe_groq(path: str) -> str | None:
 
         with open(path, "rb") as fh:
             data = aiohttp.FormData()
-            data.add_field("file", fh, filename="voice.oga", content_type="audio/ogg")
+            # Telegram voice = OGG/Opus; Groq визначає формат за розширенням у filename і
+            # приймає 'ogg' (не 'oga') — тож маркуємо .ogg, вміст той самий OGG-контейнер
+            data.add_field("file", fh, filename="audio.ogg", content_type="audio/ogg")
             data.add_field("model", settings.groq_stt_model)
             data.add_field("language", "pl")
             data.add_field("response_format", "text")
