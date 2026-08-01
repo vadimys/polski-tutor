@@ -101,12 +101,28 @@ async def full_reset(user_id: int) -> None:
     await vocab.reset(user_id)
 
 
-async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
+def _microwin_line(module_value: str, old_pct: int, new_pct: int) -> str:
+    """Рядок мікро-перемоги «було→стало»: видимий приріст готовності. '' якщо не модуль."""
+    from app.domain.models import MODULE_LABELS, Module
+
+    try:
+        short = MODULE_LABELS[Module(module_value)].split(" (")[0]  # «🎧 Słuchanie»
+    except ValueError:
+        return ""
+    return f"{short}: {old_pct}% → <b>{new_pct}%</b> (+{new_pct - old_pct}%) 📈"
+
+
+async def update_readiness(
+    user_id: int, module_value: str, pct: int, *, celebrate: bool = True
+) -> None:
     """Лог сесії (сирий бал) + перерахунок ЧЕСНОЇ готовності з історії.
 
     Єдина точка для ВСІХ вправ (письмо/мовлення/тренування/мок/аудіювання).
     Готовність більше НЕ ковзне середнє — рахується з усієї історії сесій
     (обсяг + різні дні + свіжість), див. progress.compute.
+
+    celebrate=False — придушити мікро-перемогу (placement-тест і мок: там свій підсумок
+    по всіх модулях, «+N%» на кожен був би спамом).
     """
     from app.services import assignments, goals, progress, viewas  # відкладено — уникаємо циклів
 
@@ -121,19 +137,28 @@ async def update_readiness(user_id: int, module_value: str, pct: int) -> None:
                 user_id, "🔎 <i>Превʼю-режим: цей результат НЕ зараховується у твій прогрес.</i>"
             )
             return
+        old_pct = int((u.readiness or {}).get(module_value, 0)) if u is not None else 0
         if u is None:
             u = User(id=user_id, lesson_hour=settings.lesson_hour)
             s.add(u)
+            await s.flush()  # рядок users має існувати ДО FK-insert Session (перша вправа юзера)
         s.add(Session(user_id=user_id, module=module_value, score=pct))
         await s.commit()
 
     stats = await progress.compute(user_id)  # чесна готовність із повної історії
+    new_map = progress.pcts(stats)
     async with session_factory()() as s:
         u = await s.get(User, user_id)
         if u is not None:
-            u.readiness = progress.pcts(stats)
+            u.readiness = new_map
             await s.commit()
     await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію
+    # мікро-перемога — ПІСЛЯ record_module (goals.add робить r.set і затер би буфер);
+    # лише реальний приріст (свіжість може лишити % рівним/нижчим — тоді мовчимо)
+    if celebrate:
+        new_pct = int(new_map.get(module_value, old_pct))
+        if new_pct > old_pct and (line := _microwin_line(module_value, old_pct, new_pct)):
+            await goals.push_celebration(user_id, line)
     done = await assignments.on_session(user_id)  # авто-залік завдань, чий модуль-ціль виконано
     if done:  # реальна нотифікація учня (буфер святкування — хендлер покаже після вправи)
         await goals.push_celebration(

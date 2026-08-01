@@ -434,7 +434,7 @@ async def _finalize(message: Message, user_id: int, state: FSMContext) -> None:
             continue
         got = correct.get(sec, 0)
         pct = round(got / tot * 100)
-        await user_state.update_readiness(user_id, sec, pct)
+        await user_state.update_readiness(user_id, sec, pct, celebrate=False)  # мок дає свій підсумок 5 модулів
         await progress.record_mock_pass(user_id, sec, pct)
         if pct < 50:
             all_pass = False

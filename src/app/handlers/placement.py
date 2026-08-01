@@ -105,7 +105,7 @@ async def _finalize(
     await user_state.save(st)
     # лог сесій → чесна модель готовності врахує (тест = 1 спроба = поки низька впевненість)
     for mod_value, pct in result.per_module.items():
-        await user_state.update_readiness(user_id, mod_value, pct)
+        await user_state.update_readiness(user_id, mod_value, pct, celebrate=False)  # свій підсумок нижче
 
     lines = [
         f"✅ <b>Тест пройдено!</b> {result.correct}/{result.total} правильних.",
