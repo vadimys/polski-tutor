@@ -19,9 +19,11 @@ TOP_N = 10
 
 # анонімні аліаси (польський колорит) — стабільні per-uid, без персональних даних
 _ADJ = ["Szybki", "Mądry", "Dzielny", "Wesoły", "Sprytny", "Uparty", "Cichy", "Zwinny",
-        "Waleczny", "Bystry", "Śmiały", "Pilny"]
+        "Waleczny", "Bystry", "Śmiały", "Pilny", "Zręczny", "Groźny", "Skromny", "Czujny",
+        "Rączy", "Chytry", "Gorliwy", "Zawzięty"]
 _NOUN = ["Żubr", "Bocian", "Orzeł", "Sokół", "Ryś", "Jeż", "Borsuk", "Wilk",
-         "Zając", "Łoś", "Dzik", "Kot"]
+         "Zając", "Łoś", "Dzik", "Kot", "Lis", "Sarna", "Wydra", "Kruk",
+         "Jeleń", "Bóbr", "Sowa", "Niedźwiedź"]
 
 
 def _r() -> Redis:
@@ -37,9 +39,13 @@ def _key() -> str:
 
 
 def alias(user_id: int) -> str:
-    """Стабільний анонімний нік (напр. «Szybki Bocian»). Той самий для одного uid."""
-    a = _ADJ[user_id % len(_ADJ)]
-    n = _NOUN[(user_id // len(_ADJ)) % len(_NOUN)]
+    """Стабільний анонімний нік (напр. «Szybki Bocian»). Той самий для одного uid.
+
+    Прикметник і іменник беремо з РІЗНИХ хеш-змішувань, щоб сусідні id не давали той
+    самий іменник (без цього -101/-102/-103 → усі «...Sokół»)."""
+    h = (abs(user_id) * 2654435761) & 0xFFFFFFFF  # Knuth multiplicative hash — розкид
+    a = _ADJ[h % len(_ADJ)]
+    n = _NOUN[(h // len(_ADJ)) % len(_NOUN)]
     return f"{a} {n}"
 
 
