@@ -74,6 +74,13 @@ async def _delete_redis(user_id: int) -> None:
             f"ref:inv:{user_id}",
             f"ref:rewok:{user_id}",
             f"polski:churn:reoffered:{user_id}",
+            # тренажер дієслів (SRS-стан + легасі-лічильники) — БЕЗ TTL, тож інакше
+            # осиротіли б назавжди після ст.17-видалення (аудит canary 2026-08)
+            f"verbs:srs:forms:{user_id}",
+            f"verbs:srs:rekcja:{user_id}",
+            f"verbs:wrong:forms:{user_id}",
+            f"verbs:wrong:rekcja:{user_id}",
+            f"polski:mist:{user_id}",  # колода помилок — теж БЕЗ TTL, персональні дані (ст.17)
         )
         await r.srem("polski:users", user_id)
         await r.hdel("reset:reqs", uid)

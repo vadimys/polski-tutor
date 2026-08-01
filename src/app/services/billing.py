@@ -58,6 +58,14 @@ async def apply_subscription(user_id: int, days: int, stars: int, charge_id: str
         if u is None:
             u = User(id=user_id)
             s.add(u)
+            try:
+                await s.flush()  # рядок users має існувати ДО FK-insert Payment (інакше FK-порушення
+                # і тихий rollback → «оплата без доступу»); норм. шлях (юзер існує) це не зачіпає
+            except IntegrityError:  # гонка: паралельна доставка вже створила рядок
+                await s.rollback()
+                u = await s.get(User, user_id)
+                if u is None:
+                    return ""
         until = _extended_until(u.access_until, clock.today_local(), days)
         u.access_status = "approved"
         u.access_until = until
@@ -65,7 +73,10 @@ async def apply_subscription(user_id: int, days: int, stars: int, charge_id: str
         # якщо учень згодом перейде до іншого викладача)
         s.add(
             Payment(
-                user_id=user_id, teacher_id=u.referred_by, stars=stars, days=days, charge_id=charge_id
+                # `or 0` — для щойно створеного (ще не flush) User referred_by=None, а
+                # Payment.teacher_id NOT NULL → інакше IntegrityError і оплата без доступу
+                user_id=user_id, teacher_id=u.referred_by or 0, stars=stars, days=days,
+                charge_id=charge_id,
             )
         )
         try:

@@ -35,6 +35,9 @@ async def check() -> tuple[bool, dict[str, str]]:
     try:
         r = Redis.from_url(settings.redis_url)
         await r.ping()
+        # запис-роундтріп: ловить read-only replica / maxmemory-noeviction, що PING сам не бачить
+        await r.set("polski:health:probe", "1", ex=30)
+        await r.delete("polski:health:probe")
         await r.aclose()
         detail["redis"] = "ok"
     except Exception:  # noqa: BLE001

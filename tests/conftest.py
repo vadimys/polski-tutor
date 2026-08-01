@@ -46,3 +46,27 @@ async def db():
     finally:
         base._engine, base._sessionmaker = prev_engine, prev_maker
         await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def fake_redis(monkeypatch):
+    """In-memory Redis для тестів Redis-шляхів у CI (де немає redis-сервісу).
+
+    Патчить `Redis.from_url` → fakeredis з єдиним FakeServer (усі сервіси-синглтони
+    бачать спільні дані), і скидає закешовані клієнти сервісів, які тест чіпає, щоб
+    не було витоку стану між тестами. Повертає FakeServer (за потреби прямого доступу)."""
+    import fakeredis.aioredis as far
+
+    server = far.FakeServer()
+
+    def _from_url(_url, **kw):
+        return far.FakeRedis(server=server, decode_responses=kw.get("decode_responses", False))
+
+    monkeypatch.setattr("redis.asyncio.Redis.from_url", staticmethod(_from_url))
+
+    # скинути ліниві module-global синглтони, щоб перестворились проти fake
+    import app.services.verbs as _verbs
+
+    monkeypatch.setattr(_verbs, "_redis", None, raising=False)
+    yield server
+    monkeypatch.setattr(_verbs, "_redis", None, raising=False)

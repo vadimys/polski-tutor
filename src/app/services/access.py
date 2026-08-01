@@ -196,9 +196,13 @@ async def grant_trial(
         if exam_date:
             u.exam_date = exam_date
             u.exam_date_confirmed = confirmed
+        # безстроковий доступ (approved + '') НЕ демоутимо до trial-вікна: '' семантично =
+        # «нескінченно», але в max('', дата) '' — найменше, тож без цього гейту вкоротився б
+        was_unlimited = u.access_status == "approved" and not (u.access_until or "")
         u.access_status = "approved"
         # НЕ вкорочуємо наявний доступ; `or ""` — у старих рядках БД буває NULL (TypeError у max)
-        u.access_until = max(u.access_until or "", trial_until)
+        if not was_unlimited:
+            u.access_until = max(u.access_until or "", trial_until)
         u.requested_at = clock.now_local().isoformat(timespec="minutes")
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
@@ -213,8 +217,10 @@ async def extend_days(user_id: int, days: int) -> str:
         if u is None:
             return ""
         until = (clock.today_local() + timedelta(days=days)).isoformat()
+        was_unlimited = u.access_status == "approved" and not (u.access_until or "")
         u.access_status = "approved"
-        u.access_until = max(u.access_until or "", until)  # НЕ вкорочуємо; NULL-safe
+        if not was_unlimited:  # безстроковий доступ не вкорочуємо (див. grant_trial)
+            u.access_until = max(u.access_until or "", until)  # НЕ вкорочуємо; NULL-safe
         u.decided_at = clock.now_local().isoformat(timespec="minutes")
         await s.commit()
         return u.access_until

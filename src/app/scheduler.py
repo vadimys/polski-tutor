@@ -260,6 +260,8 @@ async def _nudge_due(bot: Bot, hour: int, today: str) -> int:
     """Нагадати всім, у кого персональна година = поточній (раз на добу, дедуп у Redis)."""
     sent = 0
     for uid in await state.all_user_ids():
+        if uid <= 0:
+            continue  # реальний Telegram user id завжди додатний; ≤0 = синтетичний (canary) — не шлемо
         if not await access.is_allowed(uid, settings.admin_id):
             continue  # не турбуємо не-схвалених
         st = await state.load(uid)
