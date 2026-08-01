@@ -214,6 +214,7 @@ def practice_menu_kb() -> InlineKeyboardMarkup:
     """Підменю «Вправи» — тренування розділів іспиту."""
     return _grid(
         [
+            ("🗣 Розмова з екзаменатором", "examiner:start"),
             ("✍️ Письмо", "writing:start"), ("🗣 Мовлення", "speaking:start"),
             ("🖼 Опис фото", "speaking:photo"), ("🎧 Аудіювання", "listening:start"),
             ("🎯 Тренування", "drill:start"), ("🧩 Зіставлення", "match:open"),
