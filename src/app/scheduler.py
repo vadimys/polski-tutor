@@ -27,6 +27,7 @@ _PURGE_HOUR = 3  # ретеншн-очищення denied-користувачі
 _DIGEST_HOUR = 8  # добовий метрик-дайджест в alerts-канал (не юзерам) — раз на добу зранку
 _EXAM_HOUR = 9  # exam-lifecycle (напередодні/день/post-exam) — раз на добу зранку
 _NUDGE_TTL = 90_000  # ~25 год — дедуп-мітка нагадування самоскидається щодоби
+_CATCHUP_HOUR = 20  # вечірній catch-up (loss-aversion на серію) — раз на добу, якщо ціль не закрита
 _EXAM_TTL = 40 * 24 * 3600  # дедуп exam-повідомлень (довше за вікно до/після іспиту)
 
 _redis: Redis | None = None
@@ -46,6 +47,14 @@ async def _already_nudged(user_id: int, today: str) -> bool:
 
 async def _mark_nudged(user_id: int, today: str) -> None:
     await _r().set(f"polski:nudge:{user_id}:{today}", "1", ex=_NUDGE_TTL)
+
+
+async def _already_catchup(user_id: int, today: str) -> bool:
+    return bool(await _r().exists(f"polski:catchup:{user_id}:{today}"))
+
+
+async def _mark_catchup(user_id: int, today: str) -> None:
+    await _r().set(f"polski:catchup:{user_id}:{today}", "1", ex=_NUDGE_TTL)
 
 
 async def _claim(key: str) -> bool:
@@ -278,6 +287,59 @@ async def _nudge_due(bot: Bot, hour: int, today: str) -> int:
     return sent
 
 
+async def _catchup_text(user_id: int) -> str:
+    """Текст вечірнього catch-up. '' якщо ціль вже закрита АБО учень сьогодні не залучений
+    (streak=0 і нічого не робив — ранковий нудж уже був, не нагадуємо вдруге)."""
+    from app.services import goals
+
+    goal = await goals.get_goal(user_id)
+    done = await goals.today_minutes(user_id)
+    if done >= goal:  # денну ціль закрито — не турбуємо
+        return ""
+    left = max(1, goal - done)
+    streak = await goals.current_streak(user_id)
+    if streak >= 1:  # головний важіль — страх втратити серію
+        return (
+            f"🔥 <b>Твоя серія — {streak} дн.</b> Шкода перервати!\n"
+            f"Ще ~{left} хв сьогодні — і день зараховано. Тисни <b>⚡ Навчатись зараз</b> 👇"
+        )
+    if done > 0:  # почав, але не добив — заклик фінішувати
+        return (
+            f"Ти вже почав сьогодні 💪 Лишилось ~{left} хв до денної цілі.\n"
+            f"Фінішуймо? Тисни <b>⚡ Навчатись зараз</b> 👇"
+        )
+    return ""
+
+
+async def _catchup_due(bot: Bot, hour: int, today: str) -> int:
+    """Вечірній catch-up о _CATCHUP_HOUR: делікатне «ще трохи», лише кому ціль не закрита."""
+    if hour != _CATCHUP_HOUR:
+        return 0
+    sent = 0
+    for uid in await state.all_user_ids():
+        if uid <= 0:  # синтетичні (canary)
+            continue
+        if not await access.is_allowed(uid, settings.admin_id):
+            continue
+        st = await state.load(uid)
+        if st.role == "teacher":
+            continue
+        if st.lesson_hour >= _CATCHUP_HOUR:  # їхнє основне нагадування вже вечірнє — не дублюємо
+            continue
+        if await _already_catchup(uid, today):
+            continue
+        text = await _catchup_text(uid)
+        if not text:  # ціль закрита / не залучений сьогодні — мовчимо
+            continue
+        try:
+            await bot.send_message(uid, text, reply_markup=coach_kb())
+            await _mark_catchup(uid, today)
+            sent += 1
+        except Exception:
+            logger.exception("catchup failed uid=%s", uid)
+    return sent
+
+
 async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
     """Робота однієї години: персональні нудж(і) + (раз/добу) ретеншн і exam/завдання."""
     now = clock.now_local()
@@ -285,6 +347,9 @@ async def _run_hour(bot: Bot, purged_on: str | None) -> str | None:
     sent = await _nudge_due(bot, now.hour, today)
     if sent:
         logger.info("Nudge о %02d:00 → %d users", now.hour, sent)
+    caught = await _catchup_due(bot, now.hour, today)
+    if caught:
+        logger.info("Catch-up о %02d:00 → %d users", now.hour, caught)
     try:  # бюджет-алерт AI — щогодини, спрацьовує раз/добу при перетині порогу
         from app.services import aicost, alerts
 

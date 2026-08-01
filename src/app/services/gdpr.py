@@ -89,7 +89,10 @@ async def _delete_redis(user_id: int) -> None:
             for i in range(len(experiments.TESTS[test_key]["variants"])):
                 await r.srem(f"{pref}:exp:{i}", uid)
                 await r.srem(f"{pref}:conv:{i}", uid)
-        for pattern in (f"polski:ai:{user_id}:*", f"polski:nudge:{user_id}:*", f"fsm:*:{user_id}:*"):
+        for pattern in (
+            f"polski:ai:{user_id}:*", f"polski:nudge:{user_id}:*",
+            f"polski:catchup:{user_id}:*", f"fsm:*:{user_id}:*",
+        ):
             async for key in r.scan_iter(pattern):
                 await r.delete(key)
     finally:
