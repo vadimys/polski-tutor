@@ -63,8 +63,40 @@ def transcribe_words_sync(path: str) -> list[dict]:
         return []
 
 
+async def _transcribe_groq(path: str) -> str | None:
+    """Groq Whisper large-v3 (PRIMARY, якщо є ключ) — кращий польський WER на акценті.
+    None → нема ключа/збій → викликач падає на локальний faster-whisper."""
+    if not settings.groq_api_key:
+        return None
+    try:
+        import aiohttp
+
+        with open(path, "rb") as fh:
+            data = aiohttp.FormData()
+            data.add_field("file", fh, filename="voice.oga", content_type="audio/ogg")
+            data.add_field("model", settings.groq_stt_model)
+            data.add_field("language", "pl")
+            data.add_field("response_format", "text")
+            async with aiohttp.ClientSession() as s, s.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                data=data,
+                headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                timeout=aiohttp.ClientTimeout(total=30),
+            ) as r:
+                if r.status != 200:
+                    logger.warning("groq STT HTTP %s: %s", r.status, (await r.text())[:200])
+                    return None
+                return (await r.text()).strip()
+    except Exception:
+        logger.exception("groq STT failed — фолбек на локальний whisper")
+        return None
+
+
 async def transcribe(path: str) -> str:
-    """Транскрибувати аудіофайл (польська). '' якщо порожньо/помилка."""
+    """Транскрибувати аудіофайл (польська). Groq (якщо ключ) → локальний whisper. '' на збій."""
+    groq = await _transcribe_groq(path)
+    if groq is not None:
+        return groq
     if not available():
         return ""
     try:

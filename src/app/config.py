@@ -51,6 +51,10 @@ class Settings(BaseSettings):
     # Whisper (локальне розпізнавання голосу для модуля Mówienie)
     whisper_model: str = "small"
     whisper_dir: str = "/opt/models"
+    # Groq Whisper large-v3 як PRIMARY STT (краще розпізнає акцент/помилки A1→B1);
+    # порожній ключ → авто-фолбек на локальний faster-whisper (працює й без Groq)
+    groq_api_key: str = ""
+    groq_stt_model: str = "whisper-large-v3-turbo"
 
     # Piper TTS (локальне озвучення для модуля Słuchanie)
     piper_model: str = "/opt/voices/pl_PL-gosia-medium.onnx"
