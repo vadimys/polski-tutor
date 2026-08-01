@@ -173,7 +173,11 @@ async def _check_ai_ping() -> str:
     strong = await ai.ask("Reply with exactly: OK", "ping", strong=True, max_tokens=5, label="canary")
     if not strong.strip():
         raise CheckError("порожня відповідь strong-tier (Sonnet): модель/квота — письмо/уроки ляжуть")
-    schema = {"type": "object", "properties": {"ok": {"type": "boolean"}}, "required": ["ok"]}
+    # additionalProperties:false — вимога API structured-output (як у реальних схемах застосунку)
+    schema = {
+        "type": "object", "additionalProperties": False,
+        "properties": {"ok": {"type": "boolean"}}, "required": ["ok"],
+    }
     js = await ai.ask_json("Return {\"ok\": true}", "ping", schema, strong=False, max_tokens=30, label="canary")
     if not isinstance(js, dict) or "ok" not in js:
         raise CheckError(f"structured output (ask_json) зламано: {js!r}")
