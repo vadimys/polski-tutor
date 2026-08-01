@@ -277,12 +277,17 @@ async def _verify_clean() -> None:
         if sess or pay:
             raise CheckError(f"cleanup лишив рядки uid={uid}: Session={sess} Payment={pay}")
 
+    from app.services import league
+
     r = Redis.from_url(settings.redis_url, decode_responses=True)
     try:  # ловить БУДЬ-ЯКИЙ новий клас ключів, що gdpr ще не чистить
         for uid in (CANARY_UID, CANARY_UID2):
             leftover = [k async for k in r.scan_iter(f"*{uid}*")]
             if leftover:
                 raise CheckError(f"Redis-залишки для uid={uid}: {leftover[:8]}")
+            # ліга: uid — MEMBER sorted-set (не в назві ключа), тож scan вище його не бачить
+            if (await league.rank_of(uid))[0] is not None:
+                raise CheckError(f"uid={uid} лишився у sorted-set ліги (gdpr.league.forget?)")
     finally:
         await r.aclose()
 

@@ -38,6 +38,7 @@ from app.services import (
     goals,
     groups,
     leaderboard,
+    league,
     missions,
     progress,
     quest,
@@ -581,6 +582,31 @@ async def cb_my_board(cb: CallbackQuery) -> None:
         leaderboard.render(rows, g["name"] if g else "Клас", highlight_id=uid),
         reply_markup=to_menu_kb(),
     )
+
+
+# --- Тижнева ліга XP (глобальна, для всіх учнів) ---
+
+
+@router.callback_query(F.data == "league:me")
+async def cb_league(cb: CallbackQuery) -> None:
+    await cb.answer()
+    await _show_league(cb.message, cb.from_user.id)
+
+
+@router.message(Command("liga"))
+async def cmd_league(message: Message) -> None:
+    await _show_league(message, message.from_user.id)
+
+
+async def _show_league(message: Message, uid: int) -> None:
+    st = await user_state.load(uid)
+    if viewas.role_for(await viewas.get(uid), st.role) == "teacher":
+        await message.answer("👩‍🏫 Ліга XP — для учнів (у превʼю-режимі не рахується).",
+                             reply_markup=to_menu_kb())
+        return
+    rows = await league.top()
+    me_rank, me_xp = await league.rank_of(uid)
+    await message.answer(league.render(rows, uid, me_rank, me_xp), reply_markup=to_menu_kb())
 
 
 # --- Завдання від викладача (для учня) ---

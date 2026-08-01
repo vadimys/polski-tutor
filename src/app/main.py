@@ -70,6 +70,7 @@ COMMANDS = [
     BotCommand(command="pisanie", description="Письмо (з фідбеком)"),
     BotCommand(command="mowienie", description="Мовлення (голосове + фідбек)"),
     BotCommand(command="rozmowa", description="🗣 Розмова з екзаменатором (голосовий діалог)"),
+    BotCommand(command="liga", description="🏆 Ліга тижня (рейтинг XP)"),
     BotCommand(command="opis", description="Опис фотографії (Zadanie 1)"),
     BotCommand(command="sluchanie", description="Аудіювання (запис + питання)"),
     BotCommand(command="mok", description="Офіційний МОК (читання/граматика)"),

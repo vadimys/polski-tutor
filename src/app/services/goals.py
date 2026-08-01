@@ -259,6 +259,11 @@ async def add(user_id: int, minutes: int, xp: int, kind: str | None = None) -> d
     leveled_up = level > level_of(prev_xp)
     await _set(user_id, g)
 
+    if xp > 0:  # тижнева ліга XP (лише учні — ми вже за teacher-гардом вище)
+        from app.services import league
+
+        await league.add_xp(user_id, xp)
+
     if reached_now or leveled_up:  # відкласти святкування — хендлер покаже після вправи
         parts = []
         if leveled_up:

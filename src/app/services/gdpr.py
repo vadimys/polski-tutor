@@ -53,9 +53,10 @@ async def export_data(user_id: int) -> str:
 async def _delete_redis(user_id: int) -> None:
     """Прибрати ВСІ Redis-сліди користувача (ст.17): словник/AI/нудж/FSM + гейміфікація +
     тікети + реферали + churn + A/B-членство + запит на reset."""
-    from app.services import experiments, goals, support
+    from app.services import experiments, goals, league, support
 
     await goals.reset(user_id)  # polski:min/act/goalmet/celeb/xp/goal/freeze/streak
+    await league.forget(user_id)  # прибрати з sorted-set тижневої ліги (uid=member, не ключ)
     await support.delete_user_tickets(user_id)
 
     from redis.asyncio import Redis
