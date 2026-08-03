@@ -11,13 +11,53 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from redis.asyncio import Redis
 from sqlalchemy import select
 
+from app.config import settings
 from app.db.base import session_factory
 from app.db.models import User
 from app.services import clock
 
 SIX_MONTHS_DAYS = 182
+
+_anchor_redis: Redis | None = None
+
+
+def _anchor_r() -> Redis:
+    global _anchor_redis
+    if _anchor_redis is None:
+        _anchor_redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    return _anchor_redis
+
+
+async def anchor_trial(user_id: int) -> bool:
+    """Переставити trial-відлік на день ПЕРШОЇ справжньої вправи (одноразово, чесніше).
+
+    Тільки для trial-юзерів (approved, скінченний access_until, без оплат): referred_by=0 →
+    organic_trial_days (14), від викладача → trial_days (30). НЕ вкорочує наявне вікно.
+    Прапорець `trial:anchored:{uid}` у Redis → спрацьовує РАЗ. True — якщо дату переставлено."""
+    r = _anchor_r()
+    flag = f"trial:anchored:{user_id}"
+    if await r.get(flag):
+        return False
+    from app.services import billing
+
+    if await billing.has_payments(user_id):  # платник — фіксований період, не чіпаємо
+        await r.set(flag, "1")
+        return False
+    async with session_factory()() as s:
+        u = await s.get(User, user_id)
+        if u is None or u.access_status != "approved" or not u.access_until:
+            return False  # немає рядка / не approved / безстроковий (unlimited) → не наш кейс
+        days = settings.trial_days if u.referred_by else settings.organic_trial_days
+        new_until = (clock.today_local() + timedelta(days=days)).isoformat()
+        anchored = new_until > u.access_until  # тільки продовжуємо
+        if anchored:
+            u.access_until = new_until
+            await s.commit()
+    await r.set(flag, "1")
+    return anchored
 TEACHER_ACCESS_DAYS = 365  # викладачу — довгий доступ (поновлюваний; MVP — рік)
 
 

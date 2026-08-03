@@ -11,7 +11,7 @@ import pytest
 
 from app.db.base import session_factory
 from app.db.models import User
-from app.services import assignments, goals, progress, viewas
+from app.services import access, assignments, goals, progress, viewas
 from app.services import state as user_state
 
 
@@ -45,6 +45,7 @@ def _stub(monkeypatch):
     monkeypatch.setattr(goals, "record_module", _noop)
     monkeypatch.setattr(assignments, "on_session", _no_assign)
     monkeypatch.setattr(viewas, "get", _viewas_get)
+    monkeypatch.setattr(access, "anchor_trial", _noop)  # не про anchoring — ізолюємо від Redis
 
     async def _compute(uid):
         return {}

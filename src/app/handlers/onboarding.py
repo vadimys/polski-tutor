@@ -494,8 +494,8 @@ async def cb_send(cb: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
     await cb.answer()
     await cb.message.answer(
-        f"🚀 <b>Доступ відкрито — {settings.organic_trial_days} днів безкоштовно!</b> "
-        f"(до <b>{until}</b>)\n"
+        f"🚀 <b>Доступ відкрито — {settings.organic_trial_days} днів безкоштовно!</b>\n"
+        f"⏱ Відлік почнеться з твоєї <b>першої вправи</b> — тож починай, коли буде зручно.\n"
         f"{_trial_disclosure()}\n"
         "Почнемо зі стартового тесту 👇",
         reply_markup=approved_kb(),

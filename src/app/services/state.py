@@ -153,6 +153,10 @@ async def update_readiness(
             u.readiness = new_map
             await s.commit()
     await goals.record_module(user_id, module_value, score=pct)  # час + XP у прогресію
+    if celebrate:  # trial-відлік стартує з ПЕРШОЇ справжньої вправи (не placement/моку)
+        from app.services import access
+
+        await access.anchor_trial(user_id)
     # мікро-перемога — ПІСЛЯ record_module (goals.add робить r.set і затер би буфер);
     # лише реальний приріст (свіжість може лишити % рівним/нижчим — тоді мовчимо)
     if celebrate:

@@ -65,12 +65,15 @@ async def fake_redis(monkeypatch):
     monkeypatch.setattr("redis.asyncio.Redis.from_url", staticmethod(_from_url))
 
     # скинути ліниві module-global синглтони, щоб перестворились проти fake
+    import app.services.access as _access
     import app.services.league as _league
     import app.services.sim_quota as _quota
     import app.services.verbs as _verbs
 
     for mod in (_verbs, _league, _quota):
         monkeypatch.setattr(mod, "_redis", None, raising=False)
+    monkeypatch.setattr(_access, "_anchor_redis", None, raising=False)
     yield server
     for mod in (_verbs, _league, _quota):
         monkeypatch.setattr(mod, "_redis", None, raising=False)
+    monkeypatch.setattr(_access, "_anchor_redis", None, raising=False)

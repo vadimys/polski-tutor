@@ -82,6 +82,7 @@ async def _delete_redis(user_id: int) -> None:
             f"verbs:wrong:forms:{user_id}",
             f"verbs:wrong:rekcja:{user_id}",
             f"polski:mist:{user_id}",  # колода помилок — теж БЕЗ TTL, персональні дані (ст.17)
+            f"trial:anchored:{user_id}",  # прапорець «trial-відлік прив'язано до 1-ї вправи»
         )
         await r.srem("polski:users", user_id)
         await r.hdel("reset:reqs", uid)
